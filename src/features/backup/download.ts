@@ -1,0 +1,2 @@
+import type { BackupSnapshot } from '../../domain/models.js';
+export function downloadBackup(snapshot:BackupSnapshot):void{const blob=new Blob([JSON.stringify(snapshot,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=`kotoba-lab-backup-${new Date().toISOString().slice(0,10)}.json`;anchor.click();URL.revokeObjectURL(url);}

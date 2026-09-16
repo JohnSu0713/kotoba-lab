@@ -1,0 +1,4 @@
+import type { ContentItem } from '../../domain/models.js';
+export function shuffle<T>(values:T[],random:()=>number):T[]{const copy=[...values]; for(let i=copy.length-1;i>0;i-=1){const j=Math.floor(random()*(i+1)); const a=copy[i]; const b=copy[j]; if(a!==undefined&&b!==undefined){copy[i]=b;copy[j]=a;}} return copy;}
+export function distractors<T extends ContentItem>(correct:T,pool:T[],count:number,key:(item:T)=>string,random:()=>number):T[]{const correctKey=key(correct); const unique=new Map<string,T>(); for(const item of shuffle(pool,random)){const itemKey=key(item); if(item.id!==correct.id&&itemKey!==correctKey&&!unique.has(itemKey))unique.set(itemKey,item); if(unique.size>=count)break;} return [...unique.values()];}
+export function normalizeText(value:string):string{return value.trim().toLowerCase().normalize('NFKC');}
