@@ -1,6 +1,7 @@
 import type { AppContext } from '../../app/context.js';
 import type { KanaItem, Script } from '../../domain/models.js';
 import { studyHref } from '../router.js';
+import { speakJapanese } from '../speech.js';
 
 const rows = ['vowel', 'k', 's', 't', 'n', 'h', 'm', 'y', 'r', 'w', 'n-final'];
 
@@ -9,7 +10,7 @@ function chart(items: KanaItem[], script: Script): string {
   return `<div class="kana-chart">${rows.map((row) => {
     const rowItems = filtered.filter((item) => item.row === row);
     if (!rowItems.length) return '';
-    return `<div class="kana-chart-row">${rowItems.map((item) => `<div class="kana-cell"><strong>${item.kana}</strong><span>${item.romaji}</span></div>`).join('')}</div>`;
+    return `<div class="kana-chart-row">${rowItems.map((item) => `<button type="button" class="kana-cell" data-speak-kana="${item.kana}" aria-label="播放 ${item.kana} 的日文發音"><strong>${item.kana}</strong><span>${item.romaji} · 🔊</span></button>`).join('')}</div>`;
   }).join('')}</div>`;
 }
 
@@ -19,7 +20,7 @@ export async function renderKana(root: HTMLElement, context: AppContext): Promis
     <section class="page-header compact">
       <p class="eyebrow">FOUNDATION</p>
       <h1>五十音</h1>
-      <p>先建立看到、聽到、輸入都能直接反應的假名能力。</p>
+      <p>先建立看到、聽到、輸入都能直接反應的假名能力。點任一假名即可播放發音。</p>
     </section>
 
     <section class="kana-overview-grid">
@@ -51,4 +52,11 @@ export async function renderKana(root: HTMLElement, context: AppContext): Promis
         <a class="mode-card soft" href="${studyHref('kana-recognition', { scope: 'all' })}"><span class="mode-icon">濁</span><div><strong>進階假名混合</strong><span>濁音・半濁音・拗音一起練</span></div><b>›</b></a>
       </div>
     </section>`;
+
+  root.querySelectorAll<HTMLButtonElement>('[data-speak-kana]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const text = button.dataset.speakKana;
+      if (text) speakJapanese(text);
+    });
+  });
 }
