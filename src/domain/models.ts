@@ -16,7 +16,10 @@ export interface KanaItem {
 
 export interface VocabularyExample {
   ja: string;
-  zhTw: string;
+  zhTw?: string;
+  en?: string;
+  source?: 'tatoeba' | 'project';
+  sourceId?: string;
 }
 
 export interface VocabularyItem {
@@ -29,6 +32,9 @@ export interface VocabularyItem {
   tags: string[];
   examples: VocabularyExample[];
   order: number;
+  partsOfSpeech?: string[];
+  fields?: string[];
+  common?: boolean;
   frequencyRank?: number | null;
   sourceEntryId?: string;
   jlptConfidence?: 'community-estimate' | 'project';
