@@ -6,7 +6,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
     const response = await fetch(MANIFEST, { cache: 'no-store' });
-    const assets = response.ok ? await response.json() : ['./', './index.html', './styles.css', './visual-polish.css', './corpus-polish.css', './flashcard-polish.css', './audio/ja/manifest.json'];
+    const assets = response.ok ? await response.json() : ['./', './index.html', './styles.css', './visual-polish.css', './corpus-polish.css', './flashcard-polish.css'];
     await cache.addAll([...new Set(['./', MANIFEST, ...assets])]);
     await self.skipWaiting();
   })());
