@@ -1,0 +1,117 @@
+/* Vocabulary corpus + mixed-session presentation layer. */
+
+.vocab-library-card {
+  display: grid;
+  gap: 20px;
+  padding: clamp(18px, 2.6vw, 26px);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--accent-soft) 72%, transparent), transparent 30%),
+    var(--surface-solid);
+}
+
+.vocab-library-copy {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 15px;
+  align-items: center;
+}
+
+.vocab-library-copy > div { min-width: 0; }
+.vocab-library-copy strong { display: block; font-size: 15px; letter-spacing: -.015em; }
+.vocab-library-copy p {
+  max-width: 720px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.vocab-library-mark {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.jlpt-level-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.jlpt-level-card {
+  min-width: 0;
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-content: center;
+  column-gap: 8px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-soft) 60%, transparent);
+  transition: transform .16s ease, border-color .16s ease, background .16s ease;
+}
+.jlpt-level-card:hover,
+.jlpt-level-card:focus-visible {
+  border-color: var(--line-strong);
+  background: var(--surface-soft);
+}
+.jlpt-level-card:active { transform: scale(.98); }
+.jlpt-level-card strong {
+  grid-column: 1;
+  font-size: 18px;
+  line-height: 1.1;
+  letter-spacing: -.025em;
+}
+.jlpt-level-card span {
+  grid-column: 1;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.jlpt-level-card b {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: var(--muted);
+  font-weight: 400;
+}
+.jlpt-level-card b svg { width: 15px; height: 15px; }
+
+.mixed-mode-chip {
+  align-self: center;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-soft) 72%, transparent);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .04em;
+}
+
+.source-card a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 34%, transparent);
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .jlpt-level-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 480px) {
+  .vocab-library-card { gap: 16px; padding: 17px; }
+  .vocab-library-copy { align-items: start; }
+  .vocab-library-mark { width: 42px; height: 42px; border-radius: 13px; font-size: 21px; }
+  .jlpt-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .jlpt-level-card:last-child { grid-column: 1 / -1; }
+}

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "sourceVersion": "2026-09-02",
+  "source": "Tomoshi Open Data / JMdict (EDRDG) / Jonathan Waller JLPT estimates",
+  "license": "CC BY-SA 4.0",
+  "jlptNotice": "N5-N1 vocabulary labels are community estimates; the JLPT does not publish an official vocabulary list.",
+  "levels": {
+    "N5": {
+      "path": "./data/vocab/n5.json",
+      "count": 692
+    },
+    "N4": {
+      "path": "./data/vocab/n4.json",
+      "count": 646
+    },
+    "N3": {
+      "path": "./data/vocab/n3.json",
+      "count": 1648
+    },
+    "N2": {
+      "path": "./data/vocab/n2.json",
+      "count": 1737
+    },
+    "N1": {
+      "path": "./data/vocab/n1.json",
+      "count": 3054
+    }
+  }
+}
