@@ -8,21 +8,12 @@ on:
         required: true
         default: all
         type: choice
-        options:
-          - all
-          - kana
-          - N5
-          - N4
-          - N3
-          - N2
-          - N1
+        options: [all, kana, N5, N4, N3, N2, N1]
       force:
         description: Regenerate files even when the deterministic asset already exists
         required: true
         default: false
         type: boolean
-  # One-time bootstrap path so the first asset generation can be kicked off by
-  # merging a marker after credentials are installed. Remove after bootstrap.
   push:
     branches: [main]
     paths:
@@ -45,20 +36,16 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_TTS_CREDENTIALS_JSON }}
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
       - name: Install Cloud Text-to-Speech client
         run: python -m pip install --disable-pip-version-check google-cloud-texttospeech
-
       - name: Prepare audio-assets worktree
         run: |
           rm -rf /tmp/kotoba-audio
@@ -71,12 +58,14 @@ jobs:
             git checkout --orphan audio-assets
             git rm -rf . || true
           fi
-
       - name: Generate Chirp 3 HD assets
         env:
           GCP_TTS_VOICE: ja-JP-Chirp3-HD-Zephyr
           KOTOBA_KANA_RATE: '0.35'
           KOTOBA_WORD_RATE: '0.92'
+          # Actual project quota is lower than the nominal Chirp quota. Stay well
+          # below it and make the full generation resumable across runs.
+          KOTOBA_TTS_MIN_REQUEST_INTERVAL: '1.25'
         run: |
           scope='${{ inputs.scope }}'
           if [[ -z "$scope" ]]; then scope=all; fi
@@ -85,11 +74,10 @@ jobs:
             --kana-source src/features/kana/data.ts
             --output /tmp/kotoba-audio/audio/ja
             --scope "$scope"
-            --workers 8
+            --workers 4
           )
           if [[ '${{ inputs.force }}' == 'true' ]]; then args+=(--force); fi
           python scripts/generate_hd_audio.py "${args[@]}"
-
       - name: Publish audio-assets branch
         id: publish
         run: |
@@ -101,13 +89,11 @@ jobs:
           git add audio/ja
           if git diff --cached --quiet; then
             echo 'changed=false' >> "$GITHUB_OUTPUT"
-            echo 'HD audio assets already current.'
           else
             git commit -m "audio: refresh ${scope} Chirp 3 HD assets"
             git push origin HEAD:audio-assets
             echo 'changed=true' >> "$GITHUB_OUTPUT"
           fi
-
       - name: Redeploy Pages with HD audio
         if: steps.publish.outputs.changed == 'true'
         env:
