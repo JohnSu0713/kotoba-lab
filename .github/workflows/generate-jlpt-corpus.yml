@@ -1,0 +1,57 @@
+name: Generate JLPT corpus
+
+on:
+  push:
+    branches: [feat/jlpt-corpus]
+    paths:
+      - '.github/workflows/generate-jlpt-corpus.yml'
+      - 'scripts/import_tomoshi.py'
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/jlpt-corpus
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install zstandard
+        run: python -m pip install --disable-pip-version-check zstandard
+      - name: Download and decompress Tomoshi
+        run: |
+          python - <<'PY'
+          import urllib.request
+          import zstandard
+          src='https://github.com/tomoshi-app/tomoshi-dict-data/releases/download/v2026-09-02/tomoshi-dict-open.db.zst'
+          compressed='/tmp/tomoshi-dict-open.db.zst'
+          raw='/tmp/tomoshi-dict-open.db'
+          urllib.request.urlretrieve(src, compressed)
+          with open(compressed,'rb') as f, open(raw,'wb') as out:
+              zstandard.ZstdDecompressor().copy_stream(f,out)
+          PY
+      - name: Generate compact vocabulary packs
+        run: python scripts/import_tomoshi.py --db /tmp/tomoshi-dict-open.db --output public/data/vocab
+      - name: Show corpus summary
+        run: |
+          python - <<'PY'
+          import json
+          m=json.load(open('public/data/vocab/manifest.json'))
+          print(json.dumps(m, ensure_ascii=False, indent=2))
+          PY
+      - name: Commit generated corpus
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/data/vocab
+          if git diff --cached --quiet; then
+            echo 'Corpus already current.'
+          else
+            git commit -m 'data: import JLPT N5-N1 Traditional Chinese corpus'
+            git push origin HEAD:feat/jlpt-corpus
+          fi
