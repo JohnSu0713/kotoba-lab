@@ -1,4 +1,10 @@
 const JA_LOCALE = 'ja-JP';
+const KANA_RATE = 0.1125;
+const DEFAULT_RATE = 0.96;
+const VOICE_LOAD_TIMEOUT_MS = 400;
+
+let activeUtterance: SpeechSynthesisUtterance | undefined;
+let speechRequestId = 0;
 
 function voiceScore(voice: SpeechSynthesisVoice): number {
   const lang = voice.lang.toLowerCase();
@@ -8,10 +14,10 @@ function voiceScore(voice: SpeechSynthesisVoice): number {
   if (lang === 'ja-jp') score += 100;
   else if (lang.startsWith('ja')) score += 70;
 
-  // Prefer high-quality system voices when the browser exposes them. Names vary
-  // across Apple, Google, and Microsoft platforms, so these are only quality hints.
+  // Prefer high-quality system/browser voices. Chrome commonly exposes
+  // "Google 日本語" / "Google Japanese"; Apple and Windows expose different names.
   if (/(premium|enhanced|natural|neural|siri)/i.test(name)) score += 40;
-  if (/(kyoko|otoya|nanami|google.*日本|google.*japanese)/i.test(name)) score += 24;
+  if (/(google.*日本|google.*japanese|kyoko|otoya|nanami)/i.test(name)) score += 28;
   if (voice.localService) score += 12;
   if (voice.default) score += 5;
   if (/compact/i.test(name)) score -= 18;
@@ -30,9 +36,56 @@ function isShortKana(text: string): boolean {
 }
 
 function speechRate(text: string): number {
-  // Keep words and sentences near natural speed. Isolated kana are deliberately
-  // very slow for beginner listening practice: half of the previous 0.45 rate.
-  return isShortKana(text) ? 0.225 : 0.96;
+  // Isolated kana are intentionally ultra-slow for beginner sound discrimination.
+  // 0.1125 is exactly half of the previous 0.225 rate and stays above the Web
+  // Speech API's practical minimum of 0.1 on Chromium/Safari engines.
+  return isShortKana(text) ? KANA_RATE : DEFAULT_RATE;
+}
+
+function createUtterance(text: string, voice?: SpeechSynthesisVoice): SpeechSynthesisUtterance {
+  // A Japanese full stop helps iOS/Safari and Chromium avoid clipping a one-mora
+  // utterance at the end of a very short synthesis request.
+  const spokenText = isShortKana(text) ? `${text}。` : text;
+  const utterance = new SpeechSynthesisUtterance(spokenText);
+  utterance.lang = JA_LOCALE;
+  utterance.rate = speechRate(text);
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  if (voice) utterance.voice = voice;
+  return utterance;
+}
+
+function speakWithVoice(
+  synth: SpeechSynthesis,
+  text: string,
+  voice: SpeechSynthesisVoice | undefined,
+  requestId: number,
+  allowFallback = true,
+): void {
+  if (requestId !== speechRequestId) return;
+
+  const utterance = createUtterance(text, voice);
+  activeUtterance = utterance;
+
+  utterance.onend = () => {
+    if (activeUtterance === utterance) activeUtterance = undefined;
+  };
+
+  utterance.onerror = (event) => {
+    if (activeUtterance === utterance) activeUtterance = undefined;
+    if (requestId !== speechRequestId || !allowFallback || !voice) return;
+
+    const error = (event as SpeechSynthesisErrorEvent).error;
+    if (error === 'voice-unavailable' || error === 'language-unavailable' || error === 'synthesis-failed') {
+      // Chrome can occasionally expose a voice before it is actually ready. Retry
+      // once without pinning the voice while keeping lang=ja-JP, allowing Chromium
+      // to choose its own Japanese engine instead of falling back to another locale.
+      window.setTimeout(() => speakWithVoice(synth, text, undefined, requestId, false), 0);
+    }
+  };
+
+  if (synth.paused) synth.resume();
+  synth.speak(utterance);
 }
 
 export function canSpeakJapanese(): boolean {
@@ -44,24 +97,36 @@ export function speakJapanese(text: string): void {
   if (!canSpeakJapanese() || !clean) return;
 
   const synth = window.speechSynthesis;
+  const requestId = ++speechRequestId;
   synth.cancel();
 
-  // A Japanese full stop helps some iOS voices avoid clipping a one-mora utterance.
-  const spokenText = isShortKana(clean) ? `${clean}。` : clean;
-  const utterance = new SpeechSynthesisUtterance(spokenText);
-  utterance.lang = JA_LOCALE;
-  utterance.rate = speechRate(clean);
-  utterance.pitch = 1;
-  utterance.volume = 1;
+  const initialVoices = synth.getVoices();
+  const initialJapaneseVoice = bestJapaneseVoice(initialVoices);
 
-  const voice = bestJapaneseVoice(synth.getVoices());
-  if (voice) utterance.voice = voice;
+  // Safari usually has voices immediately. Chrome may return [] on the first call,
+  // then emit voiceschanged shortly afterward. If Chrome already returned voices,
+  // speak immediately; lang=ja-JP still constrains the fallback when no explicit
+  // Japanese voice was exposed.
+  if (initialJapaneseVoice || initialVoices.length > 0) {
+    speakWithVoice(synth, clean, initialJapaneseVoice, requestId);
+    return;
+  }
 
-  synth.speak(utterance);
+  let settled = false;
+  const finish = (): void => {
+    if (settled || requestId !== speechRequestId) return;
+    settled = true;
+    synth.removeEventListener?.('voiceschanged', onVoicesChanged);
+    speakWithVoice(synth, clean, bestJapaneseVoice(synth.getVoices()), requestId);
+  };
+
+  const onVoicesChanged = (): void => finish();
+  synth.addEventListener?.('voiceschanged', onVoicesChanged, { once: true });
+  window.setTimeout(finish, VOICE_LOAD_TIMEOUT_MS);
 }
 
-// Safari/iOS may populate voices asynchronously. Warm the list and listen once so
-// the first user-triggered pronunciation can use the best available Japanese voice.
+// Warm the voice list at startup. This is especially useful in Chrome/Chromium,
+// where the first getVoices() call is often empty until voiceschanged fires.
 if (canSpeakJapanese()) {
   const synth = window.speechSynthesis;
   synth.getVoices();
