@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Build
+        run: npm run build
+
       - name: Mount generated HD audio
         run: |
           if git fetch --depth=1 origin audio-assets:refs/remotes/origin/audio-assets; then
@@ -39,9 +42,6 @@ jobs:
           else
             echo 'audio-assets branch does not exist yet; browser TTS fallback remains active.'
           fi
-
-      - name: Build
-        run: npm run build
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
