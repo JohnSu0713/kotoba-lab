@@ -65,5 +65,6 @@ jobs:
             echo 'Vocabulary packs already current.'
           else
             git commit -m 'data: enrich JLPT vocabulary cards'
+            git pull --rebase origin feat/rich-vocab-cards
             git push origin HEAD:feat/rich-vocab-cards
           fi
