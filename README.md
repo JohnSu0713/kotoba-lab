@@ -8,10 +8,10 @@ A calm, local-first Japanese learning PWA for Traditional Chinese learners.
 - **Multiple memory paths:** visual recognition, active recall, listening, script transfer, vocabulary flashcards.
 - **Traditional Chinese first:** UI and learning explanations target zh-Hant learners.
 - **Local-first:** no account or backend required for v0.x.
-- **Modular:** content packs, study modes, scheduler, storage, and UI are replaceable modules.
+- **Modular:** content packs, study modes, scheduler, storage, audio, and UI are replaceable modules.
 - **Responsive & accessible:** designed for iPhone first, scales to tablet/desktop, supports light/dark/system appearance.
 
-## Included in v0.3.1
+## Included in v0.4.0
 
 - Hiragana + katakana: gojuon, dakuten, handakuten, yoon.
 - Kana recognition, active recall, listening choice, and hiragana↔katakana transfer.
@@ -20,7 +20,8 @@ A calm, local-first Japanese learning PWA for Traditional Chinese learners.
 - A tactile **front/back vocabulary flashcard**: first recall the reading and meaning, then tap or press Enter/Space to flip the card and reveal the answer, usage information, example, and source note.
 - Five clean JLPT level entry points with per-level counts and frequency-prioritized ordering.
 - **10-minute mixed practice** that round-robins across kana and vocabulary study modes while preserving each mode's own review record.
-- Automatic answer pronunciation plus subtle vibration feedback where the browser supports the Vibration API.
+- **HD Japanese audio engine:** pre-generated Google Cloud Chirp 3 HD MP3s when available, same-origin playback on Chrome/Safari/PWA, on-demand offline caching, and browser Web Speech as a safe fallback.
+- Answer pronunciation/haptics fire when the learner receives the answer; vocabulary flashcards speak on reveal, not on SRS rating.
 - Local IndexedDB progress, JSON backup/import.
 - Adaptive SRS behind a `Scheduler` interface (FSRS adapter is planned).
 - Installable PWA + offline cache.
@@ -44,6 +45,20 @@ Current dictionary snapshot: **Tomoshi Open Data 2026-09-02**. Example links use
 
 JLPT N5–N1 labels are community estimates; the current JLPT does not publish an official exhaustive vocabulary list. See [`data-packs/README.md`](data-packs/README.md), [`public/data/vocab/NOTICE.md`](public/data/vocab/NOTICE.md), and [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for provenance and attribution.
 
+## HD Japanese audio
+
+Runtime speech uses a layered path:
+
+```text
+pre-generated Chirp 3 HD MP3 → same-origin runtime cache → browser Japanese TTS fallback
+```
+
+The generated binary files intentionally live on the separate `audio-assets` branch so the application source history stays small. GitHub Pages mounts that branch before building the deploy artifact. MP3s are **not** eagerly pre-cached; the service worker caches only the pronunciations a learner actually hears.
+
+Generation is manual through the **Generate HD Japanese audio** Actions workflow. It defaults to `ja-JP-Chirp3-HD-Zephyr`, uses a slow `0.35×` kana learning pace and `0.92×` vocabulary pace, deduplicates identical readings, and supports incremental N5–N1 regeneration.
+
+The workflow expects one repository Actions secret named `GCP_TTS_CREDENTIALS_JSON` containing a Google Cloud service-account JSON credential for a project with Cloud Text-to-Speech enabled. The credential is used only inside GitHub Actions and is never shipped to the browser or committed to the repository.
+
 ## Refreshing vocabulary data
 
 The checked-in JSON packs are runtime assets; the browser never downloads the upstream 650 MB dictionary database. Maintainers can explicitly run the **Refresh vocabulary data** GitHub Actions workflow to reproduce the compact packs from the pinned open-data sources.
@@ -58,7 +73,7 @@ npm run serve
 
 Open `http://localhost:4173`.
 
-If TypeScript is already installed globally, `tsc -p tsconfig.json` is enough to compile.
+If TypeScript is already installed globally, `tsc -p tsconfig.json` is enough to compile. To generate HD audio locally, authenticate Application Default Credentials and run `scripts/generate_hd_audio.py` with an output directory; `--dry-run` needs no cloud dependency or credential.
 
 ## Repository layout
 
@@ -80,8 +95,10 @@ src/
     components/         presentational primitives/icons
     theme/              appearance controller
     views/              route-level views
+    speech.ts           HD static audio + Web Speech fallback
     shell.ts            app navigation shell
 public/
+  audio/ja/             runtime HD audio manifest (MP3s mounted at deploy time)
   data/vocab/           versioned N5→N1 vocabulary packs
   index.html
   styles.css
@@ -91,6 +108,7 @@ public/
   manifest.webmanifest
   sw.js
 scripts/
+  generate_hd_audio.py  Chirp 3 HD asset generator
   import_tomoshi.py     reproducible corpus importer + example enrichment
 ```
 
