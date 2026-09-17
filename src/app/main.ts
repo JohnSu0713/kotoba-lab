@@ -10,6 +10,7 @@ import { currentRoute } from '../ui/router.js';
 import { renderShell } from '../ui/shell.js';
 import { renderHome } from '../ui/views/home.js';
 import { renderKana } from '../ui/views/kana.js';
+import { renderLyrics } from '../ui/views/lyrics.js';
 import { renderStudy } from '../ui/views/study.js';
 import { renderStats } from '../ui/views/stats.js';
 import { renderSettings } from '../ui/views/settings.js';
@@ -46,6 +47,7 @@ async function bootstrap(): Promise<void> {
       if (node.dataset.nav === route.path) node.classList.add('active');
     });
     if (route.path === '/kana') await renderKana(page, context);
+    else if (route.path === '/lyrics') await renderLyrics(page, context);
     else if (route.path === '/stats') await renderStats(page, context);
     else if (route.path === '/settings') await renderSettings(page, context);
     else await renderHome(page, context);
