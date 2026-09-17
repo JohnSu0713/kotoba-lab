@@ -2,11 +2,6 @@ name: Refresh vocabulary data
 
 on:
   workflow_dispatch:
-  push:
-    branches: [feat/rich-vocab-cards]
-    paths:
-      - '.github/workflows/refresh-vocab.yml'
-      - 'scripts/import_tomoshi.py'
 
 permissions:
   contents: write
@@ -17,7 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feat/rich-vocab-cards
           fetch-depth: 0
 
       - uses: actions/setup-python@v5
@@ -64,7 +58,7 @@ jobs:
           if git diff --cached --quiet; then
             echo 'Vocabulary packs already current.'
           else
-            git commit -m 'data: enrich JLPT vocabulary cards'
-            git pull --rebase origin feat/rich-vocab-cards
-            git push origin HEAD:feat/rich-vocab-cards
+            git commit -m 'data: refresh enriched JLPT vocabulary cards'
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
