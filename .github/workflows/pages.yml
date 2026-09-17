@@ -29,6 +29,17 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Mount generated HD audio
+        run: |
+          if git fetch --depth=1 origin audio-assets:refs/remotes/origin/audio-assets; then
+            rm -rf public/audio/ja
+            mkdir -p public/audio
+            git archive refs/remotes/origin/audio-assets audio/ja | tar -x -C public
+            echo 'Mounted generated audio-assets branch.'
+          else
+            echo 'audio-assets branch does not exist yet; browser TTS fallback remains active.'
+          fi
+
       - name: Build
         run: npm run build
 
