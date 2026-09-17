@@ -234,6 +234,9 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
         if (revealed) return;
         revealed = true;
         draw();
+        // The learner receives the answer at reveal time. Pronunciation/haptics
+        // should reinforce that moment, not the later SRS self-rating.
+        giveAnswerFeedback(q.speakText, true, settings.speakAnswers);
       };
       root.querySelector('[data-action="reveal"]')?.addEventListener('click', reveal);
       const flipCard = root.querySelector<HTMLElement>('[data-flip-card]');
@@ -248,11 +251,9 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
         button.addEventListener('click', async () => {
           button.disabled = true;
           const rating = button.dataset.rating as Rating;
-          const answeredQuestion = q;
-          const outcome = await session.submit('', rating);
+          await session.submit('', rating);
           revealed = false;
           draw();
-          giveAnswerFeedback(answeredQuestion.speakText, outcome.correct, settings.speakAnswers);
         });
       });
     }
