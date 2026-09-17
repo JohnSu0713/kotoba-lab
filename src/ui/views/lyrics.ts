@@ -187,7 +187,7 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
 function bindInteractions(root: HTMLElement): void {
   root.querySelector<HTMLFormElement>('#lyric-add-form')?.addEventListener('submit', (event) => {
     event.preventDefault();
-    const form = event.currentTarget;
+    const form = event.currentTarget as HTMLFormElement;
     const data = new FormData(form);
     const artist = String(data.get('artist') ?? '').trim();
     if (!artist) return;
