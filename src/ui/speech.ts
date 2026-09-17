@@ -1,6 +1,38 @@
-function japaneseVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
-  const japanese = voices.filter((voice) => voice.lang.toLowerCase().startsWith('ja'));
-  return japanese.find((voice) => voice.lang.toLowerCase() === 'ja-jp') ?? japanese[0];
+const JA_LOCALE = 'ja-JP';
+
+function voiceScore(voice: SpeechSynthesisVoice): number {
+  const lang = voice.lang.toLowerCase();
+  const name = voice.name.toLowerCase();
+  let score = 0;
+
+  if (lang === 'ja-jp') score += 100;
+  else if (lang.startsWith('ja')) score += 70;
+
+  // Prefer high-quality system voices when the browser exposes them. Names vary
+  // across Apple, Google, and Microsoft platforms, so these are only quality hints.
+  if (/(premium|enhanced|natural|neural|siri)/i.test(name)) score += 40;
+  if (/(kyoko|otoya|nanami|google.*日本|google.*japanese)/i.test(name)) score += 24;
+  if (voice.localService) score += 12;
+  if (voice.default) score += 5;
+  if (/compact/i.test(name)) score -= 18;
+
+  return score;
+}
+
+function bestJapaneseVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
+  return voices
+    .filter((voice) => voice.lang.toLowerCase().startsWith('ja'))
+    .sort((a, b) => voiceScore(b) - voiceScore(a))[0];
+}
+
+function isShortKana(text: string): boolean {
+  return /^[ぁ-ゖァ-ヺー]{1,3}$/.test(text.trim());
+}
+
+function speechRate(text: string): number {
+  // Near-normal speed sounds less robotic for words and sentences. Isolated kana
+  // stays slightly slower so the mora remains easy to distinguish.
+  return isShortKana(text) ? 0.9 : 0.96;
 }
 
 export function canSpeakJapanese(): boolean {
@@ -8,24 +40,30 @@ export function canSpeakJapanese(): boolean {
 }
 
 export function speakJapanese(text: string): void {
-  if (!canSpeakJapanese() || !text.trim()) return;
+  const clean = text.trim();
+  if (!canSpeakJapanese() || !clean) return;
 
   const synth = window.speechSynthesis;
   synth.cancel();
 
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'ja-JP';
-  utterance.rate = 0.82;
+  // A Japanese full stop helps some iOS voices avoid clipping a one-mora utterance.
+  const spokenText = isShortKana(clean) ? `${clean}。` : clean;
+  const utterance = new SpeechSynthesisUtterance(spokenText);
+  utterance.lang = JA_LOCALE;
+  utterance.rate = speechRate(clean);
   utterance.pitch = 1;
+  utterance.volume = 1;
 
-  const voice = japaneseVoice(synth.getVoices());
+  const voice = bestJapaneseVoice(synth.getVoices());
   if (voice) utterance.voice = voice;
 
   synth.speak(utterance);
 }
 
-// Safari/iOS can populate voices asynchronously. Touching getVoices here makes the
-// first user-triggered pronunciation more reliable without adding a network dependency.
+// Safari/iOS may populate voices asynchronously. Warm the list and listen once so
+// the first user-triggered pronunciation can use the best available Japanese voice.
 if (canSpeakJapanese()) {
-  window.speechSynthesis.getVoices();
+  const synth = window.speechSynthesis;
+  synth.getVoices();
+  synth.addEventListener?.('voiceschanged', () => { synth.getVoices(); }, { once: true });
 }
