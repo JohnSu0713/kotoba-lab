@@ -14,7 +14,7 @@ type FeedbackState = {
 };
 
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>'\"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '\"': '&quot;' })[char] ?? char);
+  return value.replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char] ?? char);
 }
 
 function correctLabel(question: StudyQuestion): string {
@@ -234,8 +234,8 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
         if (revealed) return;
         revealed = true;
         draw();
-        // Revealing the back is the moment the learner receives the answer, so
-        // pronunciation/haptics belong here rather than on the later SRS rating.
+        // The learner receives the answer at reveal time. Pronunciation/haptics
+        // should reinforce that moment, not the later SRS self-rating.
         giveAnswerFeedback(q.speakText, true, settings.speakAnswers);
       };
       root.querySelector('[data-action="reveal"]')?.addEventListener('click', reveal);
