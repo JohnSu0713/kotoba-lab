@@ -16,6 +16,7 @@ export function renderShell(app: HTMLElement, contentHtml = ''): void {
       <nav class="bottom-nav" aria-label="主要導覽">
         <a href="#/" data-nav="/">${icons.today}<span>今日</span></a>
         <a href="#/kana" data-nav="/kana">${icons.kana}<span>五十音</span></a>
+        <a href="#/lyrics" data-nav="/lyrics">${icons.lyrics}<span>歌詞</span></a>
         <a href="#/stats" data-nav="/stats">${icons.stats}<span>統計</span></a>
         <a href="#/settings" data-nav="/settings">${icons.settings}<span>設定</span></a>
       </nav>
