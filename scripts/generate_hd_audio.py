@@ -27,6 +27,9 @@ LEVELS = ("N5", "N4", "N3", "N2", "N1")
 DEFAULT_VOICE = "ja-JP-Chirp3-HD-Zephyr"
 DEFAULT_KANA_RATE = 0.35
 DEFAULT_WORD_RATE = 0.92
+# Chirp 3 HD currently has a dedicated 200 requests/min/project quota. Keep a
+# conservative margin so parallel workers never burst through the minute bucket.
+DEFAULT_MIN_REQUEST_INTERVAL = 0.38
 MANIFEST_SCHEMA = 1
 KANA_SEED_RE = re.compile(
     r"\['([^']+)','([^']+)','[^']+','[^']+','(?:gojuon|dakuten|handakuten|yoon)'\]"
@@ -60,8 +63,6 @@ def load_kana_targets(source: Path, rate: float) -> list[Target]:
     targets: list[Target] = []
     for hira, kata in rows:
         canonical = normalize(hira)
-        # Hiragana and katakana represent the same sound. Generate one audio file
-        # from the hiragana reading and point both visible forms at that asset.
         targets.append(Target("kana", normalize(hira), canonical, rate))
         targets.append(Target("kana", normalize(kata), canonical, rate))
     return targets
@@ -80,8 +81,6 @@ def load_vocab_targets(source_dir: Path, levels: Iterable[str], rate: float) -> 
 
 
 def dedupe_targets(targets: Iterable[Target]) -> list[Target]:
-    # Preserve aliases (e.g. あ and ア) while synthesizing identical profile/text
-    # assets only once later through the deterministic file name.
     seen: set[tuple[str, str]] = set()
     result: list[Target] = []
     for target in targets:
@@ -116,8 +115,25 @@ def load_manifest(path: Path) -> dict:
         return empty_manifest()
 
 
-def synthesize_one(target: Target, output: Path, voice: str, attempts: int = 5) -> None:
-    # Import lazily so --dry-run works without cloud dependencies or credentials.
+_thread_local = threading.local()
+_rate_lock = threading.Lock()
+_next_request_at = 0.0
+_min_request_interval = DEFAULT_MIN_REQUEST_INTERVAL
+
+
+def wait_for_quota_slot() -> None:
+    """Serialize request starts while still allowing response work in parallel."""
+    global _next_request_at
+    with _rate_lock:
+        now = time.monotonic()
+        start_at = max(now, _next_request_at)
+        _next_request_at = start_at + _min_request_interval
+        delay = start_at - now
+    if delay > 0:
+        time.sleep(delay)
+
+
+def synthesize_one(target: Target, output: Path, voice: str, attempts: int = 7) -> None:
     from google.cloud import texttospeech  # type: ignore
 
     local = _thread_local
@@ -138,6 +154,7 @@ def synthesize_one(target: Target, output: Path, voice: str, attempts: int = 5) 
     last_error: Exception | None = None
     for attempt in range(attempts):
         try:
+            wait_for_quota_slot()
             response = client.synthesize_speech(request=request)
             output.parent.mkdir(parents=True, exist_ok=True)
             with tempfile.NamedTemporaryFile(dir=output.parent, delete=False) as temp:
@@ -145,17 +162,22 @@ def synthesize_one(target: Target, output: Path, voice: str, attempts: int = 5) 
                 temp_path = Path(temp.name)
             temp_path.replace(output)
             return
-        except Exception as error:  # Cloud client raises several retryable types.
+        except Exception as error:
             last_error = error
             if attempt + 1 < attempts:
-                time.sleep(min(2**attempt, 12))
+                # Quota errors need time for the rolling minute bucket to recover;
+                # transient transport failures usually recover much sooner.
+                message = str(error)
+                if "429" in message or "Resource has been exhausted" in message:
+                    time.sleep(min(15 * (attempt + 1), 75))
+                else:
+                    time.sleep(min(2**attempt, 12))
     raise RuntimeError(f"Failed to synthesize {target.spoken_text!r}: {last_error}")
 
 
-_thread_local = threading.local()
-
-
 def main() -> None:
+    global _min_request_interval
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--vocab-dir", type=Path, default=Path("public/data/vocab"))
     parser.add_argument("--kana-source", type=Path, default=Path("src/features/kana/data.ts"))
@@ -164,6 +186,12 @@ def main() -> None:
     parser.add_argument("--voice", default=os.environ.get("GCP_TTS_VOICE", DEFAULT_VOICE))
     parser.add_argument("--kana-rate", type=float, default=float(os.environ.get("KOTOBA_KANA_RATE", DEFAULT_KANA_RATE)))
     parser.add_argument("--word-rate", type=float, default=float(os.environ.get("KOTOBA_WORD_RATE", DEFAULT_WORD_RATE)))
+    parser.add_argument(
+        "--min-request-interval",
+        type=float,
+        default=float(os.environ.get("KOTOBA_TTS_MIN_REQUEST_INTERVAL", DEFAULT_MIN_REQUEST_INTERVAL)),
+        help="Minimum seconds between Chirp request starts across all workers.",
+    )
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
@@ -171,6 +199,9 @@ def main() -> None:
 
     if not 0.25 <= args.kana_rate <= 2.0 or not 0.25 <= args.word_rate <= 2.0:
         raise SystemExit("Chirp speaking rates must be between 0.25 and 2.0")
+    if args.min_request_interval < 0.30:
+        raise SystemExit("Use --min-request-interval >= 0.30 to respect the Chirp 3 RPM quota")
+    _min_request_interval = args.min_request_interval
 
     selected_levels = LEVELS if args.scope == "all" else ((args.scope,) if args.scope in LEVELS else ())
     targets: list[Target] = []
@@ -205,9 +236,11 @@ def main() -> None:
         if args.force or not path.exists()
     ]
 
+    requests_per_minute = 60 / args.min_request_interval
     print(
         f"Voice={args.voice}; scope={args.scope}; aliases={len(targets):,}; "
-        f"unique assets={len(synth_by_path):,}; pending={len(pending):,}"
+        f"unique assets={len(synth_by_path):,}; pending={len(pending):,}; "
+        f"max start rate≈{requests_per_minute:.1f}/min"
     )
     if args.dry_run:
         return
@@ -231,8 +264,6 @@ def main() -> None:
         encoding="utf-8",
     )
 
-    # A full regeneration prunes stale files from older voices/rates. Incremental
-    # level runs intentionally keep other level assets intact.
     if args.scope == "all":
         referenced = {
             Path(url).name
