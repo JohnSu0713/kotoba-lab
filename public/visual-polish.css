@@ -54,7 +54,10 @@ html, body { max-width: 100%; overflow-x: hidden; }
   padding: 16px 18px;
   gap: 14px;
 }
-.mode-icon {
+/* .mode-card span in the base stylesheet is more specific than .mode-icon.
+   Target the direct child explicitly so iOS cannot fall back to display:block,
+   which placed the SVG at the tile's top-left corner. */
+.mode-card > .mode-icon {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -63,7 +66,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
   text-align: center;
   overflow: hidden;
 }
-.mode-icon svg {
+.mode-card > .mode-icon svg {
   display: block;
   width: 21px;
   height: 21px;
