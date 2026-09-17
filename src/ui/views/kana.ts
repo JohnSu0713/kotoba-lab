@@ -4,13 +4,29 @@ import { studyHref } from '../router.js';
 import { speakJapanese } from '../speech.js';
 
 const rows = ['vowel', 'k', 's', 't', 'n', 'h', 'm', 'y', 'r', 'w', 'n-final'];
+const vowelColumns = ['a', 'i', 'u', 'e', 'o'] as const;
+
+function columnFor(item: KanaItem): number {
+  if (item.row === 'n-final') return 0;
+  const final = item.romaji.at(-1);
+  const index = vowelColumns.indexOf(final as (typeof vowelColumns)[number]);
+  return index >= 0 ? index : 0;
+}
+
+function kanaButton(item: KanaItem): string {
+  return `<button type="button" class="kana-cell" data-speak-kana="${item.kana}" aria-label="播放 ${item.kana} 的日文發音"><strong>${item.kana}</strong><span>${item.romaji} · 🔊</span></button>`;
+}
 
 function chart(items: KanaItem[], script: Script): string {
   const filtered = items.filter((item) => item.script === script && item.group === 'gojuon');
   return `<div class="kana-chart">${rows.map((row) => {
     const rowItems = filtered.filter((item) => item.row === row);
     if (!rowItems.length) return '';
-    return `<div class="kana-chart-row">${rowItems.map((item) => `<button type="button" class="kana-cell" data-speak-kana="${item.kana}" aria-label="播放 ${item.kana} 的日文發音"><strong>${item.kana}</strong><span>${item.romaji} · 🔊</span></button>`).join('')}</div>`;
+
+    const columns: Array<KanaItem | undefined> = Array.from({ length: 5 });
+    for (const item of rowItems) columns[columnFor(item)] = item;
+
+    return `<div class="kana-chart-row">${columns.map((item) => item ? kanaButton(item) : '<span class="kana-cell-placeholder" aria-hidden="true"></span>').join('')}</div>`;
   }).join('')}</div>`;
 }
 
