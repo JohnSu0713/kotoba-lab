@@ -1,0 +1,105 @@
+name: Generate HD Japanese audio
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Audio set to generate
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - kana
+          - N5
+          - N4
+          - N3
+          - N2
+          - N1
+      force:
+        description: Regenerate files even when the deterministic asset already exists
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: hd-japanese-audio
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_TTS_CREDENTIALS_JSON }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Cloud Text-to-Speech client
+        run: python -m pip install --disable-pip-version-check google-cloud-texttospeech
+
+      - name: Prepare audio-assets worktree
+        run: |
+          rm -rf /tmp/kotoba-audio
+          git fetch origin audio-assets:refs/remotes/origin/audio-assets || true
+          if git show-ref --verify --quiet refs/remotes/origin/audio-assets; then
+            git worktree add --detach /tmp/kotoba-audio refs/remotes/origin/audio-assets
+          else
+            git worktree add --detach /tmp/kotoba-audio HEAD
+            cd /tmp/kotoba-audio
+            git checkout --orphan audio-assets
+            git rm -rf . || true
+          fi
+
+      - name: Generate Chirp 3 HD assets
+        env:
+          GCP_TTS_VOICE: ja-JP-Chirp3-HD-Zephyr
+          KOTOBA_KANA_RATE: '0.35'
+          KOTOBA_WORD_RATE: '0.92'
+        run: |
+          args=(
+            --vocab-dir public/data/vocab
+            --kana-source src/features/kana/data.ts
+            --output /tmp/kotoba-audio/audio/ja
+            --scope '${{ inputs.scope }}'
+            --workers 8
+          )
+          if [[ '${{ inputs.force }}' == 'true' ]]; then args+=(--force); fi
+          python scripts/generate_hd_audio.py "${args[@]}"
+
+      - name: Publish audio-assets branch
+        id: publish
+        run: |
+          cd /tmp/kotoba-audio
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add audio/ja
+          if git diff --cached --quiet; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+            echo 'HD audio assets already current.'
+          else
+            git commit -m "audio: refresh ${{ inputs.scope }} Chirp 3 HD assets"
+            git push origin HEAD:audio-assets
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Redeploy Pages with HD audio
+        if: steps.publish.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main
