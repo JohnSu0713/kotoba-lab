@@ -43,8 +43,9 @@ function predicateFor(params: URLSearchParams, enabledGroups: string[]): (item: 
 function renderFlashcard(question: FlashcardQuestion, revealed: boolean): string {
   const chips = question.chips ?? [];
   const details = question.details ?? [];
+  const interactive = revealed ? '' : ' role="button" tabindex="0" aria-label="翻看答案"';
   return `
-    <div class="vocab-flip-card ${revealed ? 'is-flipped' : ''}" data-flip-card>
+    <div class="vocab-flip-card ${revealed ? 'is-flipped' : ''}" data-flip-card${interactive}>
       <div class="vocab-flip-inner">
         <article class="vocab-face vocab-front" aria-hidden="${revealed}">
           <div class="vocab-face-top">
@@ -53,9 +54,8 @@ function renderFlashcard(question: FlashcardQuestion, revealed: boolean): string
           </div>
           <div class="vocab-front-main">
             <div class="vocab-expression">${escapeHtml(question.front)}</div>
-            ${question.frontSub ? `<div class="vocab-reading">${escapeHtml(question.frontSub)}</div>` : ''}
           </div>
-          <div class="vocab-front-hint"><span>先回想意思與用法</span><span aria-hidden="true">↻</span></div>
+          <div class="vocab-front-hint"><span>先回想讀音、意思與用法</span><span aria-hidden="true">↻</span></div>
         </article>
 
         <article class="vocab-face vocab-back" aria-hidden="${!revealed}">
@@ -64,6 +64,7 @@ function renderFlashcard(question: FlashcardQuestion, revealed: boolean): string
             <span class="vocab-side-label">ANSWER</span>
           </div>
           <div class="vocab-answer-block">
+            ${question.frontSub ? `<div class="vocab-answer-reading" lang="ja">${escapeHtml(question.frontSub)}</div>` : ''}
             <p class="vocab-answer-label">意思</p>
             <div class="vocab-meaning">${escapeHtml(question.back)}</div>
             ${chips.length ? `<div class="vocab-pos-chips">${chips.map((chip) => `<span>${escapeHtml(chip)}</span>`).join('')}</div>` : ''}
@@ -229,9 +230,19 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
       });
       root.querySelector<HTMLInputElement>('input[name="answer"]')?.focus();
     } else if (q.type === 'flashcard') {
-      root.querySelector('[data-action="reveal"]')?.addEventListener('click', () => {
+      const reveal = (): void => {
+        if (revealed) return;
         revealed = true;
         draw();
+      };
+      root.querySelector('[data-action="reveal"]')?.addEventListener('click', reveal);
+      const flipCard = root.querySelector<HTMLElement>('[data-flip-card]');
+      flipCard?.addEventListener('click', reveal);
+      flipCard?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          reveal();
+        }
       });
       root.querySelectorAll<HTMLButtonElement>('[data-rating]').forEach((button) => {
         button.addEventListener('click', async () => {
