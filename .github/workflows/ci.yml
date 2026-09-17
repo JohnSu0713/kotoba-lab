@@ -26,3 +26,10 @@ jobs:
 
       - name: Type-check and build
         run: npm run build
+
+      - name: Validate HD audio target manifest
+        run: |
+          python scripts/generate_hd_audio.py \
+            --output /tmp/kotoba-audio-dry-run \
+            --scope all \
+            --dry-run

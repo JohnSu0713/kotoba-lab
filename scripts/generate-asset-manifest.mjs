@@ -20,8 +20,11 @@ const assets = (await walk(root))
   .map((file) => relative(root, file).split(sep).join('/'))
   .filter((path) => !excluded.has(path))
   .filter((path) => !path.endsWith('.map'))
+  // Thousands of MP3s are served on demand and runtime-cached by the service
+  // worker. Eagerly precaching them would make first install unnecessarily huge.
+  .filter((path) => !(path.startsWith('audio/ja/') && path.endsWith('.mp3')))
   .map((path) => `./${path}`)
   .sort();
 
 await writeFile(join(root, 'asset-manifest.json'), `${JSON.stringify(assets, null, 2)}\n`);
-console.log(`Generated asset manifest with ${assets.length} assets.`);
+console.log(`Generated asset manifest with ${assets.length} eager assets.`);

@@ -18,7 +18,8 @@ export function giveAnswerFeedback(
   // the pattern intentionally subtle so it feels like confirmation, not an alert.
   vibrate(correct ? 24 : [48, 38, 72]);
 
-  if (speakAnswers && speakText) {
-    window.setTimeout(() => speakJapanese(speakText), 40);
-  }
+  // Start audio immediately rather than through a timer. Static HD audio uses an
+  // HTMLMediaElement, and iOS/Safari is most reliable when play() stays directly
+  // attached to the learner's tap/flip gesture.
+  if (speakAnswers && speakText) speakJapanese(speakText);
 }
