@@ -54,7 +54,21 @@ html, body { max-width: 100%; overflow-x: hidden; }
   padding: 16px 18px;
   gap: 14px;
 }
-.mode-icon { flex: 0 0 auto; }
+.mode-icon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  text-align: center;
+  overflow: hidden;
+}
+.mode-icon svg {
+  display: block;
+  width: 21px;
+  height: 21px;
+  margin: 0;
+}
 .mode-card strong, .mode-card div > span { overflow-wrap: anywhere; }
 
 .quick-stats > div { padding: 18px clamp(16px, 2.4vw, 22px); }
@@ -187,9 +201,6 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .choice-grid button { padding: 13px 12px; line-height: 1.45; }
 .flash-back { padding-left: 12px; padding-right: 12px; }
 
-/* In standalone iOS PWAs, scrolling content can otherwise remain visible under
-   the translucent system status bar. Keep that safe-area visually reserved so
-   cards and kana marks never collide with the clock / signal indicators. */
 @media (display-mode: standalone) {
   body::before {
     content: "";
