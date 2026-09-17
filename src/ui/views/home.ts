@@ -3,8 +3,8 @@ import type { KanaItem } from '../../domain/models.js';
 import { studyHref } from '../router.js';
 import { icons } from '../components/icons.js';
 
-function modeCard(href: string, glyph: string, title: string, caption: string, tone = ''): string {
-  return `<a class="mode-card ${tone}" href="${href}"><span class="mode-icon">${glyph}</span><div><strong>${title}</strong><span>${caption}</span></div><b>${icons.arrow}</b></a>`;
+function modeCard(href: string, icon: string, title: string, caption: string, tone = ''): string {
+  return `<a class="mode-card ${tone}" href="${href}"><span class="mode-icon">${icon}</span><div><strong>${title}</strong><span>${caption}</span></div><b>${icons.arrow}</b></a>`;
 }
 
 export async function renderHome(root: HTMLElement, context: AppContext): Promise<void> {
@@ -64,10 +64,10 @@ export async function renderHome(root: HTMLElement, context: AppContext): Promis
     <section class="section">
       <div class="section-heading"><div><p class="eyebrow">PRACTICE</p><h2>換一種方式記住</h2></div><span class="quiet">每種模式有獨立記憶排程</span></div>
       <div class="mode-list two-column">
-        ${modeCard(studyHref('kana-audio-choice', { scope: 'all' }), '耳', '聽音辨字', '先聽，再做選擇')}
-        ${modeCard(studyHref('kana-recall', { script: 'hiragana', scope: 'basic' }), '鍵', '主動輸入', '從 romaji 回想假名')}
-        ${modeCard(studyHref('kana-script-pair', { scope: 'basic' }), '↔', '平片轉換', '建立兩套字形直接連結', 'soft')}
-        ${modeCard(studyHref('vocab-flashcard', { jlpt: 'N5' }), '語', 'N5 單字卡', '目前為小型示範詞庫', 'soft')}
+        ${modeCard(studyHref('kana-audio-choice', { scope: 'all' }), icons.modeAudio, '聽音辨字', '先聽，再做選擇')}
+        ${modeCard(studyHref('kana-recall', { script: 'hiragana', scope: 'basic' }), icons.modeKeyboard, '主動輸入', '從 romaji 回想假名')}
+        ${modeCard(studyHref('kana-script-pair', { scope: 'basic' }), icons.modeSwitch, '平片轉換', '建立兩套字形直接連結', 'soft')}
+        ${modeCard(studyHref('vocab-flashcard', { jlpt: 'N5' }), icons.modeVocab, 'N5 單字卡', '目前為小型示範詞庫', 'soft')}
       </div>
     </section>
 
