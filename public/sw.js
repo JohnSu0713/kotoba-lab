@@ -1,4 +1,4 @@
-const CACHE = 'kotoba-lab-v0.2.7';
+const CACHE = 'kotoba-lab-v0.2.8';
 const MANIFEST = './asset-manifest.json';
 
 self.addEventListener('install', (event) => {
