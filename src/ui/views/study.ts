@@ -14,7 +14,7 @@ type FeedbackState = {
 };
 
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char] ?? char);
+  return value.replace(/[&<>'\"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '\"': '&quot;' })[char] ?? char);
 }
 
 function correctLabel(question: StudyQuestion): string {
@@ -234,6 +234,9 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
         if (revealed) return;
         revealed = true;
         draw();
+        // Revealing the back is the moment the learner receives the answer, so
+        // pronunciation/haptics belong here rather than on the later SRS rating.
+        giveAnswerFeedback(q.speakText, true, settings.speakAnswers);
       };
       root.querySelector('[data-action="reveal"]')?.addEventListener('click', reveal);
       const flipCard = root.querySelector<HTMLElement>('[data-flip-card]');
@@ -248,11 +251,9 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
         button.addEventListener('click', async () => {
           button.disabled = true;
           const rating = button.dataset.rating as Rating;
-          const answeredQuestion = q;
-          const outcome = await session.submit('', rating);
+          await session.submit('', rating);
           revealed = false;
           draw();
-          giveAnswerFeedback(answeredQuestion.speakText, outcome.correct, settings.speakAnswers);
         });
       });
     }
