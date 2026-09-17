@@ -1,11 +1,11 @@
-const CACHE = 'kotoba-lab-v0.2.1';
+const CACHE = 'kotoba-lab-v0.2.3';
 const MANIFEST = './asset-manifest.json';
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
     const response = await fetch(MANIFEST, { cache: 'no-store' });
-    const assets = response.ok ? await response.json() : ['./', './index.html', './styles.css'];
+    const assets = response.ok ? await response.json() : ['./', './index.html', './styles.css', './visual-polish.css'];
     await cache.addAll([...new Set(['./', MANIFEST, ...assets])]);
     await self.skipWaiting();
   })());
