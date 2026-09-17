@@ -1,6 +1,7 @@
 import type { AppContext } from '../../app/context.js';
 import type { Rating, Script } from '../../domain/models.js';
 import type { StudyQuestion } from '../../core/contracts/study-mode.js';
+import { icons } from '../components/icons.js';
 import { speakJapanese } from '../speech.js';
 
 function escapeHtml(value: string): string {
@@ -82,7 +83,7 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
         </header>
         <div class="progress-track"><span style="width:${progress}%"></span></div>
         <main class="question-card">
-          ${q.speakText ? `<button class="speaker" data-action="speak" aria-label="播放日文發音">🔊</button>` : ''}
+          ${q.speakText ? `<button class="speaker" data-action="speak" aria-label="播放日文發音">${icons.volume}</button>` : ''}
           <div class="question-prompt">${escapeHtml(q.type === 'flashcard' ? q.front : q.prompt)}</div>
           ${q.type === 'flashcard' && q.frontSub ? `<div class="question-sub">${escapeHtml(q.frontSub)}</div>` : q.type !== 'flashcard' && q.subtitle ? `<div class="question-sub">${escapeHtml(q.subtitle)}</div>` : ''}
 

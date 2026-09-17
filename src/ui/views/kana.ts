@@ -1,5 +1,6 @@
 import type { AppContext } from '../../app/context.js';
 import type { KanaItem, Script } from '../../domain/models.js';
+import { icons } from '../components/icons.js';
 import { studyHref } from '../router.js';
 import { speakJapanese } from '../speech.js';
 
@@ -14,7 +15,7 @@ function columnFor(item: KanaItem): number {
 }
 
 function kanaButton(item: KanaItem): string {
-  return `<button type="button" class="kana-cell" data-speak-kana="${item.kana}" aria-label="播放 ${item.kana} 的日文發音"><strong>${item.kana}</strong><span>${item.romaji} · 🔊</span></button>`;
+  return `<button type="button" class="kana-cell" data-speak-kana="${item.kana}" aria-label="播放 ${item.kana} 的日文發音"><strong>${item.kana}</strong><span class="kana-cell-meta"><span class="kana-romaji">${item.romaji}</span><span class="kana-audio-icon" aria-hidden="true">${icons.volume}</span></span></button>`;
 }
 
 function chart(items: KanaItem[], script: Script): string {

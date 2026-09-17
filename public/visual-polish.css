@@ -79,6 +79,28 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .kana-cell-placeholder { visibility: hidden; }
 .kana-cell strong { font-size: clamp(18px, 2.2vw, 21px); }
 .kana-cell span { line-height: 1.2; white-space: nowrap; }
+.kana-cell-meta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 5px;
+  color: var(--muted);
+}
+.kana-romaji { margin: 0 !important; font-size: 8px; }
+.kana-audio-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  margin: 0 !important;
+  color: color-mix(in srgb, var(--muted) 82%, transparent);
+  transition: color .16s ease, transform .16s ease;
+}
+.kana-audio-icon svg { width: 13px; height: 13px; }
+.kana-cell:hover .kana-audio-icon,
+.kana-cell:focus-visible .kana-audio-icon { color: var(--accent); }
+.kana-cell:active .kana-audio-icon { transform: scale(.92); }
 
 /* Settings alignment. The kana group fieldset used to be one flex row, which
    could become uneven or overflow on narrow screens. */
@@ -148,6 +170,20 @@ html, body { max-width: 100%; overflow-x: hidden; }
   overflow-wrap: anywhere;
   word-break: normal;
 }
+.speaker {
+  width: 44px;
+  height: 44px;
+  color: var(--ink-soft);
+  border-color: color-mix(in srgb, var(--line-strong) 82%, transparent);
+  background: color-mix(in srgb, var(--surface-soft) 72%, transparent);
+  transition: color .16s ease, background .16s ease, transform .16s ease;
+}
+.speaker svg { width: 19px; height: 19px; }
+.speaker:hover, .speaker:focus-visible {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.speaker:active { transform: scale(.96); }
 .choice-grid button { padding: 13px 12px; line-height: 1.45; }
 .flash-back { padding-left: 12px; padding-right: 12px; }
 
@@ -186,6 +222,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
   .hero { padding: 22px 17px; }
   .kana-cell, .kana-cell-placeholder { min-height: 46px; }
   .kana-cell strong { font-size: 17px; }
-  .kana-cell span { font-size: 7px; }
+  .kana-romaji { font-size: 7px; }
+  .kana-audio-icon, .kana-audio-icon svg { width: 12px; height: 12px; }
   .settings-form > fieldset { grid-template-columns: 1fr; }
 }
