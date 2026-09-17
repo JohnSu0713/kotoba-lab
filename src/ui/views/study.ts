@@ -3,12 +3,14 @@ import type { Rating, Script } from '../../domain/models.js';
 import type { StudyQuestion } from '../../core/contracts/study-mode.js';
 import { icons } from '../components/icons.js';
 import { speakJapanese } from '../speech.js';
+import { giveAnswerFeedback } from '../answer-feedback.js';
 
 type FeedbackState = {
   correct: boolean;
   answer: string;
   question: StudyQuestion;
   position: number;
+  sourceModeTitle: string;
 };
 
 function escapeHtml(value: string): string {
@@ -45,10 +47,17 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
     return;
   }
 
-  const mode = context.modes.get(modeId);
   const settings = await context.repository.getSettings();
-  root.innerHTML = `<section class="loading">正在準備 ${escapeHtml(mode.title)}…</section>`;
-  const session = await context.sessions.create(mode, { predicate: predicateFor(params, settings.enabledKanaGroups) });
+  const isMixed = modeId === 'daily-mixed';
+  const mode = isMixed ? undefined : context.modes.get(modeId);
+  const pageTitle = isMixed ? '10 分鐘混合練習' : mode!.title;
+  const predicate = predicateFor(params, settings.enabledKanaGroups);
+  const mixedModes = context.modes.list().filter((candidate) => candidate.id.startsWith('kana-') || candidate.id.startsWith('vocab-'));
+
+  root.innerHTML = `<section class="loading">正在準備 ${escapeHtml(pageTitle)}…</section>`;
+  const session = isMixed
+    ? await context.sessions.createMixed(mixedModes, { predicate })
+    : await context.sessions.create(mode!, { predicate });
   let feedback: FeedbackState | undefined;
   let revealed = false;
 
@@ -75,7 +84,7 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
         <section class="study-shell complete-card">
           <a class="back-link" href="#/">← 首頁</a>
           <p class="eyebrow">ALL CLEAR</p>
-          <h1>這個模式目前沒有到期或新內容</h1>
+          <h1>目前沒有到期或新內容</h1>
           <p>可以切換另一種練習方式，或等排程到期再回來。</p>
           <a class="primary-button" href="#/">選其他模式</a>
         </section>`;
@@ -83,17 +92,19 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
     }
 
     const q = feedback?.question ?? card!.question;
+    const sourceModeTitle = feedback?.sourceModeTitle ?? card!.mode.title;
     const questionNumber = feedback?.position ?? session.completed + 1;
     const progress = session.total === 0 ? 0 : Math.round((session.completed / session.total) * 100);
     root.innerHTML = `
       <section class="study-shell">
         <header class="study-topbar">
           <a class="back-link" href="#/">← 離開</a>
-          <div class="study-mode-name">${escapeHtml(mode.title)}</div>
+          <div class="study-mode-name">${escapeHtml(pageTitle)}</div>
           <div class="study-count">${questionNumber}/${session.total}</div>
         </header>
         <div class="progress-track"><span style="width:${progress}%"></span></div>
         <main class="question-card">
+          ${isMixed ? `<div class="mixed-mode-chip">${escapeHtml(sourceModeTitle)}</div>` : ''}
           ${q.speakText ? `<button class="speaker" data-action="speak" aria-label="播放日文發音">${icons.volume}</button>` : ''}
           <div class="question-prompt">${escapeHtml(q.type === 'flashcard' ? q.front : q.prompt)}</div>
           ${q.type === 'flashcard' && q.frontSub ? `<div class="question-sub">${escapeHtml(q.frontSub)}</div>` : q.type !== 'flashcard' && q.subtitle ? `<div class="question-sub">${escapeHtml(q.subtitle)}</div>` : ''}
@@ -124,13 +135,16 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
     if (q.type === 'choice') {
       root.querySelectorAll<HTMLButtonElement>('[data-choice]').forEach((button) => {
         button.addEventListener('click', async () => {
+          button.disabled = true;
           const answer = button.dataset.choice ?? '';
           const expected = correctLabel(q);
           const answeredQuestion = q;
+          const answeredModeTitle = card!.mode.title;
           const position = session.completed + 1;
           const outcome = await session.submit(answer);
-          feedback = { correct: outcome.correct, answer: expected, question: answeredQuestion, position };
+          feedback = { correct: outcome.correct, answer: expected, question: answeredQuestion, position, sourceModeTitle: answeredModeTitle };
           draw();
+          giveAnswerFeedback(answeredQuestion.speakText, outcome.correct, settings.speakAnswers);
         });
       });
     } else if (q.type === 'text') {
@@ -138,12 +152,16 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
       form?.addEventListener('submit', async (event) => {
         event.preventDefault();
         const input = form.elements.namedItem('answer') as HTMLInputElement;
+        const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        if (submitButton) submitButton.disabled = true;
         const expected = correctLabel(q);
         const answeredQuestion = q;
+        const answeredModeTitle = card!.mode.title;
         const position = session.completed + 1;
         const outcome = await session.submit(input.value);
-        feedback = { correct: outcome.correct, answer: expected, question: answeredQuestion, position };
+        feedback = { correct: outcome.correct, answer: expected, question: answeredQuestion, position, sourceModeTitle: answeredModeTitle };
         draw();
+        giveAnswerFeedback(answeredQuestion.speakText, outcome.correct, settings.speakAnswers);
       });
       root.querySelector<HTMLInputElement>('input[name="answer"]')?.focus();
     } else if (q.type === 'flashcard') {
@@ -153,11 +171,14 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
       });
       root.querySelectorAll<HTMLButtonElement>('[data-rating]').forEach((button) => {
         button.addEventListener('click', async () => {
+          button.disabled = true;
           const rating = button.dataset.rating as Rating;
-          await session.submit('', rating);
+          const answeredQuestion = q;
+          const outcome = await session.submit('', rating);
           feedback = undefined;
           revealed = false;
           draw();
+          giveAnswerFeedback(answeredQuestion.speakText, outcome.correct, settings.speakAnswers);
         });
       });
     }
