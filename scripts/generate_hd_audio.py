@@ -162,7 +162,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--scope", default="all", choices=("all", "kana", *LEVELS))
     parser.add_argument("--voice", default=os.environ.get("GCP_TTS_VOICE", DEFAULT_VOICE))
-    parser.add_argument("--kana-rate", type=float, default=float(os.environ.get("KOToba_KANA_RATE", DEFAULT_KANA_RATE)))
+    parser.add_argument("--kana-rate", type=float, default=float(os.environ.get("KOTOBA_KANA_RATE", DEFAULT_KANA_RATE)))
     parser.add_argument("--word-rate", type=float, default=float(os.environ.get("KOTOBA_WORD_RATE", DEFAULT_WORD_RATE)))
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--force", action="store_true")
