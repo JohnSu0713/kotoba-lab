@@ -18,6 +18,13 @@ export interface TextQuestion {
   speakText?: string;
 }
 
+export interface FlashcardExample {
+  ja: string;
+  translation?: string;
+  translationLabel?: string;
+  sourceLabel?: string;
+}
+
 export interface FlashcardQuestion {
   type: 'flashcard';
   front: string;
@@ -25,6 +32,11 @@ export interface FlashcardQuestion {
   back: string;
   backSub?: string;
   speakText?: string;
+  badge?: string;
+  chips?: string[];
+  details?: Array<{ label: string; value: string }>;
+  example?: FlashcardExample;
+  sourceNote?: string;
 }
 
 export type StudyQuestion = ChoiceQuestion | TextQuestion | FlashcardQuestion;
