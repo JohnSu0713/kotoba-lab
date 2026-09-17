@@ -4,6 +4,13 @@ import type { StudyQuestion } from '../../core/contracts/study-mode.js';
 import { icons } from '../components/icons.js';
 import { speakJapanese } from '../speech.js';
 
+type FeedbackState = {
+  correct: boolean;
+  answer: string;
+  question: StudyQuestion;
+  position: number;
+};
+
 function escapeHtml(value: string): string {
   return value.replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char] ?? char);
 }
@@ -42,11 +49,14 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
   const settings = await context.repository.getSettings();
   root.innerHTML = `<section class="loading">正在準備 ${escapeHtml(mode.title)}…</section>`;
   const session = await context.sessions.create(mode, { predicate: predicateFor(params, settings.enabledKanaGroups) });
-  let feedback: { correct: boolean; answer: string } | undefined;
+  let feedback: FeedbackState | undefined;
   let revealed = false;
 
   const draw = (): void => {
-    if (session.isDone) {
+    // Keep the answered card visible during feedback. The session advances as soon
+    // as an answer is submitted, but the next card must not appear until the user
+    // explicitly taps "下一題".
+    if (!feedback && session.isDone) {
       root.innerHTML = `
         <section class="study-shell complete-card">
           <a class="back-link" href="#/">← 首頁</a>
@@ -59,8 +69,8 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
       return;
     }
 
-    const card = session.current();
-    if (!card) {
+    const card = feedback ? undefined : session.current();
+    if (!feedback && !card) {
       root.innerHTML = `
         <section class="study-shell complete-card">
           <a class="back-link" href="#/">← 首頁</a>
@@ -72,14 +82,15 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
       return;
     }
 
-    const q = card.question;
+    const q = feedback?.question ?? card!.question;
+    const questionNumber = feedback?.position ?? session.completed + 1;
     const progress = session.total === 0 ? 0 : Math.round((session.completed / session.total) * 100);
     root.innerHTML = `
       <section class="study-shell">
         <header class="study-topbar">
           <a class="back-link" href="#/">← 離開</a>
           <div class="study-mode-name">${escapeHtml(mode.title)}</div>
-          <div class="study-count">${session.completed + 1}/${session.total}</div>
+          <div class="study-count">${questionNumber}/${session.total}</div>
         </header>
         <div class="progress-track"><span style="width:${progress}%"></span></div>
         <main class="question-card">
@@ -115,8 +126,10 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
         button.addEventListener('click', async () => {
           const answer = button.dataset.choice ?? '';
           const expected = correctLabel(q);
+          const answeredQuestion = q;
+          const position = session.completed + 1;
           const outcome = await session.submit(answer);
-          feedback = { correct: outcome.correct, answer: expected };
+          feedback = { correct: outcome.correct, answer: expected, question: answeredQuestion, position };
           draw();
         });
       });
@@ -126,8 +139,10 @@ export async function renderStudy(root: HTMLElement, context: AppContext, params
         event.preventDefault();
         const input = form.elements.namedItem('answer') as HTMLInputElement;
         const expected = correctLabel(q);
+        const answeredQuestion = q;
+        const position = session.completed + 1;
         const outcome = await session.submit(input.value);
-        feedback = { correct: outcome.correct, answer: expected };
+        feedback = { correct: outcome.correct, answer: expected, question: answeredQuestion, position };
         draw();
       });
       root.querySelector<HTMLInputElement>('input[name="answer"]')?.focus();
