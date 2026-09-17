@@ -31,8 +31,8 @@ function isShortKana(text: string): boolean {
 
 function speechRate(text: string): number {
   // Keep words and sentences near natural speed. Isolated kana are deliberately
-  // much slower for beginner listening practice: half of the previous 0.9 rate.
-  return isShortKana(text) ? 0.45 : 0.96;
+  // very slow for beginner listening practice: half of the previous 0.45 rate.
+  return isShortKana(text) ? 0.225 : 0.96;
 }
 
 export function canSpeakJapanese(): boolean {
