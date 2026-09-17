@@ -21,6 +21,12 @@ on:
         required: true
         default: false
         type: boolean
+  # One-time bootstrap path so the first asset generation can be kicked off by
+  # merging a marker after credentials are installed. Remove after bootstrap.
+  push:
+    branches: [main]
+    paths:
+      - .github/audio-bootstrap-trigger
 
 permissions:
   contents: write
@@ -72,11 +78,13 @@ jobs:
           KOTOBA_KANA_RATE: '0.35'
           KOTOBA_WORD_RATE: '0.92'
         run: |
+          scope='${{ inputs.scope }}'
+          if [[ -z "$scope" ]]; then scope=all; fi
           args=(
             --vocab-dir public/data/vocab
             --kana-source src/features/kana/data.ts
             --output /tmp/kotoba-audio/audio/ja
-            --scope '${{ inputs.scope }}'
+            --scope "$scope"
             --workers 8
           )
           if [[ '${{ inputs.force }}' == 'true' ]]; then args+=(--force); fi
@@ -85,6 +93,8 @@ jobs:
       - name: Publish audio-assets branch
         id: publish
         run: |
+          scope='${{ inputs.scope }}'
+          if [[ -z "$scope" ]]; then scope=all; fi
           cd /tmp/kotoba-audio
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -93,7 +103,7 @@ jobs:
             echo 'changed=false' >> "$GITHUB_OUTPUT"
             echo 'HD audio assets already current.'
           else
-            git commit -m "audio: refresh ${{ inputs.scope }} Chirp 3 HD assets"
+            git commit -m "audio: refresh ${scope} Chirp 3 HD assets"
             git push origin HEAD:audio-assets
             echo 'changed=true' >> "$GITHUB_OUTPUT"
           fi
