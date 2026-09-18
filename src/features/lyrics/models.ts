@@ -14,8 +14,20 @@ export interface DailyLyricLesson {
   albumName?: string;
   lineJa: string;
   lineZhTw: string;
+  timingResolved?: boolean;
+  lineStartSeconds?: number;
+  lineEndSeconds?: number;
   fetchedAt: string;
   source: 'lrclib+mymemory';
+}
+
+export interface OriginalClipSource {
+  provider: 'youtube';
+  videoId: string;
+  title: string;
+  channelTitle: string;
+  startSeconds: number;
+  endSeconds: number;
 }
 
 export interface LyricsState {

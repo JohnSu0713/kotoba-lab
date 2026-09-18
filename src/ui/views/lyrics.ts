@@ -1,7 +1,20 @@
 import type { AppContext } from '../../app/context.js';
 import type { VocabularyItem } from '../../domain/models.js';
-import { fetchDailyLyric, localDateKey, pickDailyArtist } from '../../features/lyrics/provider.js';
-import type { DailyLyricLesson, FollowedArtist } from '../../features/lyrics/models.js';
+import {
+  fetchDailyLyric,
+  localDateKey,
+  pickDailyArtist,
+} from '../../features/lyrics/provider.js';
+import {
+  resolveOriginalClip,
+  youtubeEmbedUrl,
+  youtubeSearchUrl,
+} from '../../features/lyrics/media.js';
+import type {
+  DailyLyricLesson,
+  FollowedArtist,
+  OriginalClipSource,
+} from '../../features/lyrics/models.js';
 import { lyricsStore } from '../../features/lyrics/store.js';
 import { icons } from '../components/icons.js';
 import { speakJapanese } from '../speech.js';
@@ -41,20 +54,20 @@ function lessonVocabulary(context: AppContext, line: string): VocabularyItem[] {
 
 function grammarHint(line: string): { title: string; copy: string } {
   const rules: Array<[RegExp, string, string]> = [
-    [/ように/, '〜ように', '常見於「像……一樣」或「為了能……」的表達。先看前後文判斷是比喻、方式還是目的。'],
-    [/たい/, '〜たい', '動詞ます形去掉「ます」加「たい」，表示說話者想做某件事。歌詞裡很常用來直接表達願望。'],
-    [/ても|でも/, '〜ても / 〜でも', '帶有「即使……也……」的讓步語感，常用來把兩個情緒或情境拉出對比。'],
+    [/ように/, '〜ように', '常見於「像……一樣」或「為了能……」。先看前後文判斷是比喻、方式還是目的。'],
+    [/たい/, '〜たい', '表示「想做……」。歌詞裡常用來直接把願望放到句子中央。'],
+    [/ても|でも/, '〜ても / 〜でも', '帶有「即使……也……」的讓步語感，常用來做情緒對比。'],
     [/なら/, '〜なら', '把前面的情況當作條件或話題，接近「如果是……的話」。'],
-    [/のに/, '〜のに', '表示「明明……卻……」，帶有落差、遺憾或意外感。'],
-    [/ている|てる/, '〜ている', '可以表示動作正在持續，也可能表示動作完成後留下的狀態。口語和歌詞常縮成「〜てる」。'],
+    [/のに/, '〜のに', '表示「明明……卻……」，常帶有落差、遺憾或意外。'],
+    [/ている|てる/, '〜ている', '可表示正在持續，也可表示動作完成後留下的狀態；歌詞常縮成「〜てる」。'],
     [/から/, '〜から', '依上下文可表示原因「因為……」或起點「從……」。'],
-    [/だけ/, '〜だけ', '表示範圍限定「只有／只是……」，歌詞中常用來把焦點收得很窄。'],
+    [/だけ/, '〜だけ', '表示限定「只有／只是……」，把焦點收得很窄。'],
   ];
   const matched = rules.find(([pattern]) => pattern.test(line));
   if (matched) return { title: matched[1], copy: matched[2] };
   return {
     title: '整句語感',
-    copy: '先不要逐字翻譯。聽一遍日文、看一次中文，再回到原句，把整句當成一個語塊記住。',
+    copy: '先聽一次，再看中文；最後回到日文，把整句當成一個語塊記住。',
   };
 }
 
@@ -70,12 +83,13 @@ function artistChips(artists: FollowedArtist[]): string {
 function addArtistPanel(artists: FollowedArtist[]): string {
   const existing = new Set(artists.map((artist) => artist.name.toLocaleLowerCase()));
   const suggestions = SUGGESTED_ARTISTS.filter((name) => !existing.has(name.toLocaleLowerCase()));
+
   return `
     <section class="lyric-add-card">
       <div class="lyric-add-copy">
         <p class="eyebrow">YOUR ARTISTS</p>
-        <h2>把喜歡的歌手，變成每天一小句日文。</h2>
-        <p>加入歌手後，Kotoba Lab 每天固定挑一首歌，只取一小句做日文 × 繁中學習。</p>
+        <h2>把喜歡的歌手，變成每天一句。</h2>
+        <p>加入歌手後，每天固定挑一首歌與一句日文；同一天重開 App 仍是同一句。</p>
       </div>
       <form class="lyric-add-form" id="lyric-add-form">
         <label for="lyric-artist-input">歌手名稱</label>
@@ -98,7 +112,7 @@ function emptyDaily(): string {
       <div>
         <p class="eyebrow">DAILY LYRIC</p>
         <h2>先加入一位你真的會聽的歌手。</h2>
-        <p>明天打開時會是另一句；今天重開 App，仍會保留今天同一句。</p>
+        <p>明天會換一句；今天則固定保留同一句。</p>
       </div>
     </section>`;
 }
@@ -110,7 +124,7 @@ function loadingDaily(artist: FollowedArtist): string {
       <div>
         <p class="eyebrow">TODAY · ${escapeHtml(artist.name)}</p>
         <h2>正在替你挑今天的一句…</h2>
-        <p>只取一小句，不把完整歌詞塞進學習畫面。</p>
+        <p>會優先挑有同步時間戳的歌詞，之後才能直接播放這一句的原曲片段。</p>
       </div>
     </section>`;
 }
@@ -128,12 +142,16 @@ function errorDaily(artist: FollowedArtist, message: string): string {
     </section>`;
 }
 
+function clipDuration(lesson: DailyLyricLesson): number | undefined {
+  if (lesson.lineStartSeconds === undefined || lesson.lineEndSeconds === undefined) return undefined;
+  return Math.max(1, Math.round(lesson.lineEndSeconds - lesson.lineStartSeconds));
+}
+
 function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
   const vocab = lessonVocabulary(context, lesson.lineJa);
   const grammar = grammarHint(lesson.lineJa);
   const favorite = lyricsStore.isFavorite(lesson.id);
-  const searchUrl = 'https://www.youtube.com/results?search_query=' +
-    encodeURIComponent(lesson.artistName + ' ' + lesson.trackName);
+  const duration = clipDuration(lesson);
 
   return `
     <section class="lyric-daily-card">
@@ -146,13 +164,33 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
             <span>${escapeHtml(lesson.artistName)}${lesson.albumName ? ' · ' + escapeHtml(lesson.albumName) : ''}</span>
           </div>
         </div>
-        <span class="lyric-date-chip">${escapeHtml(lesson.dateKey.replaceAll('-', '.'))}</span>
+        <button class="lyric-save-button ${favorite ? 'selected' : ''}" id="lyric-favorite" type="button" aria-label="${favorite ? '取消收藏' : '收藏這句'}">
+          ${favorite ? icons.heartFilled : icons.heart}
+        </button>
       </div>
 
       <div class="lyric-quote">
-        <button class="lyric-listen" id="lyric-listen" type="button" aria-label="播放今日歌詞">${icons.volume}</button>
         <p lang="ja">${escapeHtml(lesson.lineJa)}</p>
-        <div class="lyric-translation"><span>繁中</span><strong>${escapeHtml(lesson.lineZhTw)}</strong></div>
+        <div class="lyric-translation">
+          <span>繁中</span>
+          <strong>${escapeHtml(lesson.lineZhTw)}</strong>
+        </div>
+
+        <div class="lyric-playback-row">
+          <button class="lyric-primary-play" id="lyric-original" type="button" disabled>
+            <span class="lyric-play-symbol">${icons.play}</span>
+            <span>
+              <strong>原曲片段</strong>
+              <small id="lyric-original-status">${duration ? duration + ' 秒 · 準備中' : '這句沒有同步時間'}</small>
+            </span>
+          </button>
+          <button class="lyric-pronounce" id="lyric-pronounce" type="button" aria-label="播放標準日文發音">
+            ${icons.volume}
+            <span>發音</span>
+          </button>
+        </div>
+
+        <div class="lyric-player-shell" id="lyric-player-shell" hidden></div>
       </div>
 
       <div class="lyric-learning-grid">
@@ -174,17 +212,11 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
         </article>
       </div>
 
-      <div class="lyric-actions">
-        <button class="secondary-button lyric-favorite ${favorite ? 'selected' : ''}" id="lyric-favorite" type="button">
-          ${favorite ? icons.heartFilled : icons.heart}<span>${favorite ? '已收藏' : '收藏這句'}</span>
-        </button>
-        <a class="text-link" href="${searchUrl}" target="_blank" rel="noopener noreferrer">找這首歌 <span>↗</span></a>
-      </div>
-      <p class="lyric-source">歌詞片段由 LRCLIB 查詢；中文由 MyMemory 機器翻譯。只顯示每日一小句供語言學習。</p>
+      <p class="lyric-source">LRCLIB 同步歌詞 · MyMemory 繁中對照 · 每日只取一小句。</p>
     </section>`;
 }
 
-function bindInteractions(root: HTMLElement): void {
+function bindSharedInteractions(root: HTMLElement): void {
   root.querySelector<HTMLFormElement>('#lyric-add-form')?.addEventListener('submit', (event) => {
     event.preventDefault();
     const form = event.currentTarget as HTMLFormElement;
@@ -214,19 +246,113 @@ function bindInteractions(root: HTMLElement): void {
   });
 }
 
+function openPlayer(root: HTMLElement, source: OriginalClipSource): void {
+  const shell = root.querySelector<HTMLElement>('#lyric-player-shell');
+  if (!shell) return;
+
+  shell.hidden = false;
+  shell.innerHTML = `
+    <div class="lyric-player-frame">
+      <button class="lyric-player-close" id="lyric-player-close" type="button" aria-label="關閉原曲播放器">×</button>
+      <iframe
+        src="${escapeHtml(youtubeEmbedUrl(source))}"
+        title="${escapeHtml(source.title)}"
+        allow="autoplay; encrypted-media; picture-in-picture"
+        referrerpolicy="strict-origin-when-cross-origin"
+        allowfullscreen
+      ></iframe>
+    </div>
+    <div class="lyric-player-meta">
+      <span>原曲 · ${Math.max(1, Math.round(source.endSeconds - source.startSeconds))} 秒</span>
+      <strong>${escapeHtml(source.title)}</strong>
+    </div>
+  `;
+
+  shell.querySelector<HTMLButtonElement>('#lyric-player-close')?.addEventListener('click', () => {
+    shell.innerHTML = '';
+    shell.hidden = true;
+  });
+}
+
+async function hydrateOriginalPlayback(root: HTMLElement, lesson: DailyLyricLesson): Promise<void> {
+  const button = root.querySelector<HTMLButtonElement>('#lyric-original');
+  const status = root.querySelector<HTMLElement>('#lyric-original-status');
+  if (!button || !status) return;
+
+  const resolution = await resolveOriginalClip(lesson);
+  if (!root.isConnected) return;
+
+  if (resolution.state === 'ready') {
+    const seconds = Math.max(1, Math.round(resolution.source.endSeconds - resolution.source.startSeconds));
+    button.disabled = false;
+    status.textContent = seconds + ' 秒 · 原曲';
+    button.addEventListener('click', () => openPlayer(root, resolution.source));
+    return;
+  }
+
+  button.disabled = false;
+  button.classList.add('fallback');
+  status.textContent = resolution.state === 'untimed' ? '找原曲' : '找原曲 · 外部開啟';
+  button.addEventListener('click', () => {
+    window.open(youtubeSearchUrl(lesson), '_blank', 'noopener,noreferrer');
+  });
+}
+
+function bindLessonInteractions(root: HTMLElement, lesson: DailyLyricLesson): void {
+  root.querySelector<HTMLButtonElement>('#lyric-pronounce')?.addEventListener('click', () => {
+    speakJapanese(lesson.lineJa);
+  });
+
+  root.querySelector<HTMLButtonElement>('#lyric-favorite')?.addEventListener('click', () => {
+    lyricsStore.toggleFavorite(lesson.id);
+    window.dispatchEvent(new CustomEvent('kotoba:rerender'));
+  });
+
+  void hydrateOriginalPlayback(root, lesson);
+}
+
 function pageHtml(artists: FollowedArtist[], daily: string): string {
   return `
     <section class="page-header lyric-page-header">
       <div>
         <p class="eyebrow">MUSIC → LANGUAGE</p>
         <h1>每日歌詞</h1>
-        <p>你喜歡的歌，本來就值得成為教材。</p>
+        <p>聽真正唱法，再把這一句記住。</p>
       </div>
       <div class="lyric-header-mark" aria-hidden="true">歌</div>
     </section>
     ${daily}
     ${addArtistPanel(artists)}
   `;
+}
+
+async function fetchAndRenderLesson(
+  root: HTMLElement,
+  context: AppContext,
+  artists: FollowedArtist[],
+  artist: FollowedArtist,
+  dateKey: string,
+  key: string,
+): Promise<void> {
+  root.innerHTML = pageHtml(artists, loadingDaily(artist));
+  bindSharedInteractions(root);
+
+  try {
+    const lesson = await fetchDailyLyric(artist, dateKey);
+    if (!root.isConnected) return;
+    lyricsStore.cacheLesson(key, lesson);
+    root.innerHTML = pageHtml(lyricsStore.getState().artists, dailyLesson(context, lesson));
+    bindSharedInteractions(root);
+    bindLessonInteractions(root, lesson);
+  } catch (error) {
+    if (!root.isConnected) return;
+    const message = error instanceof Error ? error.message : '未知錯誤';
+    root.innerHTML = pageHtml(lyricsStore.getState().artists, errorDaily(artist, message));
+    bindSharedInteractions(root);
+    root.querySelector<HTMLButtonElement>('#lyric-retry')?.addEventListener('click', () => {
+      void fetchAndRenderLesson(root, context, lyricsStore.getState().artists, artist, dateKey, key);
+    });
+  }
 }
 
 export async function renderLyrics(root: HTMLElement, context: AppContext): Promise<void> {
@@ -236,44 +362,19 @@ export async function renderLyrics(root: HTMLElement, context: AppContext): Prom
 
   if (!artist) {
     root.innerHTML = pageHtml(state.artists, emptyDaily());
-    bindInteractions(root);
+    bindSharedInteractions(root);
     return;
   }
 
   const key = cacheKey(dateKey, artist);
   const cached = lyricsStore.cachedLesson(key);
-  if (cached) {
+
+  if (cached?.timingResolved) {
     root.innerHTML = pageHtml(state.artists, dailyLesson(context, cached));
-    bindInteractions(root);
-    root.querySelector<HTMLButtonElement>('#lyric-listen')?.addEventListener('click', () => speakJapanese(cached.lineJa));
-    root.querySelector<HTMLButtonElement>('#lyric-favorite')?.addEventListener('click', () => {
-      lyricsStore.toggleFavorite(cached.id);
-      window.dispatchEvent(new CustomEvent('kotoba:rerender'));
-    });
+    bindSharedInteractions(root);
+    bindLessonInteractions(root, cached);
     return;
   }
 
-  root.innerHTML = pageHtml(state.artists, loadingDaily(artist));
-  bindInteractions(root);
-
-  try {
-    const lesson = await fetchDailyLyric(artist, dateKey);
-    if (!root.isConnected) return;
-    lyricsStore.cacheLesson(key, lesson);
-    root.innerHTML = pageHtml(lyricsStore.getState().artists, dailyLesson(context, lesson));
-    bindInteractions(root);
-    root.querySelector<HTMLButtonElement>('#lyric-listen')?.addEventListener('click', () => speakJapanese(lesson.lineJa));
-    root.querySelector<HTMLButtonElement>('#lyric-favorite')?.addEventListener('click', () => {
-      lyricsStore.toggleFavorite(lesson.id);
-      window.dispatchEvent(new CustomEvent('kotoba:rerender'));
-    });
-  } catch (error) {
-    if (!root.isConnected) return;
-    const message = error instanceof Error ? error.message : '未知錯誤';
-    root.innerHTML = pageHtml(lyricsStore.getState().artists, errorDaily(artist, message));
-    bindInteractions(root);
-    root.querySelector<HTMLButtonElement>('#lyric-retry')?.addEventListener('click', () => {
-      window.dispatchEvent(new CustomEvent('kotoba:rerender'));
-    });
-  }
+  await fetchAndRenderLesson(root, context, state.artists, artist, dateKey, key);
 }
