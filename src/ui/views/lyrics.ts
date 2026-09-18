@@ -720,7 +720,7 @@ function pageHtml(artists: FollowedArtist[], daily: string): string {
       <div>
         <p class="eyebrow">MUSIC → LANGUAGE</p>
         <h1>每日歌詞</h1>
-        <p>聽真正唱法，再把這一句記住。</p>
+        <p>左右翻一張，聽原曲，再把這一句記住。</p>
       </div>
       <div class="lyric-header-mark" aria-hidden="true">歌</div>
     </section>
@@ -729,56 +729,189 @@ function pageHtml(artists: FollowedArtist[], daily: string): string {
   `;
 }
 
+const deckPrefetches = new Map<string, Promise<void>>();
+
+async function prefetchDeckCard(
+  artists: FollowedArtist[],
+  dateKey: string,
+  cardIndex: number,
+): Promise<void> {
+  const index = normalizedDeckIndex(cardIndex);
+  const artist = pickDeckArtist(artists, dateKey, index);
+  if (!artist) return;
+
+  const key = cacheKey(dateKey, artist, index);
+  const cached = lyricsStore.cachedLesson(key);
+  if (cached?.timingResolved && cached.timingVersion === 2) return;
+  if (deckPrefetches.has(key)) return await deckPrefetches.get(key);
+
+  const promise = fetchDailyLyric(
+    artist,
+    dateKey,
+    deckSelectionSeed(dateKey, index),
+  ).then((lesson) => {
+    lyricsStore.cacheLesson(key, lesson);
+  }).catch(() => undefined).finally(() => {
+    deckPrefetches.delete(key);
+  });
+
+  deckPrefetches.set(key, promise);
+  await promise;
+}
+
+function bindDeckInteractions(
+  root: HTMLElement,
+  context: AppContext,
+  artists: FollowedArtist[],
+  dateKey: string,
+  cardIndex: number,
+): void {
+  const go = (nextIndex: number): void => {
+    stopAllPlayback();
+    const normalized = normalizedDeckIndex(nextIndex);
+    writeDeckIndex(dateKey, normalized);
+    void renderDeckCard(root, context, artists, dateKey, normalized);
+  };
+
+  root.querySelector<HTMLButtonElement>('#lyric-deck-prev')?.addEventListener('click', () => {
+    go(cardIndex - 1);
+  });
+  root.querySelector<HTMLButtonElement>('#lyric-deck-next')?.addEventListener('click', () => {
+    go(cardIndex + 1);
+  });
+
+  const card = root.querySelector<HTMLElement>('[data-lyric-card]');
+  if (!card) return;
+
+  let startX = 0;
+  let startY = 0;
+  card.addEventListener('touchstart', (event) => {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    startX = touch.clientX;
+    startY = touch.clientY;
+  }, { passive: true });
+
+  card.addEventListener('touchend', (event) => {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    if (Math.abs(dx) < 58 || Math.abs(dx) < Math.abs(dy) * 1.35) return;
+    go(dx < 0 ? cardIndex + 1 : cardIndex - 1);
+  }, { passive: true });
+}
+
 async function fetchAndRenderLesson(
   root: HTMLElement,
   context: AppContext,
   artists: FollowedArtist[],
   artist: FollowedArtist,
   dateKey: string,
+  cardIndex: number,
   key: string,
 ): Promise<void> {
-  root.innerHTML = pageHtml(artists, loadingDaily(artist));
+  root.innerHTML = pageHtml(artists, loadingDaily(artist, cardIndex));
   bindSharedInteractions(root);
 
   try {
-    const lesson = await fetchDailyLyric(artist, dateKey);
+    const lesson = await fetchDailyLyric(
+      artist,
+      dateKey,
+      deckSelectionSeed(dateKey, cardIndex),
+    );
     if (!root.isConnected) return;
+
     lyricsStore.cacheLesson(key, lesson);
-    root.innerHTML = pageHtml(lyricsStore.getState().artists, dailyLesson(context, lesson));
+    root.innerHTML = pageHtml(
+      lyricsStore.getState().artists,
+      dailyLesson(context, lesson, cardIndex),
+    );
     bindSharedInteractions(root);
     bindLessonInteractions(root, lesson);
+    bindDeckInteractions(root, context, lyricsStore.getState().artists, dateKey, cardIndex);
+    void prefetchDeckCard(lyricsStore.getState().artists, dateKey, cardIndex + 1);
   } catch (error) {
     if (!root.isConnected) return;
     const message = error instanceof Error ? error.message : '未知錯誤';
-    root.innerHTML = pageHtml(lyricsStore.getState().artists, errorDaily(artist, message));
+    root.innerHTML = pageHtml(
+      lyricsStore.getState().artists,
+      errorDaily(artist, message, cardIndex),
+    );
     bindSharedInteractions(root);
+    bindDeckInteractions(root, context, lyricsStore.getState().artists, dateKey, cardIndex);
     root.querySelector<HTMLButtonElement>('#lyric-retry')?.addEventListener('click', () => {
-      void fetchAndRenderLesson(root, context, lyricsStore.getState().artists, artist, dateKey, key);
+      void fetchAndRenderLesson(
+        root,
+        context,
+        lyricsStore.getState().artists,
+        artist,
+        dateKey,
+        cardIndex,
+        key,
+      );
     });
   }
+}
+
+async function renderDeckCard(
+  root: HTMLElement,
+  context: AppContext,
+  artists: FollowedArtist[],
+  dateKey: string,
+  requestedIndex: number,
+): Promise<void> {
+  stopAllPlayback();
+
+  const cardIndex = normalizedDeckIndex(requestedIndex);
+  writeDeckIndex(dateKey, cardIndex);
+  const artist = pickDeckArtist(artists, dateKey, cardIndex);
+
+  if (!artist) {
+    root.innerHTML = pageHtml(artists, emptyDaily());
+    bindSharedInteractions(root);
+    return;
+  }
+
+  const key = cacheKey(dateKey, artist, cardIndex);
+  const cached = lyricsStore.cachedLesson(key);
+
+  if (cached?.timingResolved && cached.timingVersion === 2) {
+    root.innerHTML = pageHtml(artists, dailyLesson(context, cached, cardIndex));
+    bindSharedInteractions(root);
+    bindLessonInteractions(root, cached);
+    bindDeckInteractions(root, context, artists, dateKey, cardIndex);
+    void prefetchDeckCard(artists, dateKey, cardIndex + 1);
+    return;
+  }
+
+  await fetchAndRenderLesson(
+    root,
+    context,
+    artists,
+    artist,
+    dateKey,
+    cardIndex,
+    key,
+  );
 }
 
 export async function renderLyrics(root: HTMLElement, context: AppContext): Promise<void> {
   stopAllPlayback();
   const state = lyricsStore.getState();
   const dateKey = localDateKey();
-  const artist = pickDailyArtist(state.artists, dateKey);
 
-  if (!artist) {
+  if (!state.artists.length) {
     root.innerHTML = pageHtml(state.artists, emptyDaily());
     bindSharedInteractions(root);
     return;
   }
 
-  const key = cacheKey(dateKey, artist);
-  const cached = lyricsStore.cachedLesson(key);
-
-  if (cached?.timingResolved && cached.timingVersion === 2) {
-    root.innerHTML = pageHtml(state.artists, dailyLesson(context, cached));
-    bindSharedInteractions(root);
-    bindLessonInteractions(root, cached);
-    return;
-  }
-
-  await fetchAndRenderLesson(root, context, state.artists, artist, dateKey, key);
+  await renderDeckCard(
+    root,
+    context,
+    state.artists,
+    dateKey,
+    readDeckIndex(dateKey),
+  );
 }
