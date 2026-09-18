@@ -20,11 +20,31 @@ SPECIAL={
     "じ":"Japanese zi.ogg","ぢ":"Japanese di.ogg","づ":"Japanese du.ogg",
 }
 
+MIRROR_REPO="ramified/ramified.github.io"
+MIRROR_COMMIT="8a959d7a2a0f61283a76e6db4f9cc0222295ea66"
+MIRROR_IDS={
+    "ち":"chi",
+    "ふ":"fu",
+    "じ":"ji",
+    "ぢ":"dji",
+    "づ":"dzu",
+}
+
 def norm(s:str)->str:
     return unicodedata.normalize("NFC",s.strip())
 
 def expected_human_filename(hira:str,romaji:str)->str:
     return SPECIAL.get(hira,f"Japanese {romaji}.ogg")
+
+def mirror_id(hira:str,romaji:str)->str:
+    return MIRROR_IDS.get(hira,romaji)
+
+def expected_human_asset(hira:str,romaji:str,filename:str)->str:
+    identity=(
+        f"commons-pd-mirror\0{MIRROR_REPO}\0{MIRROR_COMMIT}\0"
+        f"{mirror_id(hira,romaji)}.mp3\0{filename}"
+    )
+    return hashlib.sha256(identity.encode()).hexdigest()[:24]+".mp3"
 
 def expected_tts_asset(hira:str,voice:str,rate:float)->str:
     spoken=(
@@ -65,10 +85,14 @@ def main()->None:
                 failures.append(f"{hira}: missing human provenance")
             elif meta.get("filename")!=expected or meta.get("license")!="Public domain":
                 failures.append(f"{hira}: wrong human provenance {meta!r}, expected {expected}")
-            # Human asset identity is tied to the exact source file.
-            expected_asset=hashlib.sha256(
-                f"commons-pd\0{expected}\0trim-v1".encode()
-            ).hexdigest()[:24]+".mp3"
+            if meta:
+                if meta.get("mirrorRepo")!=MIRROR_REPO:
+                    failures.append(f"{hira}: wrong mirror repo {meta.get('mirrorRepo')!r}")
+                if meta.get("mirrorCommit")!=MIRROR_COMMIT:
+                    failures.append(f"{hira}: wrong mirror commit {meta.get('mirrorCommit')!r}")
+            # Human asset identity is tied to the exact audited mirror commit
+            # and original Wikimedia filename.
+            expected_asset=expected_human_asset(hira,romaji,expected)
             if actual!=expected_asset:
                 failures.append(f"{hira}: {actual} != expected human asset {expected_asset}")
         else:
