@@ -9,6 +9,7 @@ on:
       - scripts/import_human_kana.py
       - scripts/audit_kana_audio.py
       - scripts/audit_kana_provenance.py
+      - vendor/kana-human/**
       - src/features/kana/data.ts
       - src/ui/speech.ts
       - .github/workflows/verify-kana-audio.yml
@@ -65,6 +66,7 @@ jobs:
             --force
           python scripts/import_human_kana.py \
             --kana-source src/features/kana/data.ts \
+            --vendor-dir vendor/kana-human \
             --audio-dir /tmp/kana-audit
       - name: Audit 208 aliases / 104 canonical audio assets
         run: |
