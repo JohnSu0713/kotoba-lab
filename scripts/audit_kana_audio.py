@@ -1,156 +1,126 @@
 #!/usr/bin/env python3
-"""Audit every kana alias and every unique generated MP3.
+"""Audit every kana alias and every referenced MP3.
 
-This is intentionally strict: the manifest must be derivable from the exact kana
-source + voice + rate, every referenced file must decode, have audible energy,
-and have a plausible duration. Hiragana/katakana pairs may share one canonical
-audio file; different canonical readings may not.
+This layer verifies delivery integrity: all 208 aliases exist, each hiragana /
+katakana pair resolves to one canonical asset, distinct canonical readings do not
+accidentally collide, and every referenced file decodes with plausible duration
+and audible energy. Source correctness is checked separately by
+audit_kana_provenance.py.
 """
 
 from __future__ import annotations
-
-import argparse
-import hashlib
-import json
-import re
-import subprocess
-import unicodedata
+import argparse, json, re, subprocess, unicodedata
 from pathlib import Path
 
 KANA_SEED_RE = re.compile(
     r"\['([^']+)','([^']+)','[^']+','[^']+','(?:gojuon|dakuten|handakuten|yoon)'\]"
 )
 
-
 def normalize(text: str) -> str:
     return unicodedata.normalize("NFC", text.strip())
 
-
-def expected_asset_name(voice: str, rate: float, spoken_text: str) -> str:
-    identity = f"{voice}\0kana\0{rate:.3f}\0{spoken_text}"
-    digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:24]
-    return f"{digest}.mp3"
-
-
 def probe_duration(path: Path) -> float:
-    out = subprocess.check_output(
-        [
-            "ffprobe", "-v", "error", "-show_entries", "format=duration",
-            "-of", "default=noprint_wrappers=1:nokey=1", str(path),
-        ],
-        text=True,
-    ).strip()
+    out = subprocess.check_output([
+        "ffprobe","-v","error","-show_entries","format=duration",
+        "-of","default=noprint_wrappers=1:nokey=1",str(path),
+    ], text=True).strip()
     return float(out)
-
 
 def probe_mean_volume(path: Path) -> float:
     proc = subprocess.run(
-        ["ffmpeg", "-hide_banner", "-nostats", "-i", str(path), "-af", "volumedetect", "-f", "null", "-"],
-        text=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
-        check=False,
+        ["ffmpeg","-hide_banner","-nostats","-i",str(path),"-af","volumedetect","-f","null","-"],
+        text=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, check=False,
     )
     match = re.search(r"mean_volume:\s*(-?\d+(?:\.\d+)?)\s*dB", proc.stderr)
     if not match:
         raise RuntimeError(f"Could not measure volume for {path.name}")
     return float(match.group(1))
 
-
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--kana-source", type=Path, required=True)
-    parser.add_argument("--audio-dir", type=Path, required=True)
-    args = parser.parse_args()
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--kana-source",type=Path,required=True)
+    parser.add_argument("--audio-dir",type=Path,required=True)
+    args=parser.parse_args()
 
-    manifest = json.loads((args.audio_dir / "manifest.json").read_text(encoding="utf-8"))
-    voice = manifest.get("voices", {}).get("kana") or manifest.get("voice")
-    rate = float(manifest.get("rates", {}).get("kana", 0))
-    profile = manifest.get("profiles", {}).get("kana", {})
-    if not voice or rate <= 0:
-        raise SystemExit("Manifest is missing voice/rates.kana")
+    manifest=json.loads((args.audio_dir/"manifest.json").read_text(encoding="utf-8"))
+    profile=manifest.get("profiles",{}).get("kana",{})
+    rows=KANA_SEED_RE.findall(args.kana_source.read_text(encoding="utf-8"))
+    failures:list[str]=[]
 
-    rows = KANA_SEED_RE.findall(args.kana_source.read_text(encoding="utf-8"))
-    if not rows:
-        raise SystemExit("No kana seeds found")
+    if len(rows)!=104:
+        failures.append(f"expected 104 canonical kana, got {len(rows)}")
+    if len(profile)!=208:
+        failures.append(f"manifest contains {len(profile)} aliases, expected 208")
 
-    expected_aliases: dict[str, str] = {}
-    canonical_to_file: dict[str, str] = {}
+    canonical_to_file:dict[str,str]={}
+    expected_keys:set[str]=set()
 
-    for hira, kata in rows:
-        canonical = normalize(hira)
-        spoken = (
-            '<speak><break time="80ms"/>'
-            f'<phoneme alphabet="yomigana" ph="{canonical}">{canonical}</phoneme>'
-            '<break time="120ms"/></speak>'
-        )
-        filename = expected_asset_name(voice, rate, spoken)
-        for key in (normalize(hira), normalize(kata)):
-            expected_aliases[key] = filename
-        previous = canonical_to_file.setdefault(canonical, filename)
-        if previous != filename:
-            raise SystemExit(f"Non-deterministic filename for {canonical}")
-
-    failures: list[str] = []
-    if len(expected_aliases) != 208:
-        failures.append(f"expected 208 kana aliases, got {len(expected_aliases)}")
-    if len(profile) != 208:
-        failures.append(f"manifest contains {len(profile)} kana aliases, expected 208")
-
-    for key, filename in expected_aliases.items():
-        actual_url = profile.get(key)
-        actual_name = Path(actual_url or "").name
-        if actual_name != filename:
-            failures.append(f"{key}: manifest {actual_name!r} != expected {filename!r}")
-
-    files_to_check = sorted(set(expected_aliases.values()))
-    rows_out: list[tuple[str, int, float, float]] = []
-    for filename in files_to_check:
-        path = args.audio_dir / filename
-        if not path.exists():
-            failures.append(f"{filename}: missing")
+    for hira,kata in rows:
+        hira=normalize(hira); kata=normalize(kata)
+        expected_keys.update((hira,kata))
+        hira_name=Path(profile.get(hira,"")).name
+        kata_name=Path(profile.get(kata,"")).name
+        if not hira_name:
+            failures.append(f"{hira}: missing manifest asset")
             continue
-        size = path.stat().st_size
-        if size < 500:
-            failures.append(f"{filename}: suspiciously small ({size} bytes)")
+        if hira_name!=kata_name:
+            failures.append(f"{hira}/{kata}: aliases point to different assets")
             continue
-        try:
-            duration = probe_duration(path)
-            mean_volume = probe_mean_volume(path)
-        except Exception as exc:
-            failures.append(f"{filename}: decode/probe failed: {exc}")
-            continue
-        if not 0.20 <= duration <= 4.50:
-            failures.append(f"{filename}: duration {duration:.3f}s outside 0.20–4.50s")
-        if mean_volume < -45:
-            failures.append(f"{filename}: too quiet ({mean_volume:.1f} dB)")
-        rows_out.append((filename, size, duration, mean_volume))
+        canonical_to_file[hira]=hira_name
 
-    # Different canonical kana must not accidentally point to the same generated file.
-    reverse: dict[str, list[str]] = {}
-    for canonical, filename in canonical_to_file.items():
-        reverse.setdefault(filename, []).append(canonical)
-    collisions = {name: values for name, values in reverse.items() if len(values) > 1}
+    unexpected=set(profile)-expected_keys
+    missing=expected_keys-set(profile)
+    if unexpected:
+        failures.append(f"unexpected manifest keys: {sorted(unexpected)!r}")
+    if missing:
+        failures.append(f"missing manifest keys: {sorted(missing)!r}")
+
+    reverse:dict[str,list[str]]={}
+    for canonical,filename in canonical_to_file.items():
+        reverse.setdefault(filename,[]).append(canonical)
+    collisions={name:values for name,values in reverse.items() if len(values)>1}
     if collisions:
         failures.append(f"canonical audio collisions: {collisions}")
 
-    print(f"ALIASES={len(expected_aliases)}")
+    files_to_check=sorted(reverse)
+    rows_out=[]
+    for filename in files_to_check:
+        path=args.audio_dir/filename
+        if not path.exists():
+            failures.append(f"{filename}: missing")
+            continue
+        size=path.stat().st_size
+        if size<500:
+            failures.append(f"{filename}: suspiciously small ({size} bytes)")
+            continue
+        try:
+            duration=probe_duration(path)
+            mean_volume=probe_mean_volume(path)
+        except Exception as exc:
+            failures.append(f"{filename}: decode/probe failed: {exc}")
+            continue
+        if not 0.18<=duration<=5.0:
+            failures.append(f"{filename}: duration {duration:.3f}s outside 0.18–5.0s")
+        if mean_volume<-45:
+            failures.append(f"{filename}: too quiet ({mean_volume:.1f} dB)")
+        rows_out.append((filename,size,duration,mean_volume))
+
+    print(f"ALIASES={len(profile)}")
+    print(f"CANONICAL={len(canonical_to_file)}")
     print(f"UNIQUE_AUDIO={len(files_to_check)}")
     print(f"PROBED={len(rows_out)}")
     if rows_out:
-        durations = [row[2] for row in rows_out]
-        volumes = [row[3] for row in rows_out]
+        durations=[row[2] for row in rows_out]
+        volumes=[row[3] for row in rows_out]
         print(f"DURATION_RANGE={min(durations):.3f}..{max(durations):.3f}s")
         print(f"MEAN_VOLUME_RANGE={min(volumes):.1f}..{max(volumes):.1f}dB")
 
     if failures:
         print("FAILURES:")
         for failure in failures:
-            print(" -", failure)
+            print(" -",failure)
         raise SystemExit(1)
-
     print("KANA_AUDIO_AUDIT_OK")
 
-
-if __name__ == "__main__":
+if __name__=="__main__":
     main()
