@@ -18,6 +18,7 @@ export interface DailyLyricLesson {
   trackId: number;
   trackName: string;
   albumName?: string;
+  trackDurationSeconds?: number;
   lineJa: string;
   lineZhTw: string;
   timingResolved?: boolean;
@@ -37,6 +38,7 @@ export interface OriginalClipSource {
   albumName?: string;
   artworkUrl?: string;
   previewSeconds: number;
+  fullTrackStartSeconds?: number;
 }
 
 export interface PrecisePlaybackSource {
