@@ -336,6 +336,7 @@ export async function resolveOriginalClip(lesson: DailyLyricLesson): Promise<Ori
     // media URLs. Prefer Deezer's direct MP3 on iOS; Apple remains the fallback.
     const deezer = await searchDeezer(lesson);
     if (deezer?.preview) {
+      const fullTrackStartSeconds = deezerPreviewStart(lesson.trackDurationSeconds);
       return {
         state: 'ready',
         source: {
@@ -346,9 +347,7 @@ export async function resolveOriginalClip(lesson: DailyLyricLesson): Promise<Ori
           ...(deezer.album?.title ? { albumName: deezer.album.title } : {}),
           ...(deezer.album?.cover_medium ? { artworkUrl: deezer.album.cover_medium } : {}),
           previewSeconds: 30,
-          ...(deezerPreviewStart(lesson.trackDurationSeconds) !== undefined
-            ? { fullTrackStartSeconds: deezerPreviewStart(lesson.trackDurationSeconds) }
-            : {}),
+          ...(fullTrackStartSeconds === undefined ? {} : { fullTrackStartSeconds }),
         },
       };
     }
