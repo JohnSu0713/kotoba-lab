@@ -132,15 +132,55 @@ function cleanTrackName(lesson: DailyLyricLesson): string {
     .map((value) => value.trim()).filter(Boolean);
 
   for (const artist of artistCandidates) {
-    const escaped = artist.replace(/[.*+?^$()|[\]\\{}]/g, '\\function canonicalArtist(value: string): string {
-  return ARTIST_ALIASES[value]
-    ?? ARTIST_ALIASES[normalize(value)]
-    ?? value;
-}
-');
+    const escaped = artist.replace(/[.*+?^$()|[\]\\{}]/g, (match) => '\\' + match);
     title = title
       .replace(new RegExp('^' + escaped + '\\s*[-–—:|]\\s*', 'i'), '')
-      .replace(new RegExp('\\s*[-–—:|]\\s*' + escaped + '
+      .replace(new RegExp('\\s*[-–—:|]\\s*' + escaped + '$', 'i'), '')
+      .trim();
+  }
+
+  const split = title.split(/\s+[-–—|]\s+/);
+  if (split.length === 2) {
+    const left = split[0];
+    const right = split[1];
+    const normalizedArtist = normalize(canonicalArtist(lesson.artistName));
+    if (left && right && normalize(canonicalArtist(left)) === normalizedArtist) title = right.trim();
+  }
+
+  return title || lesson.trackName;
+}
+
+function titleVariants(lesson: DailyLyricLesson): string[] {
+  const clean = cleanTrackName(lesson);
+  return Array.from(new Set([normalize(clean), normalize(romanizeKana(clean))].filter(Boolean)));
+}
+
+function strongArtistMatch(value: string, lesson: DailyLyricLesson): boolean {
+  const actual = normalize(value);
+  const targets = [normalize(lesson.artistName), normalize(canonicalArtist(lesson.artistName))].filter(Boolean);
+  return targets.some((target) => actual === target || actual.includes(target) || target.includes(actual));
+}
+
+function strongTitleMatch(value: string, lesson: DailyLyricLesson): boolean {
+  const actual = normalize(value);
+  return titleVariants(lesson).some((target) =>
+    actual === target || (target.length >= 5 && (actual.startsWith(target) || target.startsWith(actual))),
+  );
+}
+
+function durationMatches(actual?: number, expected?: number): boolean {
+  if (!actual || !expected) return true;
+  return Math.abs(actual - expected) <= 8;
+}
+
+function verifiedDeezerMatch(item: DeezerTrack, lesson: DailyLyricLesson): boolean {
+  if (!item.preview) return false;
+  if (!strongArtistMatch(item.artist?.name ?? '', lesson)) return false;
+  if (!strongTitleMatch(item.title_short ?? item.title ?? '', lesson)) return false;
+  if (!durationMatches(item.duration, lesson.trackDurationSeconds)) return false;
+  const noisy = (item.title ?? '') + ' ' + (item.album?.title ?? '');
+  return !/\blive\b|remix|instrumental|karaoke|cover|tribute/i.test(noisy);
+}
 function scoreNames(
   title: string,
   artist: string,
