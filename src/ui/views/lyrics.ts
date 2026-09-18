@@ -217,7 +217,7 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
         </article>
       </div>
 
-      <p class="lyric-source">LRCLIB 同步歌詞 · Apple 原曲試聽 · MyMemory 繁中對照。</p>
+      <p class="lyric-source">LRCLIB 同步歌詞 · 原曲音訊試聽 · MyMemory 繁中對照。</p>
     </section>`;
 }
 
