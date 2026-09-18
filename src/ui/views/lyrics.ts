@@ -651,10 +651,12 @@ async function hydrateOriginalPlayback(root: HTMLElement, lesson: DailyLyricLess
   const status = root.querySelector<HTMLElement>('#lyric-original-status');
   if (!button || !label || !status) return;
 
-  // Never let the optional precise MusicKit path block the proven audio-preview
-  // path. Resolve the preview first, make the button usable immediately, then
-  // upgrade the same button to precise playback in the background when possible.
-  const precisePromise = resolvePrecisePlayback(lesson);
+  // Audio-verified cards store timestamps local to the exact 30-second preview,
+  // so they must stay on that verified preview. MusicKit full-track timing is a
+  // different coordinate system and must never override these cards.
+  const precisePromise = lesson.source === 'verified-preview'
+    ? Promise.resolve({ state: 'not-found' } as const)
+    : resolvePrecisePlayback(lesson);
 
   const remembered = verifiedPreviewSources.get(lesson.id);
   const preview = remembered
