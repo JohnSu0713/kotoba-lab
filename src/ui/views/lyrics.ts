@@ -347,6 +347,8 @@ function setPreviewState(
 }
 
 function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): void {
+  const status = root.querySelector<HTMLElement>('#lyric-original-status');
+
   if (activePreview && !activePreview.paused) {
     stopActivePreview();
     setPreviewState(root, source, false);
@@ -357,41 +359,70 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
   stopActivePreview();
   resetLyricHighlight(root);
 
-  const audio = new Audio(source.previewUrl);
-  activePreview = audio;
+  // Keep a real media element attached to the document. This is more reliable
+  // than a detached Audio() object in iOS standalone PWAs.
+  const audio = document.createElement('audio');
+  audio.src = source.previewUrl;
   audio.preload = 'auto';
+  audio.volume = 1;
+  audio.muted = false;
+  audio.setAttribute('playsinline', '');
+  audio.setAttribute('webkit-playsinline', '');
+  audio.hidden = true;
+  document.body.appendChild(audio);
 
-  const finish = (): void => {
+  activePreview = audio;
+
+  let finished = false;
+  const finish = (failed = false): void => {
+    if (finished) return;
+    finished = true;
+
     if (activePreviewTimer !== undefined) {
       window.clearInterval(activePreviewTimer);
       activePreviewTimer = undefined;
     }
+
     audio.pause();
-    audio.currentTime = 0;
+    audio.remove();
     if (activePreview === audio) activePreview = undefined;
-    if (root.isConnected) setPreviewState(root, source, false);
+
+    if (!root.isConnected) return;
+    setPreviewState(root, source, false);
+    if (failed && status) {
+      status.textContent = '音訊載入失敗 · 再按一次重試';
+    }
   };
 
-  audio.addEventListener('ended', finish, { once: true });
-  audio.addEventListener('error', finish, { once: true });
+  audio.addEventListener('ended', () => finish(false), { once: true });
+  audio.addEventListener('error', () => finish(true), { once: true });
+
+  if (status) status.textContent = '正在載入音訊…';
 
   void audio.play().then(() => {
     if (!root.isConnected) {
-      finish();
+      finish(false);
       return;
     }
+
     setPreviewState(root, source, true, 0);
     activePreviewTimer = window.setInterval(() => {
-      if (activePreview !== audio || audio.paused || !root.isConnected) {
-        finish();
+      if (activePreview !== audio || !root.isConnected) {
+        finish(false);
         return;
       }
+
+      if (audio.error) {
+        finish(true);
+        return;
+      }
+
       const elapsed = Math.min(audio.currentTime, source.previewSeconds);
       setPreviewState(root, source, true, elapsed);
-      if (elapsed >= source.previewSeconds) finish();
+      if (elapsed >= source.previewSeconds) finish(false);
     }, 180);
   }).catch(() => {
-    finish();
+    finish(true);
   });
 }
 
