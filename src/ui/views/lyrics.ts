@@ -462,28 +462,45 @@ async function hydrateOriginalPlayback(root: HTMLElement, lesson: DailyLyricLess
   const status = root.querySelector<HTMLElement>('#lyric-original-status');
   if (!button || !label || !status) return;
 
-  const [precise, preview] = await Promise.all([
-    resolvePrecisePlayback(lesson),
-    resolveOriginalClip(lesson),
-  ]);
+  // Never let the optional precise MusicKit path block the proven audio-preview
+  // path. Resolve the preview first, make the button usable immediately, then
+  // upgrade the same button to precise playback in the background when possible.
+  const precisePromise = resolvePrecisePlayback(lesson);
+
+  const preview = await resolveOriginalClip(lesson);
   if (!root.isConnected) return;
 
-  const fallback = preview.state === 'ready' ? preview.source : undefined;
+  let fallback: OriginalClipSource | undefined;
+  if (preview.state === 'ready') {
+    fallback = preview.source;
+    button.disabled = false;
+    setPreviewState(root, fallback, false);
+    button.onclick = () => playOriginalPreview(root, fallback!);
+  } else {
+    label.textContent = '原曲片段';
+    status.textContent = '正在準備精準片段…';
+  }
+
+  const precise = await precisePromise;
+  if (!root.isConnected) return;
 
   if (precise.state === 'ready') {
     button.disabled = false;
     label.textContent = '原曲片段';
     status.textContent = '前後各 7 秒 · 精準同步';
-    button.addEventListener('click', () => {
-      void playPrecise(root, lesson, precise.source, fallback);
-    });
+    const preciseSource = precise.source;
+    button.onclick = () => {
+      void playPrecise(root, lesson, preciseSource, fallback);
+    };
     return;
   }
 
   if (fallback) {
+    // Keep the already-working preview enabled. Precise playback is an upgrade,
+    // not a prerequisite.
     button.disabled = false;
     setPreviewState(root, fallback, false);
-    button.addEventListener('click', () => playOriginalPreview(root, fallback));
+    button.onclick = () => playOriginalPreview(root, fallback!);
     return;
   }
 
