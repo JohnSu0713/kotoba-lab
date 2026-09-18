@@ -44,8 +44,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install Cloud Text-to-Speech client
-        run: python -m pip install --disable-pip-version-check google-cloud-texttospeech
+      - name: Install audio tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python -m pip install --disable-pip-version-check google-cloud-texttospeech
       - name: Prepare audio-assets worktree
         run: |
           rm -rf /tmp/kotoba-audio
@@ -79,6 +82,17 @@ jobs:
           )
           if [[ '${{ inputs.force }}' == 'true' ]]; then args+=(--force); fi
           python scripts/generate_hd_audio.py "${args[@]}"
+
+      - name: Audit generated kana before publish
+        run: |
+          scope='${{ inputs.scope }}'
+          if [[ -z "$scope" ]]; then scope=all; fi
+          if [[ "$scope" == "all" || "$scope" == "kana" ]]; then
+            python scripts/audit_kana_audio.py \
+              --kana-source src/features/kana/data.ts \
+              --audio-dir /tmp/kotoba-audio/audio/ja
+          fi
+
       - name: Publish audio-assets branch
         id: publish
         run: |
