@@ -385,7 +385,7 @@ export async function fetchDailyLyric(
     lineJa,
     lineZhTw,
     timingResolved: true,
-    timingVersion: 2,
+    timingVersion: 3,
     ...(timedLine ? {
       lineStartSeconds: timedLine.startSeconds,
       lineEndSeconds: timedLine.endSeconds,

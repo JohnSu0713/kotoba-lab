@@ -17,6 +17,7 @@ interface AppleSearchResponse {
 interface DeezerTrack {
   id?: number;
   title?: string;
+  duration?: number;
   title_short?: string;
   preview?: string;
   artist?: { name?: string };
@@ -125,6 +126,61 @@ function canonicalArtist(value: string): string {
     ?? value;
 }
 
+function cleanTrackName(lesson: DailyLyricLesson): string {
+  let title = lesson.trackName.trim();
+  const artistCandidates = [lesson.artistName, canonicalArtist(lesson.artistName)]
+    .map((value) => value.trim()).filter(Boolean);
+
+  for (const artist of artistCandidates) {
+    const escaped = artist.replace(/[.*+?^$()|[\]\\{}]/g, (match) => '\\' + match);
+    title = title
+      .replace(new RegExp('^' + escaped + '\\s*[-–—:|]\\s*', 'i'), '')
+      .replace(new RegExp('\\s*[-–—:|]\\s*' + escaped + '$', 'i'), '')
+      .trim();
+  }
+
+  const split = title.split(/\s+[-–—|]\s+/);
+  if (split.length === 2) {
+    const left = split[0];
+    const right = split[1];
+    const normalizedArtist = normalize(canonicalArtist(lesson.artistName));
+    if (left && right && normalize(canonicalArtist(left)) === normalizedArtist) title = right.trim();
+  }
+
+  return title || lesson.trackName;
+}
+
+function titleVariants(lesson: DailyLyricLesson): string[] {
+  const clean = cleanTrackName(lesson);
+  return Array.from(new Set([normalize(clean), normalize(romanizeKana(clean))].filter(Boolean)));
+}
+
+function strongArtistMatch(value: string, lesson: DailyLyricLesson): boolean {
+  const actual = normalize(value);
+  const targets = [normalize(lesson.artistName), normalize(canonicalArtist(lesson.artistName))].filter(Boolean);
+  return targets.some((target) => actual === target || actual.includes(target) || target.includes(actual));
+}
+
+function strongTitleMatch(value: string, lesson: DailyLyricLesson): boolean {
+  const actual = normalize(value);
+  return titleVariants(lesson).some((target) =>
+    actual === target || (target.length >= 5 && (actual.startsWith(target) || target.startsWith(actual))),
+  );
+}
+
+function durationMatches(actual?: number, expected?: number): boolean {
+  if (!actual || !expected) return true;
+  return Math.abs(actual - expected) <= 8;
+}
+
+function verifiedDeezerMatch(item: DeezerTrack, lesson: DailyLyricLesson): boolean {
+  if (!item.preview) return false;
+  if (!strongArtistMatch(item.artist?.name ?? '', lesson)) return false;
+  if (!strongTitleMatch(item.title_short ?? item.title ?? '', lesson)) return false;
+  if (!durationMatches(item.duration, lesson.trackDurationSeconds)) return false;
+  const noisy = (item.title ?? '') + ' ' + (item.album?.title ?? '');
+  return !/\blive\b|remix|instrumental|karaoke|cover|tribute/i.test(noisy);
+}
 function scoreNames(
   title: string,
   artist: string,
@@ -132,8 +188,9 @@ function scoreNames(
 ): number {
   const normalizedTitle = normalize(title);
   const normalizedArtist = normalize(artist);
-  const targetTitle = normalize(lesson.trackName);
-  const romanTitle = normalize(romanizeKana(lesson.trackName));
+  const cleanTitle = cleanTrackName(lesson);
+  const targetTitle = normalize(cleanTitle);
+  const romanTitle = normalize(romanizeKana(cleanTitle));
   const targetArtist = normalize(lesson.artistName);
   const aliasArtist = normalize(canonicalArtist(lesson.artistName));
 
@@ -266,12 +323,14 @@ async function searchApple(lesson: DailyLyricLesson): Promise<AppleTrack | undef
 
 function deezerQueries(lesson: DailyLyricLesson): string[] {
   const artist = canonicalArtist(lesson.artistName);
-  const romanTitle = romanizeKana(lesson.trackName);
+  const cleanTitle = cleanTrackName(lesson);
+  const romanTitle = romanizeKana(cleanTitle);
   return Array.from(new Set([
+    'artist:"' + artist + '" track:"' + cleanTitle + '"',
     'artist:"' + artist + '" track:"' + romanTitle + '"',
+    artist + ' ' + cleanTitle,
     artist + ' ' + romanTitle,
-    artist + ' ' + lesson.trackName,
-    lesson.artistName + ' ' + lesson.trackName,
+    lesson.artistName + ' ' + cleanTitle,
   ].filter((query) => query.trim().length > 1)));
 }
 
@@ -319,56 +378,41 @@ async function searchDeezer(lesson: DailyLyricLesson): Promise<DeezerTrack | und
     try {
       const response = await deezerJsonp(query);
       merged.push(...(response.data ?? []));
-      if (merged.some((item) => !!item.preview && scoreDeezerResult(item, lesson) >= 20)) break;
+      const verified = merged
+        .filter((item) => verifiedDeezerMatch(item, lesson))
+        .sort((a, b) => scoreDeezerResult(b, lesson) - scoreDeezerResult(a, lesson));
+      if (verified[0]) return verified[0];
     } catch {
       // Try the next query shape.
     }
   }
 
   return merged
-    .filter((item) => !!item.preview)
+    .filter((item) => verifiedDeezerMatch(item, lesson))
     .sort((a, b) => scoreDeezerResult(b, lesson) - scoreDeezerResult(a, lesson))[0];
 }
 
 export async function resolveOriginalClip(lesson: DailyLyricLesson): Promise<OriginalClipResolution> {
   try {
-    // Preview URLs are intentionally resolved fresh. Both providers can rotate
-    // media URLs. Prefer Deezer's direct MP3 on iOS; Apple remains the fallback.
     const deezer = await searchDeezer(lesson);
-    if (deezer?.preview) {
-      const fullTrackStartSeconds = deezerPreviewStart(lesson.trackDurationSeconds);
-      return {
-        state: 'ready',
-        source: {
-          provider: 'deezer-preview',
-          previewUrl: deezer.preview,
-          title: deezer.title_short ?? deezer.title ?? lesson.trackName,
-          artistName: deezer.artist?.name ?? lesson.artistName,
-          ...(deezer.album?.title ? { albumName: deezer.album.title } : {}),
-          ...(deezer.album?.cover_medium ? { artworkUrl: deezer.album.cover_medium } : {}),
-          previewSeconds: 30,
-          ...(fullTrackStartSeconds === undefined ? {} : { fullTrackStartSeconds }),
-        },
-      };
-    }
+    if (!deezer?.preview) return { state: 'not-found' };
 
-    const apple = await searchApple(lesson);
-    if (apple?.previewUrl) {
-      return {
-        state: 'ready',
-        source: {
-          provider: 'apple-preview',
-          previewUrl: apple.previewUrl,
-          title: apple.trackName ?? lesson.trackName,
-          artistName: apple.artistName ?? lesson.artistName,
-          ...(apple.collectionName ? { albumName: apple.collectionName } : {}),
-          ...(apple.artworkUrl100 ? { artworkUrl: apple.artworkUrl100.replace('100x100bb', '300x300bb') } : {}),
-          previewSeconds: 20,
-        },
-      };
-    }
+    const fullTrackStartSeconds = deezerPreviewStart(deezer.duration ?? lesson.trackDurationSeconds);
+    if (fullTrackStartSeconds === undefined) return { state: 'not-found' };
 
-    return { state: 'not-found' };
+    return {
+      state: 'ready',
+      source: {
+        provider: 'deezer-preview',
+        previewUrl: deezer.preview,
+        title: deezer.title_short ?? deezer.title ?? cleanTrackName(lesson),
+        artistName: deezer.artist?.name ?? lesson.artistName,
+        ...(deezer.album?.title ? { albumName: deezer.album.title } : {}),
+        ...(deezer.album?.cover_medium ? { artworkUrl: deezer.album.cover_medium } : {}),
+        previewSeconds: 30,
+        fullTrackStartSeconds,
+      },
+    };
   } catch {
     return { state: 'error' };
   }
