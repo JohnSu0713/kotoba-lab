@@ -22,12 +22,13 @@ export interface DailyLyricLesson {
 }
 
 export interface OriginalClipSource {
-  provider: 'youtube';
-  videoId: string;
+  provider: 'apple-preview';
+  previewUrl: string;
   title: string;
-  channelTitle: string;
-  startSeconds: number;
-  endSeconds: number;
+  artistName: string;
+  albumName?: string;
+  artworkUrl?: string;
+  previewSeconds: number;
 }
 
 export interface LyricsState {
