@@ -58,10 +58,11 @@ jobs:
             git checkout --orphan audio-assets
             git rm -rf . || true
           fi
-      - name: Generate Chirp 3 HD assets
+      - name: Generate Japanese audio assets
         env:
           GCP_TTS_VOICE: ja-JP-Chirp3-HD-Zephyr
-          KOTOBA_KANA_RATE: '0.62'
+          GCP_KANA_VOICE: ja-JP-Neural2-B
+          KOTOBA_KANA_RATE: '0.90'
           KOTOBA_WORD_RATE: '0.92'
           # Actual project quota is lower than the nominal Chirp quota. Stay well
           # below it and make the full generation resumable across runs.
