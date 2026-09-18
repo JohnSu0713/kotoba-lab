@@ -102,6 +102,10 @@ def features(path: Path) -> np.ndarray:
 
 def dtw_distance(left: np.ndarray, right: np.ndarray) -> float:
     # Cosine frame cost is substantially less speaker-dependent than raw L2.
+    # Delta rows can be exactly zero on a steady isolated vowel; add a tiny
+    # floor so scipy's cosine distance never divides by a zero frame norm.
+    left = np.nan_to_num(left, nan=0.0, posinf=0.0, neginf=0.0) + 1e-6
+    right = np.nan_to_num(right, nan=0.0, posinf=0.0, neginf=0.0) + 1e-6
     matrix, path = librosa.sequence.dtw(X=left, Y=right, metric="cosine")
     return float(matrix[-1, -1] / max(1, len(path)))
 
