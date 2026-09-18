@@ -1,12 +1,22 @@
 name: Verify every kana audio asset
 
 on:
-  push:
-    branches: [fix-audited-kana-lyrics]
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
     paths:
       - scripts/generate_hd_audio.py
       - scripts/audit_kana_audio.py
       - src/features/kana/data.ts
+      - src/ui/speech.ts
+      - .github/workflows/verify-kana-audio.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/generate_hd_audio.py
+      - scripts/audit_kana_audio.py
+      - src/features/kana/data.ts
+      - src/ui/speech.ts
       - .github/workflows/verify-kana-audio.yml
 
 permissions:
