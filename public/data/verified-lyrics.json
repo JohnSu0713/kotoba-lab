@@ -1,0 +1,466 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-18T15:21:42.732682+00:00",
+  "verifier": "faster-whisper/small",
+  "storefront": "JP",
+  "entries": [
+    {
+      "id": "apple:1490256995:1.14:沈むように溶けてゆくよう",
+      "artistName": "YOASOBI",
+      "artistAliases": [
+        "YOASOBI"
+      ],
+      "trackName": "夜に駆ける",
+      "albumName": "YOASOBI",
+      "lrclibTrackId": 35977793,
+      "appleTrackId": 1490256995,
+      "storefront": "JP",
+      "trackDurationSeconds": 261.013,
+      "lineJa": "沈むように溶けてゆくように",
+      "previewLineStartSeconds": 1.14,
+      "previewLineEndSeconds": 5.08,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 13,
+      "verifiedTranscript": "沈むように溶けてゆくように"
+    },
+    {
+      "id": "apple:1490256995:9.0:二人だけの空が広がる夜に",
+      "artistName": "YOASOBI",
+      "artistAliases": [
+        "YOASOBI"
+      ],
+      "trackName": "夜に駆ける",
+      "albumName": "YOASOBI",
+      "lrclibTrackId": 35977793,
+      "appleTrackId": 1490256995,
+      "storefront": "JP",
+      "trackDurationSeconds": 261.013,
+      "lineJa": "二人だけの空が広がる夜に",
+      "previewLineStartSeconds": 9.0,
+      "previewLineEndSeconds": 13.4,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 12,
+      "verifiedTranscript": "二人だけの空が広がる夜に"
+    },
+    {
+      "id": "apple:1611482688:18.18:比べるものは何もない",
+      "artistName": "藤井 風",
+      "artistAliases": [
+        "藤井 風",
+        "Fujii Kaze",
+        "藤井風"
+      ],
+      "trackName": "まつり",
+      "albumName": "Best of Fujii Kaze 2020-2024",
+      "lrclibTrackId": 30276437,
+      "appleTrackId": 1611482688,
+      "storefront": "JP",
+      "trackDurationSeconds": 225.924,
+      "lineJa": "比べるものは何もない",
+      "previewLineStartSeconds": 18.18,
+      "previewLineEndSeconds": 20.46,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 10,
+      "verifiedTranscript": "比べるものは何もない"
+    },
+    {
+      "id": "apple:1611482688:10.46:毎日愛しき何かの",
+      "artistName": "藤井 風",
+      "artistAliases": [
+        "藤井 風",
+        "Fujii Kaze",
+        "藤井風"
+      ],
+      "trackName": "まつり",
+      "albumName": "Best of Fujii Kaze 2020-2024",
+      "lrclibTrackId": 30276437,
+      "appleTrackId": 1611482688,
+      "storefront": "JP",
+      "trackDurationSeconds": 225.924,
+      "lineJa": "毎日愛しき何かの",
+      "previewLineStartSeconds": 10.46,
+      "previewLineEndSeconds": 13.24,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 8,
+      "verifiedTranscript": "毎日愛しき何かの"
+    },
+    {
+      "id": "apple:1611482688:0.72:その閉じた心今こじ開けな",
+      "artistName": "藤井 風",
+      "artistAliases": [
+        "藤井 風",
+        "Fujii Kaze",
+        "藤井風"
+      ],
+      "trackName": "まつり",
+      "albumName": "Best of Fujii Kaze 2020-2024",
+      "lrclibTrackId": 30276437,
+      "appleTrackId": 1611482688,
+      "storefront": "JP",
+      "trackDurationSeconds": 225.924,
+      "lineJa": "その閉じた心 今こじ開けな",
+      "previewLineStartSeconds": 0.72,
+      "previewLineEndSeconds": 8.28,
+      "verificationScore": 91.7,
+      "verificationCommonChars": 9,
+      "verifiedTranscript": "冬休み その閉じた心今こじ明けな 明けななせ"
+    },
+    {
+      "id": "apple:1505498783:7.84:別の恐怖と今は戦ってるの",
+      "artistName": "藤井 風",
+      "artistAliases": [
+        "藤井 風",
+        "Fujii Kaze",
+        "藤井風"
+      ],
+      "trackName": "罪の香り",
+      "albumName": "HELP EVER HURT NEVER",
+      "lrclibTrackId": 24899418,
+      "appleTrackId": 1505498783,
+      "storefront": "JP",
+      "trackDurationSeconds": 214.2,
+      "lineJa": "別の恐怖と　今は戦ってるの",
+      "previewLineStartSeconds": 7.84,
+      "previewLineEndSeconds": 13.12,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 12,
+      "verifiedTranscript": "堪え堅いの別の恐怖と今は戦ってるの"
+    },
+    {
+      "id": "apple:1505498783:13.12:おっと罪の香り",
+      "artistName": "藤井 風",
+      "artistAliases": [
+        "藤井 風",
+        "Fujii Kaze",
+        "藤井風"
+      ],
+      "trackName": "罪の香り",
+      "albumName": "HELP EVER HURT NEVER",
+      "lrclibTrackId": 24899418,
+      "appleTrackId": 1505498783,
+      "storefront": "JP",
+      "trackDurationSeconds": 214.2,
+      "lineJa": "おっと　罪の香り",
+      "previewLineStartSeconds": 13.12,
+      "previewLineEndSeconds": 15.72,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 7,
+      "verifiedTranscript": "おっと罪の香り"
+    },
+    {
+      "id": "apple:1505498783:6.72:だけどそろそろ耐え難いの",
+      "artistName": "藤井 風",
+      "artistAliases": [
+        "藤井 風",
+        "Fujii Kaze",
+        "藤井風"
+      ],
+      "trackName": "罪の香り",
+      "albumName": "HELP EVER HURT NEVER",
+      "lrclibTrackId": 24899418,
+      "appleTrackId": 1505498783,
+      "storefront": "JP",
+      "trackDurationSeconds": 214.2,
+      "lineJa": "だけど　そろそろ耐え難いの",
+      "previewLineStartSeconds": 6.72,
+      "previewLineEndSeconds": 7.84,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 4,
+      "verifiedTranscript": "そろそろ"
+    },
+    {
+      "id": "apple:1538265734:0.0:汚れてゆくのでしょう",
+      "artistName": "米津玄師",
+      "artistAliases": [
+        "米津玄師",
+        "Kenshi Yonezu"
+      ],
+      "trackName": "カムパネルラ",
+      "albumName": "米津玄師",
+      "lrclibTrackId": 24811563,
+      "appleTrackId": 1538265734,
+      "storefront": "JP",
+      "trackDurationSeconds": 235.723,
+      "lineJa": "汚れてゆくのでしょう",
+      "previewLineStartSeconds": 0.0,
+      "previewLineEndSeconds": 7.34,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 10,
+      "verifiedTranscript": "花糸の湯の通り 私の手は汚れてゆくのでしょう"
+    },
+    {
+      "id": "apple:1538265734:7.34:生きてゆくでしょう",
+      "artistName": "米津玄師",
+      "artistAliases": [
+        "米津玄師",
+        "Kenshi Yonezu"
+      ],
+      "trackName": "カムパネルラ",
+      "albumName": "米津玄師",
+      "lrclibTrackId": 24811563,
+      "appleTrackId": 1538265734,
+      "storefront": "JP",
+      "trackDurationSeconds": 235.723,
+      "lineJa": "生きてゆくでしょう",
+      "previewLineStartSeconds": 7.34,
+      "previewLineEndSeconds": 13.88,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 9,
+      "verifiedTranscript": "追い風に昼がえり 私はまだ生きてゆくでしょう"
+    },
+    {
+      "id": "apple:1538265734:14.8:寄り添うように",
+      "artistName": "米津玄師",
+      "artistAliases": [
+        "米津玄師",
+        "Kenshi Yonezu"
+      ],
+      "trackName": "カムパネルラ",
+      "albumName": "米津玄師",
+      "lrclibTrackId": 24811563,
+      "appleTrackId": 1538265734,
+      "storefront": "JP",
+      "trackDurationSeconds": 235.723,
+      "lineJa": "寄り添うように",
+      "previewLineStartSeconds": 14.8,
+      "previewLineEndSeconds": 21.3,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 7,
+      "verifiedTranscript": "終わる日まで寄り添うように 君を覚えていたい"
+    },
+    {
+      "id": "apple:1537279371:5.16:晴れた空に種を蒔こう",
+      "artistName": "米津玄師",
+      "artistAliases": [
+        "米津玄師",
+        "Kenshi Yonezu"
+      ],
+      "trackName": "「パプリカ」-Paprika",
+      "albumName": "米津玄師",
+      "lrclibTrackId": 28063780,
+      "appleTrackId": 1537279371,
+      "storefront": "JP",
+      "trackDurationSeconds": 203.032,
+      "lineJa": "晴れた空に種を蒔こう",
+      "previewLineStartSeconds": 5.16,
+      "previewLineEndSeconds": 9.5,
+      "verificationScore": 88.9,
+      "verificationCommonChars": 7,
+      "verifiedTranscript": "晴れた空に種をまこ"
+    },
+    {
+      "id": "apple:1537279371:9.5:ハレルヤ夢を描いたなら",
+      "artistName": "米津玄師",
+      "artistAliases": [
+        "米津玄師",
+        "Kenshi Yonezu"
+      ],
+      "trackName": "「パプリカ」-Paprika",
+      "albumName": "米津玄師",
+      "lrclibTrackId": 28063780,
+      "appleTrackId": 1537279371,
+      "storefront": "JP",
+      "trackDurationSeconds": 203.032,
+      "lineJa": "ハレルヤ 夢を描いたなら",
+      "previewLineStartSeconds": 9.5,
+      "previewLineEndSeconds": 14.02,
+      "verificationScore": 85.7,
+      "verificationCommonChars": 7,
+      "verifiedTranscript": "晴れる夜 夢を描いたなら"
+    },
+    {
+      "id": "apple:1537279371:14.92:心遊ばせあなたにとどけ",
+      "artistName": "米津玄師",
+      "artistAliases": [
+        "米津玄師",
+        "Kenshi Yonezu"
+      ],
+      "trackName": "「パプリカ」-Paprika",
+      "albumName": "米津玄師",
+      "lrclibTrackId": 28063780,
+      "appleTrackId": 1537279371,
+      "storefront": "JP",
+      "trackDurationSeconds": 203.032,
+      "lineJa": "心遊ばせあなたにとどけ",
+      "previewLineStartSeconds": 14.92,
+      "previewLineEndSeconds": 20.08,
+      "verificationScore": 84.2,
+      "verificationCommonChars": 7,
+      "verifiedTranscript": "心を遊ばせあなたに届け"
+    },
+    {
+      "id": "apple:1536130472:0.0:廃墟の屋上に",
+      "artistName": "Aimer",
+      "artistAliases": [
+        "Aimer"
+      ],
+      "trackName": "誰か、海を。",
+      "albumName": "Aimer",
+      "lrclibTrackId": 28187577,
+      "appleTrackId": 1536130472,
+      "storefront": "JP",
+      "trackDurationSeconds": 294.147,
+      "lineJa": "廃墟の屋上に",
+      "previewLineStartSeconds": 0.0,
+      "previewLineEndSeconds": 5.5,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 6,
+      "verifiedTranscript": "廃墟の屋上に 辿り着く渡毛の"
+    },
+    {
+      "id": "apple:1536130472:13.0:灰色の地上に",
+      "artistName": "Aimer",
+      "artistAliases": [
+        "Aimer"
+      ],
+      "trackName": "誰か、海を。",
+      "albumName": "Aimer",
+      "lrclibTrackId": 28187577,
+      "appleTrackId": 1536130472,
+      "storefront": "JP",
+      "trackDurationSeconds": 294.147,
+      "lineJa": "灰色の地上に",
+      "previewLineStartSeconds": 13.0,
+      "previewLineEndSeconds": 19.16,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 6,
+      "verifiedTranscript": "灰色の地上に 飾られた光の"
+    },
+    {
+      "id": "apple:1538259791:8.5:許されない約束飾られた記",
+      "artistName": "Aimer",
+      "artistAliases": [
+        "Aimer"
+      ],
+      "trackName": "broKen NIGHT",
+      "albumName": "Aimer",
+      "lrclibTrackId": 25102505,
+      "appleTrackId": 1538259791,
+      "storefront": "JP",
+      "trackDurationSeconds": 296.307,
+      "lineJa": "許されない約束 飾られた記憶",
+      "previewLineStartSeconds": 8.5,
+      "previewLineEndSeconds": 15.74,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 13,
+      "verifiedTranscript": "許されない約束 飾られた記憶"
+    },
+    {
+      "id": "apple:1538259791:15.74:終末を問いかける",
+      "artistName": "Aimer",
+      "artistAliases": [
+        "Aimer"
+      ],
+      "trackName": "broKen NIGHT",
+      "albumName": "Aimer",
+      "lrclibTrackId": 25102505,
+      "appleTrackId": 1538259791,
+      "storefront": "JP",
+      "trackDurationSeconds": 296.307,
+      "lineJa": "終末を問いかける",
+      "previewLineStartSeconds": 15.74,
+      "previewLineEndSeconds": 19.38,
+      "verificationScore": 85.7,
+      "verificationCommonChars": 6,
+      "verifiedTranscript": "終わりを問いかける"
+    },
+    {
+      "id": "apple:1538127362:15.3:そう世界の片隅で祈りとか",
+      "artistName": "Aimer",
+      "artistAliases": [
+        "Aimer"
+      ],
+      "trackName": "Cold Sun",
+      "albumName": "Aimer",
+      "lrclibTrackId": 28184327,
+      "appleTrackId": 1538127362,
+      "storefront": "JP",
+      "trackDurationSeconds": 309.1,
+      "lineJa": "そう 世界の片隅で 祈りとか誓いすら意味をなさない",
+      "previewLineStartSeconds": 15.3,
+      "previewLineEndSeconds": 23.54,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 16,
+      "verifiedTranscript": "そう 世界の片隅で祈りとか誓いすら"
+    },
+    {
+      "id": "apple:1538127362:3.74:知らないどこかで手にした",
+      "artistName": "Aimer",
+      "artistAliases": [
+        "Aimer"
+      ],
+      "trackName": "Cold Sun",
+      "albumName": "Aimer",
+      "lrclibTrackId": 28184327,
+      "appleTrackId": 1538127362,
+      "storefront": "JP",
+      "trackDurationSeconds": 309.1,
+      "lineJa": "知らないどこかで手にした何かは",
+      "previewLineStartSeconds": 3.74,
+      "previewLineEndSeconds": 9.66,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 15,
+      "verifiedTranscript": "知らないどこかで手にした何かは"
+    },
+    {
+      "id": "apple:1753269920:9.16:揺れるスカートは恋してる",
+      "artistName": "あいみょん",
+      "artistAliases": [
+        "あいみょん",
+        "Aimyon"
+      ],
+      "trackName": "ラッキーカラー",
+      "albumName": "ラッキーカラー [Single]",
+      "lrclibTrackId": 34564623,
+      "appleTrackId": 1753269920,
+      "storefront": "JP",
+      "trackDurationSeconds": 218.58,
+      "lineJa": "揺れるスカートは恋してるって証",
+      "previewLineStartSeconds": 9.16,
+      "previewLineEndSeconds": 13.14,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 15,
+      "verifiedTranscript": "揺れるスカートは 恋してるって証"
+    },
+    {
+      "id": "apple:1753269920:13.76:小さなところで気づいて",
+      "artistName": "あいみょん",
+      "artistAliases": [
+        "あいみょん",
+        "Aimyon"
+      ],
+      "trackName": "ラッキーカラー",
+      "albumName": "ラッキーカラー [Single]",
+      "lrclibTrackId": 34564623,
+      "appleTrackId": 1753269920,
+      "storefront": "JP",
+      "trackDurationSeconds": 218.58,
+      "lineJa": "小さなところで気づいて",
+      "previewLineStartSeconds": 13.76,
+      "previewLineEndSeconds": 17.88,
+      "verificationScore": 100.0,
+      "verificationCommonChars": 11,
+      "verifiedTranscript": "小さなところで気づいて 恋してるの私"
+    },
+    {
+      "id": "apple:1753269920:18.52:今日もまつ毛を空に高くあ",
+      "artistName": "あいみょん",
+      "artistAliases": [
+        "あいみょん",
+        "Aimyon"
+      ],
+      "trackName": "ラッキーカラー",
+      "albumName": "ラッキーカラー [Single]",
+      "lrclibTrackId": 34564623,
+      "appleTrackId": 1753269920,
+      "storefront": "JP",
+      "trackDurationSeconds": 218.58,
+      "lineJa": "今日もまつ毛を空に高くあげる",
+      "previewLineStartSeconds": 18.52,
+      "previewLineEndSeconds": 24.52,
+      "verificationScore": 92.9,
+      "verificationCommonChars": 8,
+      "verifiedTranscript": "今日もまつけを空に 高くあげる"
+    }
+  ]
+}
