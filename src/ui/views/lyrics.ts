@@ -62,8 +62,8 @@ function escapeHtml(value: string): string {
     .replaceAll("'", '&#039;');
 }
 
-function cacheKey(dateKey: string, artist: FollowedArtist, cardIndex: number): string {
-  return dateKey + ':card:' + cardIndex + ':' + artist.id;
+function deckSlotKey(dateKey: string, cardIndex: number): string {
+  return dateKey + ':verified-card:' + normalizedDeckIndex(cardIndex);
 }
 
 function normalizedDeckIndex(index: number): number {
@@ -749,40 +749,80 @@ function sourceContainsLesson(
 
   const previewStart = source.fullTrackStartSeconds;
   const previewEnd = previewStart + source.previewSeconds;
-  return lesson.lineStartSeconds >= previewStart + 0.5
-    && lesson.lineEndSeconds <= previewEnd - 0.5;
+
+  // Keep real context on both sides; this avoids a line that technically lands
+  // in the excerpt but is clipped at the boundary.
+  return lesson.lineStartSeconds >= previewStart + 4
+    && lesson.lineEndSeconds <= previewEnd - 4;
 }
 
-async function resolveVerifiedLesson(
-  artist: FollowedArtist,
+function artistOrderForCard(
+  artists: FollowedArtist[],
+  dateKey: string,
+  cardIndex: number,
+): FollowedArtist[] {
+  if (!artists.length) return [];
+  const preferred = pickDeckArtist(artists, dateKey, cardIndex);
+  if (!preferred) return [...artists];
+  const start = artists.findIndex((artist) => artist.id === preferred.id);
+  if (start < 0) return [...artists];
+  return [...artists.slice(start), ...artists.slice(0, start)];
+}
+
+function existingLessonIdsForDate(dateKey: string): Set<string> {
+  const state = lyricsStore.getState();
+  return new Set(
+    Object.entries(state.cachedLessons)
+      .filter(([key, lesson]) =>
+        key.startsWith(dateKey + ':verified-card:')
+        && lesson.timingVersion === 3,
+      )
+      .map(([, lesson]) => lesson.id),
+  );
+}
+
+async function resolveVerifiedDeckLesson(
+  artists: FollowedArtist[],
   dateKey: string,
   cardIndex: number,
 ): Promise<DailyLyricLesson> {
-  const baseSeed = deckSelectionSeed(dateKey, cardIndex);
+  const used = existingLessonIdsForDate(dateKey);
+  const orderedArtists = artistOrderForCard(artists, dateKey, cardIndex);
   let lastError: unknown;
+  let tried = 0;
 
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    try {
-      const lesson = await fetchDailyLyric(
-        artist,
-        dateKey,
-        baseSeed + ':verified:' + attempt,
-      );
-      const preview = await resolveOriginalClip(lesson);
-      if (
-        preview.state === 'ready'
-        && sourceContainsLesson(preview.source, lesson)
-      ) {
-        verifiedPreviewSources.set(lesson.id, preview.source);
-        return lesson;
+  for (const artist of orderedArtists) {
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      if (tried >= 16) break;
+      tried += 1;
+
+      try {
+        const lesson = await fetchDailyLyric(
+          artist,
+          dateKey,
+          deckSelectionSeed(dateKey, cardIndex)
+            + ':artist:' + artist.id
+            + ':verified:' + attempt,
+        );
+
+        if (used.has(lesson.id)) continue;
+
+        const preview = await resolveOriginalClip(lesson);
+        if (
+          preview.state === 'ready'
+          && sourceContainsLesson(preview.source, lesson)
+        ) {
+          verifiedPreviewSources.set(lesson.id, preview.source);
+          return lesson;
+        }
+      } catch (error) {
+        lastError = error;
       }
-    } catch (error) {
-      lastError = error;
     }
   }
 
   if (lastError instanceof Error) throw lastError;
-  throw new Error('這位歌手目前找不到「音訊與歌詞時間都能驗證」的卡片，請翻下一張。');
+  throw new Error('目前追蹤的歌手暫時找不到可完整驗證的原曲歌詞卡。');
 }
 
 async function prefetchDeckCard(
@@ -791,15 +831,12 @@ async function prefetchDeckCard(
   cardIndex: number,
 ): Promise<void> {
   const index = normalizedDeckIndex(cardIndex);
-  const artist = pickDeckArtist(artists, dateKey, index);
-  if (!artist) return;
-
-  const key = cacheKey(dateKey, artist, index);
+  const key = deckSlotKey(dateKey, index);
   const cached = lyricsStore.cachedLesson(key);
   if (cached?.timingResolved && cached.timingVersion === 3) return;
   if (deckPrefetches.has(key)) return await deckPrefetches.get(key);
 
-  const promise = resolveVerifiedLesson(artist, dateKey, index)
+  const promise = resolveVerifiedDeckLesson(artists, dateKey, index)
     .then((lesson) => {
       lyricsStore.cacheLesson(key, lesson);
     })
@@ -855,20 +892,33 @@ function bindDeckInteractions(
   }, { passive: true });
 }
 
-async function fetchAndRenderLesson(
+async function cachedLessonIsVerified(
+  lesson: DailyLyricLesson,
+): Promise<boolean> {
+  if (!lesson.timingResolved || lesson.timingVersion !== 3) return false;
+  const preview = await resolveOriginalClip(lesson);
+  if (preview.state !== 'ready') return false;
+  if (!sourceContainsLesson(preview.source, lesson)) return false;
+  verifiedPreviewSources.set(lesson.id, preview.source);
+  return true;
+}
+
+async function fetchAndRenderDeckCard(
   root: HTMLElement,
   context: AppContext,
   artists: FollowedArtist[],
-  artist: FollowedArtist,
   dateKey: string,
   cardIndex: number,
   key: string,
 ): Promise<void> {
-  root.innerHTML = pageHtml(artists, loadingDaily(artist, cardIndex));
+  const loadingArtist = pickDeckArtist(artists, dateKey, cardIndex) ?? artists[0];
+  if (!loadingArtist) return;
+
+  root.innerHTML = pageHtml(artists, loadingDaily(loadingArtist, cardIndex));
   bindSharedInteractions(root);
 
   try {
-    const lesson = await resolveVerifiedLesson(artist, dateKey, cardIndex);
+    const lesson = await resolveVerifiedDeckLesson(artists, dateKey, cardIndex);
     if (!root.isConnected) return;
 
     lyricsStore.cacheLesson(key, lesson);
@@ -884,34 +934,22 @@ async function fetchAndRenderLesson(
     if (!root.isConnected) return;
     const message = error instanceof Error ? error.message : '未知錯誤';
     root.innerHTML = pageHtml(
-      lyricsStore.getState().artists,
-      errorDaily(artist, message, cardIndex),
+      artists,
+      `
+        <section class="lyric-daily-card lyric-error-card" data-lyric-card>
+          <div class="lyric-record" aria-hidden="true"><span>?</span></div>
+          <div>
+            <p class="eyebrow">CARD ${cardIndex + 1}</p>
+            <h2>目前沒有足夠的「已驗證」原曲卡片。</h2>
+            <p>${escapeHtml(message)}</p>
+            <p>這張不會用不確定的音訊硬湊；可以先翻下一張，或加入更多歌手。</p>
+          </div>
+          ${deckNav(cardIndex)}
+        </section>`,
     );
     bindSharedInteractions(root);
-    bindDeckInteractions(root, context, lyricsStore.getState().artists, dateKey, cardIndex);
-    root.querySelector<HTMLButtonElement>('#lyric-retry')?.addEventListener('click', () => {
-      void fetchAndRenderLesson(
-        root,
-        context,
-        lyricsStore.getState().artists,
-        artist,
-        dateKey,
-        cardIndex,
-        key,
-      );
-    });
+    bindDeckInteractions(root, context, artists, dateKey, cardIndex);
   }
-}
-
-async function cachedLessonIsVerified(
-  lesson: DailyLyricLesson,
-): Promise<boolean> {
-  if (!lesson.timingResolved || lesson.timingVersion !== 3) return false;
-  const preview = await resolveOriginalClip(lesson);
-  if (preview.state !== 'ready') return false;
-  if (!sourceContainsLesson(preview.source, lesson)) return false;
-  verifiedPreviewSources.set(lesson.id, preview.source);
-  return true;
 }
 
 async function renderDeckCard(
@@ -925,15 +963,7 @@ async function renderDeckCard(
 
   const cardIndex = normalizedDeckIndex(requestedIndex);
   writeDeckIndex(dateKey, cardIndex);
-  const artist = pickDeckArtist(artists, dateKey, cardIndex);
-
-  if (!artist) {
-    root.innerHTML = pageHtml(artists, emptyDaily());
-    bindSharedInteractions(root);
-    return;
-  }
-
-  const key = cacheKey(dateKey, artist, cardIndex);
+  const key = deckSlotKey(dateKey, cardIndex);
   const cached = lyricsStore.cachedLesson(key);
 
   if (cached && await cachedLessonIsVerified(cached)) {
@@ -945,11 +975,10 @@ async function renderDeckCard(
     return;
   }
 
-  await fetchAndRenderLesson(
+  await fetchAndRenderDeckCard(
     root,
     context,
     artists,
-    artist,
     dateKey,
     cardIndex,
     key,
