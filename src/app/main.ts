@@ -58,7 +58,25 @@ async function bootstrap(): Promise<void> {
   await render();
 
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => { void navigator.serviceWorker.register('./sw.js'); });
+    window.addEventListener('load', () => {
+      void (async () => {
+        const registration = await navigator.serviceWorker.register('./sw.js', {
+          updateViaCache: 'none',
+        });
+        await registration.update().catch(() => undefined);
+
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          const key = 'kotoba-lab:sw-refresh:v0.6.0';
+          if (sessionStorage.getItem(key)) return;
+          sessionStorage.setItem(key, '1');
+          location.reload();
+        }, { once: true });
+      })();
+    });
   }
 }
 
