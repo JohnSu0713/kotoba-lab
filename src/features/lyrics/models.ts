@@ -4,6 +4,12 @@ export interface FollowedArtist {
   addedAt: string;
 }
 
+export interface LyricWordTiming {
+  text: string;
+  startSeconds: number;
+  endSeconds: number;
+}
+
 export interface DailyLyricLesson {
   id: string;
   dateKey: string;
@@ -15,8 +21,10 @@ export interface DailyLyricLesson {
   lineJa: string;
   lineZhTw: string;
   timingResolved?: boolean;
+  timingVersion?: 2;
   lineStartSeconds?: number;
   lineEndSeconds?: number;
+  words?: LyricWordTiming[];
   fetchedAt: string;
   source: 'lrclib+mymemory';
 }
@@ -29,6 +37,16 @@ export interface OriginalClipSource {
   albumName?: string;
   artworkUrl?: string;
   previewSeconds: number;
+}
+
+export interface PrecisePlaybackSource {
+  provider: 'apple-music';
+  songId: string;
+  title: string;
+  artistName: string;
+  storefront: string;
+  startSeconds: number;
+  endSeconds: number;
 }
 
 export interface LyricsState {
