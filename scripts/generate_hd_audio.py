@@ -55,7 +55,7 @@ def asset_name(target: Target, voice: str) -> str:
     return f"{digest}.mp3"
 
 
-def load_kana_targets(source: Path, rate: float) -> list[Target]:
+def load_kana_targets(source: Path, rate: float, subset: str = "all") -> list[Target]:
     text = source.read_text(encoding="utf-8")
     rows = KANA_SEED_RE.findall(text)
     if not rows:
@@ -63,6 +63,16 @@ def load_kana_targets(source: Path, rate: float) -> list[Target]:
 
     targets: list[Target] = []
     for hira, kata in rows:
+        row_match = next(
+            (
+                match for match in KANA_SEED_RE.finditer(text)
+                if match.group(1) == hira and match.group(2) == kata
+            ),
+            None,
+        )
+        group = row_match.group(0).rsplit("'", 2)[1] if row_match else ""
+        if subset == "yoon" and group != "yoon":
+            continue
         canonical = normalize(hira)
         # Use Google's Japanese-specific yomigana phoneme control so isolated
         # morae are explicit rather than inferred from a one-character sentence.
@@ -200,6 +210,7 @@ def main() -> None:
     parser.add_argument("--voice", default=os.environ.get("GCP_TTS_VOICE", DEFAULT_VOICE))
     parser.add_argument("--kana-voice", default=os.environ.get("GCP_KANA_VOICE", DEFAULT_KANA_VOICE))
     parser.add_argument("--kana-rate", type=float, default=float(os.environ.get("KOTOBA_KANA_RATE", DEFAULT_KANA_RATE)))
+    parser.add_argument("--kana-subset", choices=("all", "yoon"), default="all")
     parser.add_argument("--word-rate", type=float, default=float(os.environ.get("KOTOBA_WORD_RATE", DEFAULT_WORD_RATE)))
     parser.add_argument(
         "--min-request-interval",
@@ -221,7 +232,7 @@ def main() -> None:
     selected_levels = LEVELS if args.scope == "all" else ((args.scope,) if args.scope in LEVELS else ())
     targets: list[Target] = []
     if args.scope in ("all", "kana"):
-        targets.extend(load_kana_targets(args.kana_source, args.kana_rate))
+        targets.extend(load_kana_targets(args.kana_source, args.kana_rate, args.kana_subset))
     if selected_levels:
         targets.extend(load_vocab_targets(args.vocab_dir, selected_levels, args.word_rate))
     targets = dedupe_targets(targets)
