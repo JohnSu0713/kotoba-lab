@@ -325,25 +325,8 @@ async function searchDeezer(lesson: DailyLyricLesson): Promise<DeezerTrack | und
 
 export async function resolveOriginalClip(lesson: DailyLyricLesson): Promise<OriginalClipResolution> {
   try {
-    // Preview URLs are intentionally resolved fresh. Both Apple and Deezer can
-    // rotate/expire media URLs, so persisting the URL in localStorage can leave
-    // iOS with a clickable button that points at dead audio.
-    const apple = await searchApple(lesson);
-    if (apple?.previewUrl) {
-      return {
-        state: 'ready',
-        source: {
-          provider: 'apple-preview',
-          previewUrl: apple.previewUrl,
-          title: apple.trackName ?? lesson.trackName,
-          artistName: apple.artistName ?? lesson.artistName,
-          ...(apple.collectionName ? { albumName: apple.collectionName } : {}),
-          ...(apple.artworkUrl100 ? { artworkUrl: apple.artworkUrl100.replace('100x100bb', '300x300bb') } : {}),
-          previewSeconds: 20,
-        },
-      };
-    }
-
+    // Preview URLs are intentionally resolved fresh. Both providers can rotate
+    // media URLs. Prefer Deezer's direct MP3 on iOS; Apple remains the fallback.
     const deezer = await searchDeezer(lesson);
     if (deezer?.preview) {
       return {
@@ -355,6 +338,22 @@ export async function resolveOriginalClip(lesson: DailyLyricLesson): Promise<Ori
           artistName: deezer.artist?.name ?? lesson.artistName,
           ...(deezer.album?.title ? { albumName: deezer.album.title } : {}),
           ...(deezer.album?.cover_medium ? { artworkUrl: deezer.album.cover_medium } : {}),
+          previewSeconds: 20,
+        },
+      };
+    }
+
+    const apple = await searchApple(lesson);
+    if (apple?.previewUrl) {
+      return {
+        state: 'ready',
+        source: {
+          provider: 'apple-preview',
+          previewUrl: apple.previewUrl,
+          title: apple.trackName ?? lesson.trackName,
+          artistName: apple.artistName ?? lesson.artistName,
+          ...(apple.collectionName ? { albumName: apple.collectionName } : {}),
+          ...(apple.artworkUrl100 ? { artworkUrl: apple.artworkUrl100.replace('100x100bb', '300x300bb') } : {}),
           previewSeconds: 20,
         },
       };
