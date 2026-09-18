@@ -3,7 +3,7 @@ import type { VocabularyItem } from '../../domain/models.js';
 import {
   fetchDailyLyric,
   localDateKey,
-  pickDailyArtist,
+  pickDeckArtist,
 } from '../../features/lyrics/provider.js';
 import { resolveOriginalClip } from '../../features/lyrics/media.js';
 import {
@@ -22,6 +22,8 @@ import { icons } from '../components/icons.js';
 import { speakJapanese } from '../speech.js';
 
 const SUGGESTED_ARTISTS = ['YOASOBI', '藤井 風', '米津玄師', 'Aimer', 'あいみょん', 'Official髭男dism'];
+const LYRIC_DECK_SIZE = 6;
+const DECK_POSITION_PREFIX = 'kotoba-lab:lyrics-deck-position:';
 
 let activePreview: HTMLAudioElement | undefined;
 let activePreviewTimer: number | undefined;
@@ -59,8 +61,33 @@ function escapeHtml(value: string): string {
     .replaceAll("'", '&#039;');
 }
 
-function cacheKey(dateKey: string, artist: FollowedArtist): string {
-  return dateKey + ':' + artist.id;
+function cacheKey(dateKey: string, artist: FollowedArtist, cardIndex: number): string {
+  return dateKey + ':card:' + cardIndex + ':' + artist.id;
+}
+
+function normalizedDeckIndex(index: number): number {
+  return ((index % LYRIC_DECK_SIZE) + LYRIC_DECK_SIZE) % LYRIC_DECK_SIZE;
+}
+
+function readDeckIndex(dateKey: string): number {
+  try {
+    const value = Number(localStorage.getItem(DECK_POSITION_PREFIX + dateKey) ?? '0');
+    return Number.isFinite(value) ? normalizedDeckIndex(value) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeDeckIndex(dateKey: string, index: number): void {
+  try {
+    localStorage.setItem(DECK_POSITION_PREFIX + dateKey, String(normalizedDeckIndex(index)));
+  } catch {
+    // Deck position is a convenience only.
+  }
+}
+
+function deckSelectionSeed(dateKey: string, cardIndex: number): string {
+  return dateKey + ':card:' + normalizedDeckIndex(cardIndex);
 }
 
 function lessonVocabulary(context: AppContext, line: string): VocabularyItem[] {
@@ -117,8 +144,8 @@ function addArtistPanel(artists: FollowedArtist[]): string {
     <section class="lyric-add-card">
       <div class="lyric-add-copy">
         <p class="eyebrow">YOUR ARTISTS</p>
-        <h2>把喜歡的歌手，變成每天一句。</h2>
-        <p>加入歌手後，每天固定挑一首歌與一句日文；同一天重開 App 仍是同一句。</p>
+        <h2>把喜歡的歌手，變成一疊每日歌詞卡。</h2>
+        <p>每天會固定生成一組可左右翻閱的歌詞卡；同一天重開 App，卡片內容與位置都會保留。</p>
       </div>
       <form class="lyric-add-form" id="lyric-add-form">
         <label for="lyric-artist-input">歌手名稱</label>
