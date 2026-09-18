@@ -249,6 +249,44 @@ export function pickDailyArtist(artists: FollowedArtist[], dateKey: string): Fol
   return artists[stableHash('artist:' + dateKey) % artists.length];
 }
 
+export function pickDeckArtist(
+  artists: FollowedArtist[],
+  dateKey: string,
+  cardIndex: number,
+): FollowedArtist | undefined {
+  if (!artists.length) return undefined;
+  return artists[stableHash('artist:' + dateKey + ':card:' + cardIndex) % artists.length];
+}
+
+function previewWindow(trackDuration?: number): { start: number; end: number } | undefined {
+  if (!trackDuration || trackDuration <= 0) return undefined;
+  const start = trackDuration > 60
+    ? 30
+    : trackDuration > 30
+      ? Math.max(0, trackDuration - 30)
+      : 0;
+  return {
+    start,
+    end: Math.min(trackDuration, start + 30),
+  };
+}
+
+function focusableTimedLines(lines: SyncedLine[], trackDuration?: number): SyncedLine[] {
+  const window = previewWindow(trackDuration);
+  if (!window) return lines;
+
+  const withContext = lines.filter((line) =>
+    line.startSeconds >= window.start + 4
+    && line.endSeconds <= window.end - 4,
+  );
+  if (withContext.length) return withContext;
+
+  return lines.filter((line) =>
+    line.startSeconds >= window.start
+    && line.endSeconds <= window.end,
+  );
+}
+
 async function translateToTraditionalChinese(text: string): Promise<string> {
   const pairs = ['ja-JP|zh-TW', 'ja|zh-TW'];
   for (const pair of pairs) {
@@ -288,35 +326,49 @@ async function searchArtistTracks(artist: FollowedArtist): Promise<LrcLibTrack[]
   });
 }
 
-export async function fetchDailyLyric(artist: FollowedArtist, dateKey: string): Promise<DailyLyricLesson> {
+export async function fetchDailyLyric(
+  artist: FollowedArtist,
+  dateKey: string,
+  selectionSeed = dateKey,
+): Promise<DailyLyricLesson> {
   const tracks = await searchArtistTracks(artist);
   if (!tracks.length) throw new Error('目前找不到 ' + artist.name + ' 的可用歌詞。');
 
   const prepared = tracks
-    .map((track) => ({
-      track,
-      timed: track.syncedLyrics
+    .map((track) => {
+      const timed = track.syncedLyrics
         ? syncedLines(track.syncedLyrics, track.duration, track.lyricsfile)
-        : [],
-      plain: track.plainLyrics ? lyricLines(track.plainLyrics) : [],
-    }))
+        : [];
+      return {
+        track,
+        timed,
+        focusedTimed: focusableTimedLines(timed, track.duration),
+        plain: track.plainLyrics ? lyricLines(track.plainLyrics) : [],
+      };
+    })
     .filter(({ timed, plain }) => timed.length > 0 || plain.length > 0);
 
   if (!prepared.length) {
     throw new Error('目前找到的歌曲沒有適合學習的日文歌詞，請再試一次或加入其他歌手。');
   }
 
+  const previewSynchronized = prepared.filter(({ focusedTimed }) => focusedTimed.length > 0);
   const synchronized = prepared.filter(({ timed }) => timed.length > 0);
-  const pool = synchronized.length ? synchronized : prepared;
-  const selected = pool[stableHash('track:' + dateKey + ':' + artist.id) % pool.length];
+  const pool = previewSynchronized.length
+    ? previewSynchronized
+    : synchronized.length
+      ? synchronized
+      : prepared;
+  const selected = pool[stableHash('track:' + selectionSeed + ':' + artist.id) % pool.length];
   if (!selected) throw new Error('目前找不到適合學習的日文歌詞。');
 
-  const { track, timed, plain } = selected;
-  const timedLine = timed.length
-    ? timed[stableHash('line:' + dateKey + ':' + track.id) % timed.length]
+  const { track, timed, focusedTimed, plain } = selected;
+  const timedPool = focusedTimed.length ? focusedTimed : timed;
+  const timedLine = timedPool.length
+    ? timedPool[stableHash('line:' + selectionSeed + ':' + track.id) % timedPool.length]
     : undefined;
   const lineJa = timedLine?.text
-    ?? plain[stableHash('line:' + dateKey + ':' + track.id) % plain.length];
+    ?? plain[stableHash('line:' + selectionSeed + ':' + track.id) % plain.length];
 
   if (!lineJa) throw new Error('目前找不到適合學習的日文歌詞。');
   const lineZhTw = await translateToTraditionalChinese(lineJa);
@@ -329,6 +381,7 @@ export async function fetchDailyLyric(artist: FollowedArtist, dateKey: string): 
     trackId: track.id,
     trackName: track.trackName,
     ...(track.albumName ? { albumName: track.albumName } : {}),
+    ...(track.duration ? { trackDurationSeconds: track.duration } : {}),
     lineJa,
     lineZhTw,
     timingResolved: true,

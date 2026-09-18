@@ -160,6 +160,13 @@ function scoreAppleResult(item: AppleTrack, lesson: DailyLyricLesson): number {
   return score;
 }
 
+function deezerPreviewStart(trackDuration?: number): number | undefined {
+  if (!trackDuration || trackDuration <= 0) return undefined;
+  if (trackDuration > 60) return 30;
+  if (trackDuration > 30) return Math.max(0, trackDuration - 30);
+  return 0;
+}
+
 function scoreDeezerResult(item: DeezerTrack, lesson: DailyLyricLesson): number {
   let score = scoreNames(
     item.title_short ?? item.title ?? '',
@@ -329,6 +336,7 @@ export async function resolveOriginalClip(lesson: DailyLyricLesson): Promise<Ori
     // media URLs. Prefer Deezer's direct MP3 on iOS; Apple remains the fallback.
     const deezer = await searchDeezer(lesson);
     if (deezer?.preview) {
+      const fullTrackStartSeconds = deezerPreviewStart(lesson.trackDurationSeconds);
       return {
         state: 'ready',
         source: {
@@ -338,7 +346,8 @@ export async function resolveOriginalClip(lesson: DailyLyricLesson): Promise<Ori
           artistName: deezer.artist?.name ?? lesson.artistName,
           ...(deezer.album?.title ? { albumName: deezer.album.title } : {}),
           ...(deezer.album?.cover_medium ? { artworkUrl: deezer.album.cover_medium } : {}),
-          previewSeconds: 20,
+          previewSeconds: 30,
+          ...(fullTrackStartSeconds === undefined ? {} : { fullTrackStartSeconds }),
         },
       };
     }

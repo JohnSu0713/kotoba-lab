@@ -612,3 +612,86 @@
     transition: none;
   }
 }
+
+
+/* Daily lyric card deck */
+.lyric-daily-card[data-lyric-card] {
+  touch-action: pan-y;
+}
+
+.lyric-deck-nav {
+  position: relative;
+  z-index: 2;
+  width: fit-content;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px auto -8px;
+  padding: 5px 7px;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-soft) 82%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.lyric-deck-nav > button {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+}
+
+.lyric-deck-nav > button:hover {
+  background: var(--surface-solid);
+  color: var(--ink);
+}
+
+#lyric-deck-prev svg { transform: rotate(180deg); }
+.lyric-deck-nav svg { width: 15px; height: 15px; }
+
+.lyric-deck-position {
+  min-width: 76px;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+}
+
+.lyric-deck-position > span {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+
+.lyric-deck-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lyric-deck-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line-strong);
+  transition: width 150ms ease, background-color 150ms ease;
+}
+
+.lyric-deck-dot.active {
+  width: 13px;
+  background: var(--accent);
+}
+
+@media (max-width: 520px) {
+  .lyric-deck-nav {
+    margin-top: 15px;
+    margin-bottom: -12px;
+  }
+}

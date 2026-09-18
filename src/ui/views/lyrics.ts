@@ -3,7 +3,7 @@ import type { VocabularyItem } from '../../domain/models.js';
 import {
   fetchDailyLyric,
   localDateKey,
-  pickDailyArtist,
+  pickDeckArtist,
 } from '../../features/lyrics/provider.js';
 import { resolveOriginalClip } from '../../features/lyrics/media.js';
 import {
@@ -22,6 +22,8 @@ import { icons } from '../components/icons.js';
 import { speakJapanese } from '../speech.js';
 
 const SUGGESTED_ARTISTS = ['YOASOBI', '藤井 風', '米津玄師', 'Aimer', 'あいみょん', 'Official髭男dism'];
+const LYRIC_DECK_SIZE = 6;
+const DECK_POSITION_PREFIX = 'kotoba-lab:lyrics-deck-position:';
 
 let activePreview: HTMLAudioElement | undefined;
 let activePreviewTimer: number | undefined;
@@ -59,8 +61,33 @@ function escapeHtml(value: string): string {
     .replaceAll("'", '&#039;');
 }
 
-function cacheKey(dateKey: string, artist: FollowedArtist): string {
-  return dateKey + ':' + artist.id;
+function cacheKey(dateKey: string, artist: FollowedArtist, cardIndex: number): string {
+  return dateKey + ':card:' + cardIndex + ':' + artist.id;
+}
+
+function normalizedDeckIndex(index: number): number {
+  return ((index % LYRIC_DECK_SIZE) + LYRIC_DECK_SIZE) % LYRIC_DECK_SIZE;
+}
+
+function readDeckIndex(dateKey: string): number {
+  try {
+    const value = Number(localStorage.getItem(DECK_POSITION_PREFIX + dateKey) ?? '0');
+    return Number.isFinite(value) ? normalizedDeckIndex(value) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeDeckIndex(dateKey: string, index: number): void {
+  try {
+    localStorage.setItem(DECK_POSITION_PREFIX + dateKey, String(normalizedDeckIndex(index)));
+  } catch {
+    // Deck position is a convenience only.
+  }
+}
+
+function deckSelectionSeed(dateKey: string, cardIndex: number): string {
+  return dateKey + ':card:' + normalizedDeckIndex(cardIndex);
 }
 
 function lessonVocabulary(context: AppContext, line: string): VocabularyItem[] {
@@ -117,8 +144,8 @@ function addArtistPanel(artists: FollowedArtist[]): string {
     <section class="lyric-add-card">
       <div class="lyric-add-copy">
         <p class="eyebrow">YOUR ARTISTS</p>
-        <h2>把喜歡的歌手，變成每天一句。</h2>
-        <p>加入歌手後，每天固定挑一首歌與一句日文；同一天重開 App 仍是同一句。</p>
+        <h2>把喜歡的歌手，變成一疊每日歌詞卡。</h2>
+        <p>每天會固定生成一組可左右翻閱的歌詞卡；同一天重開 App，卡片內容與位置都會保留。</p>
       </div>
       <form class="lyric-add-form" id="lyric-add-form">
         <label for="lyric-artist-input">歌手名稱</label>
@@ -146,28 +173,46 @@ function emptyDaily(): string {
     </section>`;
 }
 
-function loadingDaily(artist: FollowedArtist): string {
+function deckNav(cardIndex: number): string {
+  const index = normalizedDeckIndex(cardIndex);
+  const dots = Array.from({ length: LYRIC_DECK_SIZE }, (_, dotIndex) =>
+    '<span class="lyric-deck-dot ' + (dotIndex === index ? 'active' : '') + '" aria-hidden="true"></span>',
+  ).join('');
+
   return `
-    <section class="lyric-daily-card lyric-loading-card">
+    <div class="lyric-deck-nav" aria-label="每日歌詞卡片">
+      <button id="lyric-deck-prev" type="button" aria-label="上一張歌詞卡">${icons.arrow}</button>
+      <div class="lyric-deck-position">
+        <div class="lyric-deck-dots">${dots}</div>
+        <span>${index + 1} / ${LYRIC_DECK_SIZE}</span>
+      </div>
+      <button id="lyric-deck-next" type="button" aria-label="下一張歌詞卡">${icons.arrow}</button>
+    </div>`;
+}
+
+function loadingDaily(artist: FollowedArtist, cardIndex: number): string {
+  return `
+    <section class="lyric-daily-card lyric-loading-card" data-lyric-card>
       <div class="lyric-record is-spinning" aria-hidden="true"><span>♪</span></div>
       <div>
-        <p class="eyebrow">TODAY · ${escapeHtml(artist.name)}</p>
-        <h2>正在替你挑今天的一句…</h2>
-        <p>優先使用精準同步歌詞，讓原曲播放與文字 highlight 對得上。</p>
+        <p class="eyebrow">CARD ${normalizedDeckIndex(cardIndex) + 1} · ${escapeHtml(artist.name)}</p>
+        <h2>正在替你挑這張歌詞卡…</h2>
+        <p>優先挑能落在原曲試聽範圍裡的同步歌詞，讓播放更快進到這一句。</p>
       </div>
     </section>`;
 }
 
-function errorDaily(artist: FollowedArtist, message: string): string {
+function errorDaily(artist: FollowedArtist, message: string, cardIndex: number): string {
   return `
-    <section class="lyric-daily-card lyric-error-card">
+    <section class="lyric-daily-card lyric-error-card" data-lyric-card>
       <div class="lyric-record" aria-hidden="true"><span>?</span></div>
       <div>
-        <p class="eyebrow">TODAY · ${escapeHtml(artist.name)}</p>
-        <h2>今天這位歌手暫時沒有抓到可用句子。</h2>
+        <p class="eyebrow">CARD ${normalizedDeckIndex(cardIndex) + 1} · ${escapeHtml(artist.name)}</p>
+        <h2>這張卡暫時沒有抓到可用句子。</h2>
         <p>${escapeHtml(message)}</p>
         <button class="secondary-button" id="lyric-retry" type="button">再試一次</button>
       </div>
+      ${deckNav(cardIndex)}
     </section>`;
 }
 
@@ -182,18 +227,22 @@ function lyricMarkup(lesson: DailyLyricLesson): string {
   return '<span class="lyric-sync-line" id="lyric-sync-line">' + escapeHtml(lesson.lineJa) + '</span>';
 }
 
-function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
+function dailyLesson(
+  context: AppContext,
+  lesson: DailyLyricLesson,
+  cardIndex: number,
+): string {
   const vocab = lessonVocabulary(context, lesson.lineJa);
   const grammar = grammarHint(lesson.lineJa);
   const favorite = lyricsStore.isFavorite(lesson.id);
 
   return `
-    <section class="lyric-daily-card">
+    <section class="lyric-daily-card" data-lyric-card>
       <div class="lyric-card-top">
         <div class="lyric-song-meta">
           <div class="lyric-record" aria-hidden="true"><span>♪</span></div>
           <div>
-            <p class="eyebrow">TODAY'S LYRIC</p>
+            <p class="eyebrow">LYRIC CARD · ${normalizedDeckIndex(cardIndex) + 1}</p>
             <strong>${escapeHtml(lesson.trackName)}</strong>
             <span>${escapeHtml(lesson.artistName)}${lesson.albumName ? ' · ' + escapeHtml(lesson.albumName) : ''}</span>
           </div>
@@ -202,6 +251,8 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
           ${favorite ? icons.heartFilled : icons.heart}
         </button>
       </div>
+
+      ${deckNav(cardIndex)}
 
       <div class="lyric-quote">
         <p lang="ja" id="lyric-sync-text">${lyricMarkup(lesson)}</p>
@@ -245,7 +296,7 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
         </article>
       </div>
 
-      <p class="lyric-source">LRCLIB 精準時間 · 原曲音訊 · MyMemory 繁中對照。</p>
+      <p class="lyric-source">左右滑動翻卡 · LRCLIB 同步時間 · 原曲音訊 · MyMemory 繁中對照。</p>
     </section>`;
 }
 
@@ -326,9 +377,58 @@ function updateLyricHighlight(
   }
 }
 
+interface PreviewFocusWindow {
+  start: number;
+  end: number;
+  duration: number;
+  focused: boolean;
+}
+
+function previewFocusWindow(
+  source: OriginalClipSource,
+  lesson: DailyLyricLesson,
+): PreviewFocusWindow {
+  const clipEnd = Math.max(1, source.previewSeconds);
+  const fullTrackStart = source.fullTrackStartSeconds;
+
+  if (
+    fullTrackStart !== undefined
+    && lesson.lineStartSeconds !== undefined
+    && lesson.lineEndSeconds !== undefined
+  ) {
+    const localLineStart = lesson.lineStartSeconds - fullTrackStart;
+    const localLineEnd = lesson.lineEndSeconds - fullTrackStart;
+
+    if (localLineEnd >= 0 && localLineStart <= clipEnd) {
+      const start = Math.max(0, localLineStart - 5);
+      const end = Math.min(
+        clipEnd,
+        Math.max(localLineEnd + 5, start + 6),
+      );
+      if (end > start + 1) {
+        return {
+          start,
+          end,
+          duration: end - start,
+          focused: true,
+        };
+      }
+    }
+  }
+
+  const end = Math.min(12, clipEnd);
+  return {
+    start: 0,
+    end,
+    duration: end,
+    focused: false,
+  };
+}
+
 function setPreviewState(
   root: HTMLElement,
   source: OriginalClipSource,
+  focus: PreviewFocusWindow,
   playing: boolean,
   elapsedSeconds = 0,
 ): void {
@@ -336,22 +436,32 @@ function setPreviewState(
   const status = root.querySelector<HTMLElement>('#lyric-original-status');
   if (!label || !status) return;
 
-  label.textContent = '原曲試聽';
-  setBasicPlaybackState(root, playing, elapsedSeconds / source.previewSeconds);
+  label.textContent = focus.focused ? '原曲片段' : '原曲試聽';
+  setBasicPlaybackState(root, playing, elapsedSeconds / focus.duration);
 
   if (playing) {
-    status.textContent = Math.max(0, Math.ceil(source.previewSeconds - elapsedSeconds)) + ' 秒 · 播放中';
+    const remaining = Math.max(0, Math.ceil(focus.duration - elapsedSeconds));
+    status.textContent = focus.focused
+      ? remaining + ' 秒 · 歌詞聚焦'
+      : remaining + ' 秒 · 播放中';
   } else {
-    status.textContent = source.previewSeconds + ' 秒 · 純音訊';
+    status.textContent = Math.ceil(focus.duration)
+      + (focus.focused ? ' 秒 · 前後各約 5 秒' : ' 秒 · 純音訊');
   }
 }
 
-function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): void {
+function playOriginalPreview(
+  root: HTMLElement,
+  source: OriginalClipSource,
+  lesson: DailyLyricLesson,
+): void {
   const status = root.querySelector<HTMLElement>('#lyric-original-status');
+  const focus = previewFocusWindow(source, lesson);
 
   if (activePreview && !activePreview.paused) {
     stopActivePreview();
-    setPreviewState(root, source, false);
+    resetLyricHighlight(root);
+    setPreviewState(root, source, focus, false);
     return;
   }
 
@@ -359,8 +469,6 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
   stopActivePreview();
   resetLyricHighlight(root);
 
-  // Keep a real media element attached to the document. This is more reliable
-  // than a detached Audio() object in iOS standalone PWAs.
   const audio = document.createElement('audio');
   audio.src = source.previewUrl;
   audio.preload = 'auto';
@@ -376,8 +484,19 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
 
   let finished = false;
   let startWatchdog: number | undefined = window.setTimeout(() => {
-    if (audio.currentTime < 0.05) finish(true);
+    if (audio.currentTime < Math.max(0.05, focus.start - 0.5)) finish(true);
   }, 5000);
+
+  const seekToFocus = (): void => {
+    if (focus.start <= 0) return;
+    try {
+      if (Math.abs(audio.currentTime - focus.start) > 0.35) {
+        audio.currentTime = focus.start;
+      }
+    } catch {
+      // Safari can reject an early seek until metadata is available.
+    }
+  };
 
   const finish = (failed = false): void => {
     if (finished) return;
@@ -397,22 +516,26 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
     if (activePreview === audio) activePreview = undefined;
 
     if (!root.isConnected) return;
-    setPreviewState(root, source, false);
+    resetLyricHighlight(root);
+    setPreviewState(root, source, focus, false);
     if (failed && status) {
       status.textContent = '音訊載入失敗 · 再按一次重試';
     }
   };
 
+  audio.addEventListener('loadedmetadata', seekToFocus, { once: true });
+  audio.addEventListener('canplay', seekToFocus, { once: true });
   audio.addEventListener('ended', () => finish(false), { once: true });
   audio.addEventListener('error', () => finish(true), { once: true });
   audio.addEventListener('playing', () => {
+    seekToFocus();
     if (startWatchdog !== undefined) {
       window.clearTimeout(startWatchdog);
       startWatchdog = undefined;
     }
   }, { once: true });
 
-  if (status) status.textContent = '正在載入音訊…';
+  if (status) status.textContent = focus.focused ? '正在定位這句…' : '正在載入音訊…';
 
   void audio.play().then(() => {
     if (!root.isConnected) {
@@ -420,7 +543,9 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
       return;
     }
 
-    setPreviewState(root, source, true, 0);
+    seekToFocus();
+    setPreviewState(root, source, focus, true, 0);
+
     activePreviewTimer = window.setInterval(() => {
       if (activePreview !== audio || !root.isConnected) {
         finish(false);
@@ -432,10 +557,27 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
         return;
       }
 
-      const elapsed = Math.min(audio.currentTime, source.previewSeconds);
-      setPreviewState(root, source, true, elapsed);
-      if (elapsed >= source.previewSeconds) finish(false);
-    }, 180);
+      if (audio.currentTime + 0.35 < focus.start) {
+        seekToFocus();
+        return;
+      }
+
+      const elapsed = Math.max(0, Math.min(
+        focus.duration,
+        audio.currentTime - focus.start,
+      ));
+      setPreviewState(root, source, focus, true, elapsed);
+
+      if (source.fullTrackStartSeconds !== undefined) {
+        updateLyricHighlight(
+          root,
+          lesson,
+          source.fullTrackStartSeconds + audio.currentTime,
+        );
+      }
+
+      if (audio.currentTime >= focus.end - 0.05) finish(false);
+    }, 90);
   }).catch(() => {
     finish(true);
   });
@@ -493,9 +635,9 @@ async function playPrecise(
     setBasicPlaybackState(root, false, 0);
 
     if (fallback) {
-      setPreviewState(root, fallback, false);
-      status.textContent = fallback.previewSeconds + ' 秒 · 試聽模式';
-      playOriginalPreview(root, fallback);
+      const focus = previewFocusWindow(fallback, lesson);
+      setPreviewState(root, fallback, focus, false);
+      playOriginalPreview(root, fallback, lesson);
     } else {
       status.textContent = 'Apple Music 授權後可精準播放';
     }
@@ -520,8 +662,9 @@ async function hydrateOriginalPlayback(root: HTMLElement, lesson: DailyLyricLess
   if (preview.state === 'ready') {
     fallback = preview.source;
     button.disabled = false;
-    setPreviewState(root, fallback, false);
-    button.onclick = () => playOriginalPreview(root, fallback!);
+    const focus = previewFocusWindow(fallback, lesson);
+    setPreviewState(root, fallback, focus, false);
+    button.onclick = () => playOriginalPreview(root, fallback!, lesson);
   } else {
     label.textContent = '原曲片段';
     status.textContent = '正在準備精準片段…';
@@ -545,8 +688,9 @@ async function hydrateOriginalPlayback(root: HTMLElement, lesson: DailyLyricLess
     // Keep the already-working preview enabled. Precise playback is an upgrade,
     // not a prerequisite.
     button.disabled = false;
-    setPreviewState(root, fallback, false);
-    button.onclick = () => playOriginalPreview(root, fallback!);
+    const focus = previewFocusWindow(fallback, lesson);
+    setPreviewState(root, fallback, focus, false);
+    button.onclick = () => playOriginalPreview(root, fallback!, lesson);
     return;
   }
 
@@ -576,7 +720,7 @@ function pageHtml(artists: FollowedArtist[], daily: string): string {
       <div>
         <p class="eyebrow">MUSIC → LANGUAGE</p>
         <h1>每日歌詞</h1>
-        <p>聽真正唱法，再把這一句記住。</p>
+        <p>左右翻一張，聽原曲，再把這一句記住。</p>
       </div>
       <div class="lyric-header-mark" aria-hidden="true">歌</div>
     </section>
@@ -585,56 +729,189 @@ function pageHtml(artists: FollowedArtist[], daily: string): string {
   `;
 }
 
+const deckPrefetches = new Map<string, Promise<void>>();
+
+async function prefetchDeckCard(
+  artists: FollowedArtist[],
+  dateKey: string,
+  cardIndex: number,
+): Promise<void> {
+  const index = normalizedDeckIndex(cardIndex);
+  const artist = pickDeckArtist(artists, dateKey, index);
+  if (!artist) return;
+
+  const key = cacheKey(dateKey, artist, index);
+  const cached = lyricsStore.cachedLesson(key);
+  if (cached?.timingResolved && cached.timingVersion === 2) return;
+  if (deckPrefetches.has(key)) return await deckPrefetches.get(key);
+
+  const promise = fetchDailyLyric(
+    artist,
+    dateKey,
+    deckSelectionSeed(dateKey, index),
+  ).then((lesson) => {
+    lyricsStore.cacheLesson(key, lesson);
+  }).catch(() => undefined).finally(() => {
+    deckPrefetches.delete(key);
+  });
+
+  deckPrefetches.set(key, promise);
+  await promise;
+}
+
+function bindDeckInteractions(
+  root: HTMLElement,
+  context: AppContext,
+  artists: FollowedArtist[],
+  dateKey: string,
+  cardIndex: number,
+): void {
+  const go = (nextIndex: number): void => {
+    stopAllPlayback();
+    const normalized = normalizedDeckIndex(nextIndex);
+    writeDeckIndex(dateKey, normalized);
+    void renderDeckCard(root, context, artists, dateKey, normalized);
+  };
+
+  root.querySelector<HTMLButtonElement>('#lyric-deck-prev')?.addEventListener('click', () => {
+    go(cardIndex - 1);
+  });
+  root.querySelector<HTMLButtonElement>('#lyric-deck-next')?.addEventListener('click', () => {
+    go(cardIndex + 1);
+  });
+
+  const card = root.querySelector<HTMLElement>('[data-lyric-card]');
+  if (!card) return;
+
+  let startX = 0;
+  let startY = 0;
+  card.addEventListener('touchstart', (event) => {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    startX = touch.clientX;
+    startY = touch.clientY;
+  }, { passive: true });
+
+  card.addEventListener('touchend', (event) => {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    if (Math.abs(dx) < 58 || Math.abs(dx) < Math.abs(dy) * 1.35) return;
+    go(dx < 0 ? cardIndex + 1 : cardIndex - 1);
+  }, { passive: true });
+}
+
 async function fetchAndRenderLesson(
   root: HTMLElement,
   context: AppContext,
   artists: FollowedArtist[],
   artist: FollowedArtist,
   dateKey: string,
+  cardIndex: number,
   key: string,
 ): Promise<void> {
-  root.innerHTML = pageHtml(artists, loadingDaily(artist));
+  root.innerHTML = pageHtml(artists, loadingDaily(artist, cardIndex));
   bindSharedInteractions(root);
 
   try {
-    const lesson = await fetchDailyLyric(artist, dateKey);
+    const lesson = await fetchDailyLyric(
+      artist,
+      dateKey,
+      deckSelectionSeed(dateKey, cardIndex),
+    );
     if (!root.isConnected) return;
+
     lyricsStore.cacheLesson(key, lesson);
-    root.innerHTML = pageHtml(lyricsStore.getState().artists, dailyLesson(context, lesson));
+    root.innerHTML = pageHtml(
+      lyricsStore.getState().artists,
+      dailyLesson(context, lesson, cardIndex),
+    );
     bindSharedInteractions(root);
     bindLessonInteractions(root, lesson);
+    bindDeckInteractions(root, context, lyricsStore.getState().artists, dateKey, cardIndex);
+    void prefetchDeckCard(lyricsStore.getState().artists, dateKey, cardIndex + 1);
   } catch (error) {
     if (!root.isConnected) return;
     const message = error instanceof Error ? error.message : '未知錯誤';
-    root.innerHTML = pageHtml(lyricsStore.getState().artists, errorDaily(artist, message));
+    root.innerHTML = pageHtml(
+      lyricsStore.getState().artists,
+      errorDaily(artist, message, cardIndex),
+    );
     bindSharedInteractions(root);
+    bindDeckInteractions(root, context, lyricsStore.getState().artists, dateKey, cardIndex);
     root.querySelector<HTMLButtonElement>('#lyric-retry')?.addEventListener('click', () => {
-      void fetchAndRenderLesson(root, context, lyricsStore.getState().artists, artist, dateKey, key);
+      void fetchAndRenderLesson(
+        root,
+        context,
+        lyricsStore.getState().artists,
+        artist,
+        dateKey,
+        cardIndex,
+        key,
+      );
     });
   }
+}
+
+async function renderDeckCard(
+  root: HTMLElement,
+  context: AppContext,
+  artists: FollowedArtist[],
+  dateKey: string,
+  requestedIndex: number,
+): Promise<void> {
+  stopAllPlayback();
+
+  const cardIndex = normalizedDeckIndex(requestedIndex);
+  writeDeckIndex(dateKey, cardIndex);
+  const artist = pickDeckArtist(artists, dateKey, cardIndex);
+
+  if (!artist) {
+    root.innerHTML = pageHtml(artists, emptyDaily());
+    bindSharedInteractions(root);
+    return;
+  }
+
+  const key = cacheKey(dateKey, artist, cardIndex);
+  const cached = lyricsStore.cachedLesson(key);
+
+  if (cached?.timingResolved && cached.timingVersion === 2) {
+    root.innerHTML = pageHtml(artists, dailyLesson(context, cached, cardIndex));
+    bindSharedInteractions(root);
+    bindLessonInteractions(root, cached);
+    bindDeckInteractions(root, context, artists, dateKey, cardIndex);
+    void prefetchDeckCard(artists, dateKey, cardIndex + 1);
+    return;
+  }
+
+  await fetchAndRenderLesson(
+    root,
+    context,
+    artists,
+    artist,
+    dateKey,
+    cardIndex,
+    key,
+  );
 }
 
 export async function renderLyrics(root: HTMLElement, context: AppContext): Promise<void> {
   stopAllPlayback();
   const state = lyricsStore.getState();
   const dateKey = localDateKey();
-  const artist = pickDailyArtist(state.artists, dateKey);
 
-  if (!artist) {
+  if (!state.artists.length) {
     root.innerHTML = pageHtml(state.artists, emptyDaily());
     bindSharedInteractions(root);
     return;
   }
 
-  const key = cacheKey(dateKey, artist);
-  const cached = lyricsStore.cachedLesson(key);
-
-  if (cached?.timingResolved && cached.timingVersion === 2) {
-    root.innerHTML = pageHtml(state.artists, dailyLesson(context, cached));
-    bindSharedInteractions(root);
-    bindLessonInteractions(root, cached);
-    return;
-  }
-
-  await fetchAndRenderLesson(root, context, state.artists, artist, dateKey, key);
+  await renderDeckCard(
+    root,
+    context,
+    state.artists,
+    dateKey,
+    readDeckIndex(dateKey),
+  );
 }
