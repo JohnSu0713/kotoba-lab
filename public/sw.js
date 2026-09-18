@@ -1,4 +1,4 @@
-const CACHE = 'kotoba-lab-v0.5.0';
+const CACHE = 'kotoba-lab-v0.6.0';
 const AUDIO_CACHE = 'kotoba-lab-audio-runtime-v1';
 const MANIFEST = './asset-manifest.json';
 
@@ -81,4 +81,11 @@ self.addEventListener('fetch', (event) => {
       return Response.error();
     }
   })());
+});
+
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    void self.skipWaiting();
+  }
 });
