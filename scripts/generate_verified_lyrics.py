@@ -361,6 +361,7 @@ def audio_matches(
                 "score": float(score),
                 "fullScore": float(full_score),
                 "coverage": float(coverage),
+                "exactInclusion": bool(exact_inclusion),
                 "common": int(common),
             }
             if best_for_line is None or (
@@ -470,6 +471,7 @@ def main() -> None:
                     "verificationScore": round(match["score"], 1),
                     "verificationFullScore": round(match["fullScore"], 1),
                     "verificationCoverage": round(match["coverage"], 3),
+                    "verificationExactInclusion": bool(match["exactInclusion"]),
                     "verificationCommonChars": int(match["common"]),
                     "verifiedTranscript": match["transcript"],
                 }
