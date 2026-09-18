@@ -142,20 +142,34 @@ export async function fetchDailyLyric(artist: FollowedArtist, dateKey: string): 
   const tracks = await searchArtistTracks(artist);
   if (!tracks.length) throw new Error('目前找不到 ' + artist.name + ' 的可用歌詞。');
 
-  const synchronizedTracks = tracks.filter((track) => !!track.syncedLyrics);
-  const pool = synchronizedTracks.length ? synchronizedTracks : tracks;
-  const track = pool[stableHash('track:' + dateKey + ':' + artist.id) % pool.length];
-  if (!track) throw new Error('Selected track is unavailable.');
+  const prepared = tracks
+    .map((track) => ({
+      track,
+      timed: track.syncedLyrics ? syncedLines(track.syncedLyrics, track.duration) : [],
+      plain: track.plainLyrics ? lyricLines(track.plainLyrics) : [],
+    }))
+    .filter(({ timed, plain }) => timed.length > 0 || plain.length > 0);
 
-  const timed = track.syncedLyrics ? syncedLines(track.syncedLyrics, track.duration) : [];
+  if (!prepared.length) {
+    throw new Error('目前找到的歌曲沒有適合學習的日文歌詞，請再試一次或加入其他歌手。');
+  }
+
+  // Prefer tracks whose synced lyrics already contain a usable Japanese line so
+  // original-song playback can start at the exact sentence. Fall back to plain
+  // Japanese lyrics only when no synchronized Japanese track is available.
+  const synchronized = prepared.filter(({ timed }) => timed.length > 0);
+  const pool = synchronized.length ? synchronized : prepared;
+  const selected = pool[stableHash('track:' + dateKey + ':' + artist.id) % pool.length];
+  if (!selected) throw new Error('目前找不到適合學習的日文歌詞。');
+
+  const { track, timed, plain } = selected;
   const timedLine = timed.length
     ? timed[stableHash('line:' + dateKey + ':' + track.id) % timed.length]
     : undefined;
-  const plain = track.plainLyrics ? lyricLines(track.plainLyrics) : [];
   const lineJa = timedLine?.text
-    ?? plain[stableHash('line:' + dateKey + ':' + track.id) % Math.max(1, plain.length)];
+    ?? plain[stableHash('line:' + dateKey + ':' + track.id) % plain.length];
 
-  if (!lineJa) throw new Error('No suitable Japanese lyric line was found.');
+  if (!lineJa) throw new Error('目前找不到適合學習的日文歌詞。');
   const lineZhTw = await translateToTraditionalChinese(lineJa);
 
   return {
