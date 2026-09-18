@@ -25,7 +25,7 @@ from typing import Iterable
 
 LEVELS = ("N5", "N4", "N3", "N2", "N1")
 DEFAULT_VOICE = "ja-JP-Chirp3-HD-Zephyr"
-DEFAULT_KANA_RATE = 0.62
+DEFAULT_KANA_RATE = 0.80
 DEFAULT_WORD_RATE = 0.92
 # Chirp 3 HD currently has a dedicated 200 requests/min/project quota. Keep a
 # conservative margin so parallel workers never burst through the minute bucket.
@@ -63,8 +63,11 @@ def load_kana_targets(source: Path, rate: float) -> list[Target]:
     targets: list[Target] = []
     for hira, kata in rows:
         canonical = normalize(hira)
-        targets.append(Target("kana", normalize(hira), canonical, rate))
-        targets.append(Target("kana", normalize(kata), canonical, rate))
+        # A sentence boundary prevents Chirp from clipping isolated morae such as
+        # い / き / し / ち. The manifest key remains the raw kana.
+        spoken = canonical + "。"
+        targets.append(Target("kana", normalize(hira), spoken, rate))
+        targets.append(Target("kana", normalize(kata), spoken, rate))
     return targets
 
 
