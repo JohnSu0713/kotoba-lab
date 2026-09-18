@@ -47,6 +47,17 @@ SPECIAL = {
     "づ": "Japanese du.ogg",
 }
 
+MIRROR_REPO = "ramified/ramified.github.io"
+MIRROR_COMMIT = "8a959d7a2a0f61283a76e6db4f9cc0222295ea66"
+MIRROR_DIR = "web/database/assets/ramified_minigames/japanese_pronunciation"
+MIRROR_IDS = {
+    "ち": "chi",
+    "ふ": "fu",
+    "じ": "ji",
+    "ぢ": "dji",
+    "づ": "dzu",
+}
+
 
 def commons_url(filename: str) -> str:
     canonical = filename.replace(" ", "_")
@@ -62,8 +73,23 @@ def source_filename(hira: str, romaji: str) -> str:
     return SPECIAL.get(hira, f"Japanese {romaji}.ogg")
 
 
-def asset_name(filename: str) -> str:
-    identity = f"commons-pd\0{filename}\0trim-v1"
+def mirror_id(hira: str, romaji: str) -> str:
+    return MIRROR_IDS.get(hira, romaji)
+
+
+def mirror_url(hira: str, romaji: str) -> str:
+    media_id = mirror_id(hira, romaji)
+    return (
+        "https://raw.githubusercontent.com/"
+        f"{MIRROR_REPO}/{MIRROR_COMMIT}/{MIRROR_DIR}/{media_id}.mp3"
+    )
+
+
+def asset_name(filename: str, hira: str, romaji: str) -> str:
+    identity = (
+        f"commons-pd-mirror\0{MIRROR_REPO}\0{MIRROR_COMMIT}\0"
+        f"{mirror_id(hira, romaji)}.mp3\0{filename}"
+    )
     return hashlib.sha256(identity.encode()).hexdigest()[:24] + ".mp3"
 
 
@@ -101,8 +127,8 @@ def master(src: Path, dst: Path) -> None:
 
 def download_one(hira: str, romaji: str, output: Path) -> None:
     filename = source_filename(hira, romaji)
-    url = commons_url(filename)
-    destination = output / asset_name(filename)
+    url = mirror_url(hira, romaji)
+    destination = output / asset_name(filename, hira, romaji)
     if destination.exists() and destination.stat().st_size > 500:
         print(f"{hira}: cached {destination.name}")
         return
@@ -119,44 +145,27 @@ def download_one(hira: str, romaji: str, output: Path) -> None:
         },
     )
 
-    with tempfile.TemporaryDirectory() as td:
-        raw = Path(td) / filename.replace(" ", "_")
-        last_error: Exception | None = None
-        for attempt in range(5):
-            try:
-                with urllib.request.urlopen(request, timeout=35) as response:
-                    raw.write_bytes(response.read())
-                last_error = None
+    last_error: Exception | None = None
+    for attempt in range(5):
+        try:
+            with urllib.request.urlopen(request, timeout=35) as response:
+                data = response.read()
+            if len(data) < 1000:
+                raise RuntimeError(f"{hira}: mirrored MP3 is suspiciously small")
+            destination.write_bytes(data)
+            last_error = None
+            break
+        except Exception as exc:
+            last_error = exc
+            if attempt == 4:
                 break
-            except urllib.error.HTTPError as exc:
-                last_error = exc
-                if exc.code != 429 or attempt == 4:
-                    break
-                retry_after = exc.headers.get("Retry-After")
-                # Each shard makes <10 requests from its own hosted runner. A
-                # short retry is enough for transient edge throttling; never
-                # sleep for Wikimedia's 10-minute global backoff in CI.
-                wait = (
-                    min(float(retry_after), 25)
-                    if retry_after and retry_after.isdigit()
-                    else min(4 * (attempt + 1), 20)
-                )
-                print(f"{hira}: 429; retrying in {wait:.0f}s")
-                time.sleep(wait)
-            except Exception as exc:
-                last_error = exc
-                if attempt == 4:
-                    break
-                time.sleep(min(3 * (attempt + 1), 15))
-        if last_error is not None:
-            raise RuntimeError(
-                f"{hira}: failed {filename} {url}: {last_error}"
-            ) from last_error
+            time.sleep(min(2 * (attempt + 1), 8))
+    if last_error is not None:
+        raise RuntimeError(
+            f"{hira}: failed mirrored asset {url}: {last_error}"
+        ) from last_error
 
-        if raw.stat().st_size < 1000:
-            raise RuntimeError(f"{hira}: downloaded source is suspiciously small")
-        master(raw, destination)
-        print(f"{hira}: vendored {destination.name}")
+    print(f"{hira}: vendored {destination.name}")
 
 
 def rows_from_source(path: Path) -> list[tuple[str, str, str, str]]:
@@ -216,7 +225,7 @@ def main() -> None:
     missing: list[str] = []
     for hira, kata, romaji, _ in human_rows:
         filename = source_filename(hira, romaji)
-        name = asset_name(filename)
+        name = asset_name(filename, hira, romaji)
         source = args.vendor_dir / name
         if not source.exists():
             missing.append(f"{hira}:{name}")
@@ -230,6 +239,9 @@ def main() -> None:
         sources[hira] = {
             "filename": filename,
             "url": commons_url(filename),
+            "mirrorUrl": mirror_url(hira, romaji),
+            "mirrorRepo": MIRROR_REPO,
+            "mirrorCommit": MIRROR_COMMIT,
             "license": "Public domain",
             "author": "Hakatanoshio117117",
         }
@@ -242,7 +254,9 @@ def main() -> None:
 
     manifest["kanaHumanAudio"] = {
         "count": imported,
-        "source": "Wikimedia Commons",
+        "source": "Wikimedia Commons via audited GitHub mirror",
+        "mirrorRepo": MIRROR_REPO,
+        "mirrorCommit": MIRROR_COMMIT,
         "license": "Public domain",
         "author": "Hakatanoshio117117",
         "items": sources,
