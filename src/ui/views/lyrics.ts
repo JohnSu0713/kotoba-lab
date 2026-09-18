@@ -775,7 +775,7 @@ function existingLessonIdsForDate(dateKey: string): Set<string> {
     Object.entries(state.cachedLessons)
       .filter(([key, lesson]) =>
         key.startsWith(dateKey + ':verified-card:')
-        && lesson.timingVersion === 3,
+        && lesson.timingVersion === 4,
       )
       .map(([, lesson]) => lesson.id),
   );
@@ -833,7 +833,7 @@ async function prefetchDeckCard(
   const index = normalizedDeckIndex(cardIndex);
   const key = deckSlotKey(dateKey, index);
   const cached = lyricsStore.cachedLesson(key);
-  if (cached?.timingResolved && cached.timingVersion === 3) return;
+  if (cached?.timingResolved && cached.timingVersion === 4) return;
   if (deckPrefetches.has(key)) return await deckPrefetches.get(key);
 
   const promise = resolveVerifiedDeckLesson(artists, dateKey, index)
@@ -895,7 +895,7 @@ function bindDeckInteractions(
 async function cachedLessonIsVerified(
   lesson: DailyLyricLesson,
 ): Promise<boolean> {
-  if (!lesson.timingResolved || lesson.timingVersion !== 3) return false;
+  if (!lesson.timingResolved || lesson.timingVersion !== 4) return false;
   const preview = await resolveOriginalClip(lesson);
   if (preview.state !== 'ready') return false;
   if (!sourceContainsLesson(preview.source, lesson)) return false;
