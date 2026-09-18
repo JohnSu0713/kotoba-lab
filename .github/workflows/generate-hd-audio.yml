@@ -80,6 +80,9 @@ jobs:
             --scope "$scope"
             --workers 4
           )
+          if [[ "$scope" == "all" || "$scope" == "kana" ]]; then
+            args+=(--kana-subset yoon)
+          fi
           if [[ '${{ inputs.force }}' == 'true' ]]; then args+=(--force); fi
           python scripts/generate_hd_audio.py "${args[@]}"
           if [[ "$scope" == "all" || "$scope" == "kana" ]]; then
