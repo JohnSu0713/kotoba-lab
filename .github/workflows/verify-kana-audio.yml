@@ -1,0 +1,39 @@
+name: Verify every kana audio asset
+
+on:
+  push:
+    branches: [fix-audited-kana-lyrics]
+    paths:
+      - scripts/generate_hd_audio.py
+      - scripts/audit_kana_audio.py
+      - src/features/kana/data.ts
+      - .github/workflows/verify-kana-audio.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_TTS_CREDENTIALS_JSON }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install TTS client
+        run: python -m pip install --disable-pip-version-check google-cloud-texttospeech
+      - name: Generate all kana from scratch
+        env:
+          GCP_TTS_VOICE: ja-JP-Chirp3-HD-Zephyr
+          KOTOBA_KANA_RATE: '0.80'
+          KOTOBA_TTS_MIN_REQUEST_INTERVAL: '1.25'
+        run: |
+          rm -rf /tmp/kana-audit
+          python scripts/generate_hd_audio.py             --kana-source src/features/kana/data.ts             --output /tmp/kana-audit             --scope kana             --workers 4             --force
+      - name: Audit all 208 aliases / 104 unique audio files
+        run: |
+          python scripts/audit_kana_audio.py             --kana-source src/features/kana/data.ts             --audio-dir /tmp/kana-audit
