@@ -34,7 +34,6 @@ export type OriginalClipResolution =
   | { state: 'ready'; source: OriginalClipSource }
   | { state: 'not-found' | 'error' };
 
-const CACHE_PREFIX = 'kotoba-lab:audio-preview:v3:';
 const STOREFRONTS = ['US', 'JP', 'TW'] as const;
 
 const ARTIST_ALIASES: Record<string, string> = {
@@ -173,27 +172,6 @@ function scoreDeezerResult(item: DeezerTrack, lesson: DailyLyricLesson): number 
   return score;
 }
 
-function cachedSource(key: string): OriginalClipSource | undefined {
-  try {
-    const raw = localStorage.getItem(CACHE_PREFIX + key);
-    if (!raw) return undefined;
-    const parsed = JSON.parse(raw) as OriginalClipSource;
-    if (!parsed.previewUrl) return undefined;
-    if (parsed.provider !== 'apple-preview' && parsed.provider !== 'deezer-preview') return undefined;
-    return parsed;
-  } catch {
-    return undefined;
-  }
-}
-
-function cacheSource(key: string, source: OriginalClipSource): void {
-  try {
-    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(source));
-  } catch {
-    // Preview lookup is an enhancement; storage failure must not break Lyrics.
-  }
-}
-
 function appleSearchUrl(lesson: DailyLyricLesson, country: string): URL {
   const url = new URL('https://itunes.apple.com/search');
   url.searchParams.set('term', lesson.artistName + ' ' + lesson.trackName);
@@ -262,14 +240,20 @@ async function searchApple(lesson: DailyLyricLesson): Promise<AppleTrack | undef
       } catch {
         response = await appleJsonp(lesson, country);
       }
-      merged.push(...(response.results ?? []));
+
+      const playable = (response.results ?? [])
+        .filter((item) => !!item.previewUrl)
+        .sort((a, b) => scoreAppleResult(b, lesson) - scoreAppleResult(a, lesson));
+      if (playable[0] && scoreAppleResult(playable[0], lesson) >= 18) {
+        return playable[0];
+      }
+      merged.push(...playable);
     } catch {
       // Continue to the next storefront.
     }
   }
 
   return merged
-    .filter((item) => !!item.previewUrl)
     .sort((a, b) => scoreAppleResult(b, lesson) - scoreAppleResult(a, lesson))[0];
 }
 
@@ -340,42 +324,40 @@ async function searchDeezer(lesson: DailyLyricLesson): Promise<DeezerTrack | und
 }
 
 export async function resolveOriginalClip(lesson: DailyLyricLesson): Promise<OriginalClipResolution> {
-  const key = normalize(lesson.artistName + ':' + lesson.trackName);
-  const cached = cachedSource(key);
-  if (cached) return { state: 'ready', source: cached };
-
   try {
-    // Deezer exposes a direct MP3 preview and supports JSONP, making it the
-    // most reliable option inside an iOS standalone PWA. Apple remains the
-    // secondary catalog fallback.
-    const deezer = await searchDeezer(lesson);
-    if (deezer?.preview) {
-      const source: OriginalClipSource = {
-        provider: 'deezer-preview',
-        previewUrl: deezer.preview,
-        title: deezer.title_short ?? deezer.title ?? lesson.trackName,
-        artistName: deezer.artist?.name ?? lesson.artistName,
-        ...(deezer.album?.title ? { albumName: deezer.album.title } : {}),
-        ...(deezer.album?.cover_medium ? { artworkUrl: deezer.album.cover_medium } : {}),
-        previewSeconds: 20,
-      };
-      cacheSource(key, source);
-      return { state: 'ready', source };
-    }
-
+    // Preview URLs are intentionally resolved fresh. Both Apple and Deezer can
+    // rotate/expire media URLs, so persisting the URL in localStorage can leave
+    // iOS with a clickable button that points at dead audio.
     const apple = await searchApple(lesson);
     if (apple?.previewUrl) {
-      const source: OriginalClipSource = {
-        provider: 'apple-preview',
-        previewUrl: apple.previewUrl,
-        title: apple.trackName ?? lesson.trackName,
-        artistName: apple.artistName ?? lesson.artistName,
-        ...(apple.collectionName ? { albumName: apple.collectionName } : {}),
-        ...(apple.artworkUrl100 ? { artworkUrl: apple.artworkUrl100.replace('100x100bb', '300x300bb') } : {}),
-        previewSeconds: 20,
+      return {
+        state: 'ready',
+        source: {
+          provider: 'apple-preview',
+          previewUrl: apple.previewUrl,
+          title: apple.trackName ?? lesson.trackName,
+          artistName: apple.artistName ?? lesson.artistName,
+          ...(apple.collectionName ? { albumName: apple.collectionName } : {}),
+          ...(apple.artworkUrl100 ? { artworkUrl: apple.artworkUrl100.replace('100x100bb', '300x300bb') } : {}),
+          previewSeconds: 20,
+        },
       };
-      cacheSource(key, source);
-      return { state: 'ready', source };
+    }
+
+    const deezer = await searchDeezer(lesson);
+    if (deezer?.preview) {
+      return {
+        state: 'ready',
+        source: {
+          provider: 'deezer-preview',
+          previewUrl: deezer.preview,
+          title: deezer.title_short ?? deezer.title ?? lesson.trackName,
+          artistName: deezer.artist?.name ?? lesson.artistName,
+          ...(deezer.album?.title ? { albumName: deezer.album.title } : {}),
+          ...(deezer.album?.cover_medium ? { artworkUrl: deezer.album.cover_medium } : {}),
+          previewSeconds: 20,
+        },
+      };
     }
 
     return { state: 'not-found' };
