@@ -66,5 +66,7 @@ jobs:
             echo "Catalog unchanged"
           else
             git commit -m "lyrics: refresh audio-verified catalog"
+            git fetch origin ${{ github.ref_name }}
+            git rebase origin/${{ github.ref_name }}
             git push origin HEAD:${{ github.ref_name }}
           fi
