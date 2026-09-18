@@ -345,21 +345,9 @@ export async function resolveOriginalClip(lesson: DailyLyricLesson): Promise<Ori
   if (cached) return { state: 'ready', source: cached };
 
   try {
-    const apple = await searchApple(lesson);
-    if (apple?.previewUrl) {
-      const source: OriginalClipSource = {
-        provider: 'apple-preview',
-        previewUrl: apple.previewUrl,
-        title: apple.trackName ?? lesson.trackName,
-        artistName: apple.artistName ?? lesson.artistName,
-        ...(apple.collectionName ? { albumName: apple.collectionName } : {}),
-        ...(apple.artworkUrl100 ? { artworkUrl: apple.artworkUrl100.replace('100x100bb', '300x300bb') } : {}),
-        previewSeconds: 20,
-      };
-      cacheSource(key, source);
-      return { state: 'ready', source };
-    }
-
+    // Deezer exposes a direct MP3 preview and supports JSONP, making it the
+    // most reliable option inside an iOS standalone PWA. Apple remains the
+    // secondary catalog fallback.
     const deezer = await searchDeezer(lesson);
     if (deezer?.preview) {
       const source: OriginalClipSource = {
@@ -369,6 +357,21 @@ export async function resolveOriginalClip(lesson: DailyLyricLesson): Promise<Ori
         artistName: deezer.artist?.name ?? lesson.artistName,
         ...(deezer.album?.title ? { albumName: deezer.album.title } : {}),
         ...(deezer.album?.cover_medium ? { artworkUrl: deezer.album.cover_medium } : {}),
+        previewSeconds: 20,
+      };
+      cacheSource(key, source);
+      return { state: 'ready', source };
+    }
+
+    const apple = await searchApple(lesson);
+    if (apple?.previewUrl) {
+      const source: OriginalClipSource = {
+        provider: 'apple-preview',
+        previewUrl: apple.previewUrl,
+        title: apple.trackName ?? lesson.trackName,
+        artistName: apple.artistName ?? lesson.artistName,
+        ...(apple.collectionName ? { albumName: apple.collectionName } : {}),
+        ...(apple.artworkUrl100 ? { artworkUrl: apple.artworkUrl100.replace('100x100bb', '300x300bb') } : {}),
         previewSeconds: 20,
       };
       cacheSource(key, source);
