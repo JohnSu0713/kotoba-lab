@@ -32,7 +32,8 @@ jobs:
       - name: Generate all kana from scratch
         env:
           GCP_TTS_VOICE: ja-JP-Chirp3-HD-Zephyr
-          KOTOBA_KANA_RATE: '0.80'
+          GCP_KANA_VOICE: ja-JP-Neural2-B
+          KOTOBA_KANA_RATE: '0.90'
           KOTOBA_TTS_MIN_REQUEST_INTERVAL: '1.25'
         run: |
           rm -rf /tmp/kana-audit
