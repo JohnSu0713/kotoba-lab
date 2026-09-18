@@ -168,6 +168,7 @@ export async function fetchDailyLyric(artist: FollowedArtist, dateKey: string): 
     ...(track.albumName ? { albumName: track.albumName } : {}),
     lineJa,
     lineZhTw,
+    timingResolved: true,
     ...(timedLine ? {
       lineStartSeconds: timedLine.startSeconds,
       lineEndSeconds: timedLine.endSeconds,
