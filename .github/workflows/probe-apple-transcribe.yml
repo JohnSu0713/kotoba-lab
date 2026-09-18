@@ -35,8 +35,8 @@ jobs:
           rows = [
               row for row in data.get('results', [])
               if row.get('previewUrl')
-              and 'fujii' in row.get('artistName','').lower()
-              and 'matsuri' in row.get('trackName','').lower()
+              and row.get('artistId') == 1486113150
+              and row.get('trackName') == 'まつり'
           ]
           if not rows:
               print(json.dumps(data, ensure_ascii=False)[:6000])
