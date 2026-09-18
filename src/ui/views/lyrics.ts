@@ -2,6 +2,7 @@ import type { AppContext } from '../../app/context.js';
 import type { VocabularyItem } from '../../domain/models.js';
 import {
   fetchDailyLyric,
+  finalizeDailyLyricTranslation,
   localDateKey,
   pickDeckArtist,
 } from '../../features/lyrics/provider.js';
@@ -781,6 +782,12 @@ function existingLessonIdsForDate(dateKey: string): Set<string> {
   );
 }
 
+function timeoutResult<T>(value: T, ms: number): Promise<T> {
+  return new Promise((resolve) => {
+    window.setTimeout(() => resolve(value), ms);
+  });
+}
+
 async function resolveVerifiedDeckLesson(
   artists: FollowedArtist[],
   dateKey: string,
@@ -788,12 +795,13 @@ async function resolveVerifiedDeckLesson(
 ): Promise<DailyLyricLesson> {
   const used = existingLessonIdsForDate(dateKey);
   const orderedArtists = artistOrderForCard(artists, dateKey, cardIndex);
+  const deadline = performance.now() + 7200;
   let lastError: unknown;
   let tried = 0;
 
   for (const artist of orderedArtists) {
-    for (let attempt = 0; attempt < 4; attempt += 1) {
-      if (tried >= 16) break;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      if (tried >= 6 || performance.now() >= deadline) break;
       tried += 1;
 
       try {
@@ -803,26 +811,32 @@ async function resolveVerifiedDeckLesson(
           deckSelectionSeed(dateKey, cardIndex)
             + ':artist:' + artist.id
             + ':verified:' + attempt,
+          { translate: false },
         );
 
         if (used.has(lesson.id)) continue;
 
-        const preview = await resolveOriginalClip(lesson);
+        const preview = await Promise.race([
+          resolveOriginalClip(lesson),
+          timeoutResult({ state: 'not-found' as const }, 2600),
+        ]);
+
         if (
           preview.state === 'ready'
           && sourceContainsLesson(preview.source, lesson)
         ) {
           verifiedPreviewSources.set(lesson.id, preview.source);
-          return lesson;
+          return await finalizeDailyLyricTranslation(lesson);
         }
       } catch (error) {
         lastError = error;
       }
     }
+    if (performance.now() >= deadline || tried >= 6) break;
   }
 
   if (lastError instanceof Error) throw lastError;
-  throw new Error('目前追蹤的歌手暫時找不到可完整驗證的原曲歌詞卡。');
+  throw new Error('目前找不到可驗證的前 30 秒原曲歌詞卡，請翻下一張。');
 }
 
 async function prefetchDeckCard(
