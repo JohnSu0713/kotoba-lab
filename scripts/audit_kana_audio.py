@@ -79,7 +79,11 @@ def main() -> None:
 
     for hira, kata in rows:
         canonical = normalize(hira)
-        spoken = canonical + "。"
+        spoken = (
+            '<speak><break time="80ms"/>'
+            f'<phoneme alphabet="yomigana" ph="{canonical}">{canonical}</phoneme>'
+            '<break time="120ms"/></speak>'
+        )
         filename = expected_asset_name(voice, rate, spoken)
         for key in (normalize(hira), normalize(kata)):
             expected_aliases[key] = filename
