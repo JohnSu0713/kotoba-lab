@@ -61,7 +61,7 @@ jobs:
       - name: Generate Chirp 3 HD assets
         env:
           GCP_TTS_VOICE: ja-JP-Chirp3-HD-Zephyr
-          KOTOBA_KANA_RATE: '0.35'
+          KOTOBA_KANA_RATE: '0.62'
           KOTOBA_WORD_RATE: '0.92'
           # Actual project quota is lower than the nominal Chirp quota. Stay well
           # below it and make the full generation resumable across runs.
