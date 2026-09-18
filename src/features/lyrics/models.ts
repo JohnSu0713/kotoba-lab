@@ -16,18 +16,19 @@ export interface DailyLyricLesson {
   artistId: string;
   artistName: string;
   trackId: number;
+  appleTrackId?: number;
   trackName: string;
   albumName?: string;
   trackDurationSeconds?: number;
   lineJa: string;
   lineZhTw: string;
   timingResolved?: boolean;
-  timingVersion?: 4;
+  timingVersion?: 4 | 5;
   lineStartSeconds?: number;
   lineEndSeconds?: number;
   words?: LyricWordTiming[];
   fetchedAt: string;
-  source: 'lrclib+mymemory';
+  source: 'lrclib+mymemory' | 'verified-preview';
 }
 
 export interface OriginalClipSource {
