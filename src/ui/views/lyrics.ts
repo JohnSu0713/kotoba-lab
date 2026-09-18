@@ -635,9 +635,9 @@ async function playPrecise(
     setBasicPlaybackState(root, false, 0);
 
     if (fallback) {
-      setPreviewState(root, fallback, false);
-      status.textContent = fallback.previewSeconds + ' 秒 · 試聽模式';
-      playOriginalPreview(root, fallback);
+      const focus = previewFocusWindow(fallback, lesson);
+      setPreviewState(root, fallback, focus, false);
+      playOriginalPreview(root, fallback, lesson);
     } else {
       status.textContent = 'Apple Music 授權後可精準播放';
     }
@@ -662,8 +662,9 @@ async function hydrateOriginalPlayback(root: HTMLElement, lesson: DailyLyricLess
   if (preview.state === 'ready') {
     fallback = preview.source;
     button.disabled = false;
-    setPreviewState(root, fallback, false);
-    button.onclick = () => playOriginalPreview(root, fallback!);
+    const focus = previewFocusWindow(fallback, lesson);
+    setPreviewState(root, fallback, focus, false);
+    button.onclick = () => playOriginalPreview(root, fallback!, lesson);
   } else {
     label.textContent = '原曲片段';
     status.textContent = '正在準備精準片段…';
@@ -687,8 +688,9 @@ async function hydrateOriginalPlayback(root: HTMLElement, lesson: DailyLyricLess
     // Keep the already-working preview enabled. Precise playback is an upgrade,
     // not a prerequisite.
     button.disabled = false;
-    setPreviewState(root, fallback, false);
-    button.onclick = () => playOriginalPreview(root, fallback!);
+    const focus = previewFocusWindow(fallback, lesson);
+    setPreviewState(root, fallback, focus, false);
+    button.onclick = () => playOriginalPreview(root, fallback!, lesson);
     return;
   }
 
