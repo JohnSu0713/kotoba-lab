@@ -173,28 +173,46 @@ function emptyDaily(): string {
     </section>`;
 }
 
-function loadingDaily(artist: FollowedArtist): string {
+function deckNav(cardIndex: number): string {
+  const index = normalizedDeckIndex(cardIndex);
+  const dots = Array.from({ length: LYRIC_DECK_SIZE }, (_, dotIndex) =>
+    '<span class="lyric-deck-dot ' + (dotIndex === index ? 'active' : '') + '" aria-hidden="true"></span>',
+  ).join('');
+
   return `
-    <section class="lyric-daily-card lyric-loading-card">
+    <div class="lyric-deck-nav" aria-label="每日歌詞卡片">
+      <button id="lyric-deck-prev" type="button" aria-label="上一張歌詞卡">${icons.arrow}</button>
+      <div class="lyric-deck-position">
+        <div class="lyric-deck-dots">${dots}</div>
+        <span>${index + 1} / ${LYRIC_DECK_SIZE}</span>
+      </div>
+      <button id="lyric-deck-next" type="button" aria-label="下一張歌詞卡">${icons.arrow}</button>
+    </div>`;
+}
+
+function loadingDaily(artist: FollowedArtist, cardIndex: number): string {
+  return `
+    <section class="lyric-daily-card lyric-loading-card" data-lyric-card>
       <div class="lyric-record is-spinning" aria-hidden="true"><span>♪</span></div>
       <div>
-        <p class="eyebrow">TODAY · ${escapeHtml(artist.name)}</p>
-        <h2>正在替你挑今天的一句…</h2>
-        <p>優先使用精準同步歌詞，讓原曲播放與文字 highlight 對得上。</p>
+        <p class="eyebrow">CARD ${normalizedDeckIndex(cardIndex) + 1} · ${escapeHtml(artist.name)}</p>
+        <h2>正在替你挑這張歌詞卡…</h2>
+        <p>優先挑能落在原曲試聽範圍裡的同步歌詞，讓播放更快進到這一句。</p>
       </div>
     </section>`;
 }
 
-function errorDaily(artist: FollowedArtist, message: string): string {
+function errorDaily(artist: FollowedArtist, message: string, cardIndex: number): string {
   return `
-    <section class="lyric-daily-card lyric-error-card">
+    <section class="lyric-daily-card lyric-error-card" data-lyric-card>
       <div class="lyric-record" aria-hidden="true"><span>?</span></div>
       <div>
-        <p class="eyebrow">TODAY · ${escapeHtml(artist.name)}</p>
-        <h2>今天這位歌手暫時沒有抓到可用句子。</h2>
+        <p class="eyebrow">CARD ${normalizedDeckIndex(cardIndex) + 1} · ${escapeHtml(artist.name)}</p>
+        <h2>這張卡暫時沒有抓到可用句子。</h2>
         <p>${escapeHtml(message)}</p>
         <button class="secondary-button" id="lyric-retry" type="button">再試一次</button>
       </div>
+      ${deckNav(cardIndex)}
     </section>`;
 }
 
@@ -209,18 +227,22 @@ function lyricMarkup(lesson: DailyLyricLesson): string {
   return '<span class="lyric-sync-line" id="lyric-sync-line">' + escapeHtml(lesson.lineJa) + '</span>';
 }
 
-function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
+function dailyLesson(
+  context: AppContext,
+  lesson: DailyLyricLesson,
+  cardIndex: number,
+): string {
   const vocab = lessonVocabulary(context, lesson.lineJa);
   const grammar = grammarHint(lesson.lineJa);
   const favorite = lyricsStore.isFavorite(lesson.id);
 
   return `
-    <section class="lyric-daily-card">
+    <section class="lyric-daily-card" data-lyric-card>
       <div class="lyric-card-top">
         <div class="lyric-song-meta">
           <div class="lyric-record" aria-hidden="true"><span>♪</span></div>
           <div>
-            <p class="eyebrow">TODAY'S LYRIC</p>
+            <p class="eyebrow">LYRIC CARD · ${normalizedDeckIndex(cardIndex) + 1}</p>
             <strong>${escapeHtml(lesson.trackName)}</strong>
             <span>${escapeHtml(lesson.artistName)}${lesson.albumName ? ' · ' + escapeHtml(lesson.albumName) : ''}</span>
           </div>
@@ -229,6 +251,8 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
           ${favorite ? icons.heartFilled : icons.heart}
         </button>
       </div>
+
+      ${deckNav(cardIndex)}
 
       <div class="lyric-quote">
         <p lang="ja" id="lyric-sync-text">${lyricMarkup(lesson)}</p>
@@ -272,7 +296,7 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
         </article>
       </div>
 
-      <p class="lyric-source">LRCLIB 精準時間 · 原曲音訊 · MyMemory 繁中對照。</p>
+      <p class="lyric-source">左右滑動翻卡 · LRCLIB 同步時間 · 原曲音訊 · MyMemory 繁中對照。</p>
     </section>`;
 }
 
