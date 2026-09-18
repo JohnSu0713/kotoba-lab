@@ -170,7 +170,15 @@ function strongTitleMatch(value: string, lesson: DailyLyricLesson): boolean {
 
 function durationMatches(actual?: number, expected?: number): boolean {
   if (!actual || !expected) return true;
-  return Math.abs(actual - expected) <= 8;
+  return Math.abs(actual - expected) <= 3;
+}
+
+function albumMatches(actual?: string, expected?: string): boolean {
+  if (!actual || !expected) return true;
+  const a = normalize(actual);
+  const e = normalize(expected);
+  if (!a || !e) return true;
+  return a === e || a.includes(e) || e.includes(a);
 }
 
 function verifiedDeezerMatch(item: DeezerTrack, lesson: DailyLyricLesson): boolean {
@@ -178,6 +186,7 @@ function verifiedDeezerMatch(item: DeezerTrack, lesson: DailyLyricLesson): boole
   if (!strongArtistMatch(item.artist?.name ?? '', lesson)) return false;
   if (!strongTitleMatch(item.title_short ?? item.title ?? '', lesson)) return false;
   if (!durationMatches(item.duration, lesson.trackDurationSeconds)) return false;
+  if (!albumMatches(item.album?.title, lesson.albumName)) return false;
   const noisy = (item.title ?? '') + ' ' + (item.album?.title ?? '');
   return !/\blive\b|remix|instrumental|karaoke|cover|tribute/i.test(noisy);
 }
