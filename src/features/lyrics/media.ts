@@ -226,10 +226,9 @@ function scoreAppleResult(item: AppleTrack, lesson: DailyLyricLesson): number {
   return score;
 }
 
-function deezerPreviewStart(trackDuration?: number): number | undefined {
-  if (!trackDuration || trackDuration <= 0) return undefined;
-  if (trackDuration > 60) return 30;
-  if (trackDuration > 30) return Math.max(0, trackDuration - 30);
+function deezerPreviewStart(): number {
+  // Deezer's preview file is a 30-second excerpt beginning at the track start.
+  // Do not infer a 30s offset from the full track duration.
   return 0;
 }
 
@@ -352,7 +351,7 @@ async function deezerJsonp(query: string): Promise<DeezerSearchResponse> {
     const timeout = window.setTimeout(() => {
       cleanup();
       reject(new Error('Deezer preview lookup timed out.'));
-    }, 5000);
+    }, 1800);
 
     const cleanup = (): void => {
       window.clearTimeout(timeout);
@@ -383,7 +382,7 @@ async function deezerJsonp(query: string): Promise<DeezerSearchResponse> {
 async function searchDeezer(lesson: DailyLyricLesson): Promise<DeezerTrack | undefined> {
   const merged: DeezerTrack[] = [];
 
-  for (const query of deezerQueries(lesson)) {
+  for (const query of deezerQueries(lesson).slice(0, 3)) {
     try {
       const response = await deezerJsonp(query);
       merged.push(...(response.data ?? []));
@@ -406,8 +405,7 @@ export async function resolveOriginalClip(lesson: DailyLyricLesson): Promise<Ori
     const deezer = await searchDeezer(lesson);
     if (!deezer?.preview) return { state: 'not-found' };
 
-    const fullTrackStartSeconds = deezerPreviewStart(deezer.duration ?? lesson.trackDurationSeconds);
-    if (fullTrackStartSeconds === undefined) return { state: 'not-found' };
+    const fullTrackStartSeconds = deezerPreviewStart();
 
     return {
       state: 'ready',
