@@ -29,24 +29,6 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Configure runtime integrations
-        env:
-          YOUTUBE_DATA_API_KEY: ${{ secrets.YOUTUBE_DATA_API_KEY }}
-        run: |
-          python - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          config = {
-              "youtubeDataApiKey": os.environ.get("YOUTUBE_DATA_API_KEY", "").strip(),
-          }
-          Path("public/runtime-config.json").write_text(
-              json.dumps(config, ensure_ascii=False, separators=(",", ":")) + "\n",
-              encoding="utf-8",
-          )
-          PY
-
       - name: Build
         run: npm run build
 

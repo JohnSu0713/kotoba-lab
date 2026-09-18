@@ -520,64 +520,36 @@
   font-weight: 700;
 }
 
-.lyric-player-shell {
-  max-width: 620px;
-  margin: 14px auto 0;
-  text-align: left;
-}
-.lyric-player-shell[hidden] { display: none; }
-.lyric-player-frame {
+.lyric-play-copy { min-width: 0; }
+
+.lyric-primary-play {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
-  min-height: 200px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: #000;
-  box-shadow: var(--shadow-sm);
 }
-.lyric-player-frame iframe {
-  width: 100%;
-  height: 100%;
-  display: block;
-  border: 0;
+.lyric-primary-play.playing {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line-strong));
+  background: color-mix(in srgb, var(--accent-soft) 48%, var(--surface-soft));
 }
-.lyric-player-close {
+.lyric-primary-play.playing .lyric-play-symbol {
+  background: var(--accent);
+}
+.lyric-audio-progress {
   position: absolute;
-  z-index: 2;
-  top: 9px;
-  right: 9px;
-  width: 31px;
-  height: 31px;
-  border: 1px solid rgba(255,255,255,.2);
-  border-radius: 50%;
-  background: rgba(0,0,0,.62);
-  color: #fff;
-  font-size: 19px;
-  line-height: 1;
-  backdrop-filter: blur(10px);
-}
-.lyric-player-meta {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 9px 2px 0;
-}
-.lyric-player-meta span {
-  flex: 0 0 auto;
-  color: var(--accent);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: .06em;
-}
-.lyric-player-meta strong {
-  min-width: 0;
+  left: 14px;
+  right: 14px;
+  bottom: 7px;
+  height: 2px;
   overflow: hidden;
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line-strong) 66%, transparent);
+}
+.lyric-audio-progress > span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width .16s linear;
 }
 
 @media (max-width: 520px) {
@@ -593,8 +565,4 @@
     height: 32px;
   }
   .lyric-pronounce { min-width: 0; }
-  .lyric-player-frame {
-    border-radius: 15px;
-    min-height: 200px;
-  }
 }
