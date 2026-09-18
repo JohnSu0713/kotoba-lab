@@ -49,6 +49,12 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
           python -m pip install --disable-pip-version-check google-cloud-texttospeech
+      - name: Validate vendored native source set
+        run: |
+          count=$(find vendor/kana-human -maxdepth 1 -name '*.mp3' | wc -l | tr -d ' ')
+          echo "VENDORED_NATIVE_KANA=$count"
+          test "$count" = "71"
+
       - name: Build all kana audio from authoritative sources
         env:
           GCP_TTS_VOICE: ja-JP-Chirp3-HD-Zephyr
