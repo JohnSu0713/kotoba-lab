@@ -88,6 +88,7 @@ jobs:
           if [[ "$scope" == "all" || "$scope" == "kana" ]]; then
             python scripts/import_human_kana.py \
               --kana-source src/features/kana/data.ts \
+              --vendor-dir vendor/kana-human \
               --audio-dir /tmp/kotoba-audio/audio/ja
           fi
 
