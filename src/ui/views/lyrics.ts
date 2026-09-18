@@ -217,7 +217,7 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
         </article>
       </div>
 
-      <p class="lyric-source">LRCLIB 同步歌詞 · MyMemory 繁中對照 · 每日只取一小句。</p>
+      <p class="lyric-source">LRCLIB 同步歌詞 · Apple 原曲試聽 · MyMemory 繁中對照。</p>
     </section>`;
 }
 
@@ -291,7 +291,6 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
   const audio = new Audio(source.previewUrl);
   activePreview = audio;
   audio.preload = 'auto';
-  audio.playsInline = true;
 
   const finish = (): void => {
     if (activePreviewTimer !== undefined) {
