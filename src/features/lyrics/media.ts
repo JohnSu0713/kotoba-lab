@@ -18,7 +18,8 @@ export type OriginalClipResolution =
   | { state: 'ready'; source: OriginalClipSource }
   | { state: 'not-found' | 'error' };
 
-const CACHE_PREFIX = 'kotoba-lab:apple-preview:v1:';
+const CACHE_PREFIX = 'kotoba-lab:apple-preview:v2:';
+const STOREFRONTS = ['US', 'JP', 'TW'] as const;
 
 function normalize(value: string): string {
   return value
@@ -70,25 +71,31 @@ function cacheSource(key: string, source: OriginalClipSource): void {
   }
 }
 
-function searchUrl(lesson: DailyLyricLesson): URL {
+function searchUrl(lesson: DailyLyricLesson, country: string): URL {
   const url = new URL('https://itunes.apple.com/search');
   url.searchParams.set('term', lesson.artistName + ' ' + lesson.trackName);
-  url.searchParams.set('country', 'JP');
+  url.searchParams.set('country', country);
   url.searchParams.set('media', 'music');
   url.searchParams.set('entity', 'song');
-  url.searchParams.set('limit', '12');
+  url.searchParams.set('limit', '25');
   return url;
 }
 
-async function searchWithFetch(lesson: DailyLyricLesson): Promise<AppleSearchResponse> {
-  const response = await fetch(searchUrl(lesson), {
+async function searchWithFetch(
+  lesson: DailyLyricLesson,
+  country: string,
+): Promise<AppleSearchResponse> {
+  const response = await fetch(searchUrl(lesson, country), {
     headers: { Accept: 'application/json' },
   });
   if (!response.ok) throw new Error('Apple preview lookup failed: ' + response.status);
   return await response.json() as AppleSearchResponse;
 }
 
-async function searchWithJsonp(lesson: DailyLyricLesson): Promise<AppleSearchResponse> {
+async function searchWithJsonp(
+  lesson: DailyLyricLesson,
+  country: string,
+): Promise<AppleSearchResponse> {
   return await new Promise<AppleSearchResponse>((resolve, reject) => {
     const callbackName = '__kotobaApplePreview' + Date.now().toString(36);
     const script = document.createElement('script');
@@ -109,7 +116,7 @@ async function searchWithJsonp(lesson: DailyLyricLesson): Promise<AppleSearchRes
       resolve(data);
     };
 
-    const url = searchUrl(lesson);
+    const url = searchUrl(lesson, country);
     url.searchParams.set('callback', callbackName);
     script.src = url.toString();
     script.async = true;
@@ -121,12 +128,38 @@ async function searchWithJsonp(lesson: DailyLyricLesson): Promise<AppleSearchRes
   });
 }
 
-async function searchApple(lesson: DailyLyricLesson): Promise<AppleSearchResponse> {
+async function searchStorefront(
+  lesson: DailyLyricLesson,
+  country: string,
+): Promise<AppleSearchResponse> {
   try {
-    return await searchWithFetch(lesson);
+    return await searchWithFetch(lesson, country);
   } catch {
-    return await searchWithJsonp(lesson);
+    return await searchWithJsonp(lesson, country);
   }
+}
+
+async function searchApple(lesson: DailyLyricLesson): Promise<AppleSearchResponse> {
+  const merged: AppleTrack[] = [];
+  for (const country of STOREFRONTS) {
+    try {
+      const response = await searchStorefront(lesson, country);
+      merged.push(...(response.results ?? []));
+      if (merged.some((item) => !!item.previewUrl && scoreResult(item, lesson) >= 18)) break;
+    } catch {
+      // A storefront can omit or block previews; continue to the next region.
+    }
+  }
+
+  const deduped = Array.from(
+    new Map(
+      merged.map((item) => [
+        String(item.trackId ?? '') + '|' + (item.previewUrl ?? '') + '|' + (item.trackName ?? ''),
+        item,
+      ]),
+    ).values(),
+  );
+  return { resultCount: deduped.length, results: deduped };
 }
 
 export async function resolveOriginalClip(lesson: DailyLyricLesson): Promise<OriginalClipResolution> {
