@@ -25,8 +25,8 @@ from typing import Iterable
 
 LEVELS = ("N5", "N4", "N3", "N2", "N1")
 DEFAULT_VOICE = "ja-JP-Chirp3-HD-Zephyr"
-DEFAULT_KANA_RATE = 0.80
-DEFAULT_WORD_RATE = 0.92
+DEFAULT_KANA_RATE = 0.90
+DEFAULT_WORD_RATE = 0.92\nDEFAULT_KANA_VOICE = "ja-JP-Neural2-B"
 # Chirp 3 HD currently has a dedicated 200 requests/min/project quota. Keep a
 # conservative margin so parallel workers never burst through the minute bucket.
 DEFAULT_MIN_REQUEST_INTERVAL = 0.38
@@ -187,6 +187,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--scope", default="all", choices=("all", "kana", *LEVELS))
     parser.add_argument("--voice", default=os.environ.get("GCP_TTS_VOICE", DEFAULT_VOICE))
+    parser.add_argument("--kana-voice", default=os.environ.get("GCP_KANA_VOICE", DEFAULT_KANA_VOICE))
     parser.add_argument("--kana-rate", type=float, default=float(os.environ.get("KOTOBA_KANA_RATE", DEFAULT_KANA_RATE)))
     parser.add_argument("--word-rate", type=float, default=float(os.environ.get("KOTOBA_WORD_RATE", DEFAULT_WORD_RATE)))
     parser.add_argument(
@@ -219,6 +220,7 @@ def main() -> None:
     manifest = load_manifest(manifest_path)
     manifest["schemaVersion"] = MANIFEST_SCHEMA
     manifest["voice"] = args.voice
+    manifest["voices"] = {"kana": args.kana_voice, "default": args.voice}
     manifest["rates"] = {"kana": args.kana_rate, "default": args.word_rate}
 
     if args.scope == "all":
@@ -226,22 +228,23 @@ def main() -> None:
     elif args.scope == "kana":
         manifest["profiles"]["kana"] = {}
 
-    synth_by_path: dict[Path, Target] = {}
+    synth_by_path: dict[Path, tuple[Target, str]] = {}
     for target in targets:
-        filename = asset_name(target, args.voice)
+        target_voice = args.kana_voice if target.profile == "kana" else args.voice
+        filename = asset_name(target, target_voice)
         path = args.output / filename
         manifest["profiles"][target.profile][target.key] = f"./audio/ja/{filename}"
-        synth_by_path.setdefault(path, target)
+        synth_by_path.setdefault(path, (target, target_voice))
 
     pending = [
-        (path, target)
-        for path, target in synth_by_path.items()
+        (path, target, target_voice)
+        for path, (target, target_voice) in synth_by_path.items()
         if args.force or not path.exists()
     ]
 
     requests_per_minute = 60 / args.min_request_interval
     print(
-        f"Voice={args.voice}; scope={args.scope}; aliases={len(targets):,}; "
+        f"Voice={args.voice}; kana_voice={args.kana_voice}; scope={args.scope}; aliases={len(targets):,}; "
         f"unique assets={len(synth_by_path):,}; pending={len(pending):,}; "
         f"max start rate≈{requests_per_minute:.1f}/min"
     )
@@ -252,8 +255,8 @@ def main() -> None:
         completed = 0
         with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, args.workers)) as executor:
             futures = {
-                executor.submit(synthesize_one, target, path, args.voice): (path, target)
-                for path, target in pending
+                executor.submit(synthesize_one, target, path, target_voice): (path, target)
+                for path, target, target_voice in pending
             }
             for future in concurrent.futures.as_completed(futures):
                 future.result()
