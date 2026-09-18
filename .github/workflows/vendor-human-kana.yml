@@ -1,0 +1,82 @@
+name: Vendor native kana recordings
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fix-audited-kana-lyrics]
+    paths:
+      - scripts/import_human_kana.py
+      - .github/workflows/vendor-human-kana.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vendor-human-kana-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+      - name: Download and master shard
+        run: |
+          rm -rf /tmp/kana-human-${{ matrix.shard }}
+          python scripts/import_human_kana.py \
+            --kana-source src/features/kana/data.ts \
+            --vendor-dir /tmp/kana-human-${{ matrix.shard }} \
+            --download-only \
+            --shard-index ${{ matrix.shard }} \
+            --shard-count 8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kana-human-${{ matrix.shard }}
+          path: /tmp/kana-human-${{ matrix.shard }}/*.mp3
+          if-no-files-found: error
+          retention-days: 2
+
+  assemble:
+    needs: download
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix-audited-kana-lyrics
+          fetch-depth: 0
+      - name: Download all shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: kana-human-*
+          path: vendor/kana-human
+          merge-multiple: true
+      - name: Validate vendored set
+        run: |
+          count=$(find vendor/kana-human -maxdepth 1 -name '*.mp3' | wc -l | tr -d ' ')
+          echo "VENDORED_MP3=$count"
+          test "$count" = "71"
+      - name: Commit vendored public-domain assets
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vendor/kana-human
+          if git diff --cached --quiet; then
+            echo "Vendored assets unchanged"
+          else
+            git commit -m "audio: vendor 71 public-domain native kana recordings"
+            git fetch origin fix-audited-kana-lyrics
+            git rebase origin/fix-audited-kana-lyrics
+            git push origin HEAD:fix-audited-kana-lyrics
+          fi

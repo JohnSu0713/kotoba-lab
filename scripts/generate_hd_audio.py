@@ -25,8 +25,9 @@ from typing import Iterable
 
 LEVELS = ("N5", "N4", "N3", "N2", "N1")
 DEFAULT_VOICE = "ja-JP-Chirp3-HD-Zephyr"
-DEFAULT_KANA_RATE = 0.62
+DEFAULT_KANA_RATE = 0.90
 DEFAULT_WORD_RATE = 0.92
+DEFAULT_KANA_VOICE = "ja-JP-Neural2-B"
 # Chirp 3 HD currently has a dedicated 200 requests/min/project quota. Keep a
 # conservative margin so parallel workers never burst through the minute bucket.
 DEFAULT_MIN_REQUEST_INTERVAL = 0.38
@@ -54,7 +55,7 @@ def asset_name(target: Target, voice: str) -> str:
     return f"{digest}.mp3"
 
 
-def load_kana_targets(source: Path, rate: float) -> list[Target]:
+def load_kana_targets(source: Path, rate: float, subset: str = "all") -> list[Target]:
     text = source.read_text(encoding="utf-8")
     rows = KANA_SEED_RE.findall(text)
     if not rows:
@@ -62,9 +63,27 @@ def load_kana_targets(source: Path, rate: float) -> list[Target]:
 
     targets: list[Target] = []
     for hira, kata in rows:
+        row_match = next(
+            (
+                match for match in KANA_SEED_RE.finditer(text)
+                if match.group(1) == hira and match.group(2) == kata
+            ),
+            None,
+        )
+        group = row_match.group(0).rsplit("'", 2)[1] if row_match else ""
+        if subset == "yoon" and group != "yoon":
+            continue
         canonical = normalize(hira)
-        targets.append(Target("kana", normalize(hira), canonical, rate))
-        targets.append(Target("kana", normalize(kata), canonical, rate))
+        # Use Google's Japanese-specific yomigana phoneme control so isolated
+        # morae are explicit rather than inferred from a one-character sentence.
+        # Small leading/trailing breaks prevent edge clipping on mobile playback.
+        spoken = (
+            '<speak><break time="80ms"/>'
+            f'<phoneme alphabet="yomigana" ph="{canonical}">{canonical}</phoneme>'
+            '<break time="120ms"/></speak>'
+        )
+        targets.append(Target("kana", normalize(hira), spoken, rate))
+        targets.append(Target("kana", normalize(kata), spoken, rate))
     return targets
 
 
@@ -142,8 +161,13 @@ def synthesize_one(target: Target, output: Path, voice: str, attempts: int = 7) 
         client = texttospeech.TextToSpeechClient()
         local.client = client
 
+    synthesis_input = (
+        texttospeech.SynthesisInput(ssml=target.spoken_text)
+        if target.profile == "kana"
+        else texttospeech.SynthesisInput(text=target.spoken_text)
+    )
     request = {
-        "input": texttospeech.SynthesisInput(text=target.spoken_text),
+        "input": synthesis_input,
         "voice": texttospeech.VoiceSelectionParams(language_code="ja-JP", name=voice),
         "audio_config": texttospeech.AudioConfig(
             audio_encoding=texttospeech.AudioEncoding.MP3,
@@ -184,7 +208,9 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--scope", default="all", choices=("all", "kana", *LEVELS))
     parser.add_argument("--voice", default=os.environ.get("GCP_TTS_VOICE", DEFAULT_VOICE))
+    parser.add_argument("--kana-voice", default=os.environ.get("GCP_KANA_VOICE", DEFAULT_KANA_VOICE))
     parser.add_argument("--kana-rate", type=float, default=float(os.environ.get("KOTOBA_KANA_RATE", DEFAULT_KANA_RATE)))
+    parser.add_argument("--kana-subset", choices=("all", "yoon"), default="all")
     parser.add_argument("--word-rate", type=float, default=float(os.environ.get("KOTOBA_WORD_RATE", DEFAULT_WORD_RATE)))
     parser.add_argument(
         "--min-request-interval",
@@ -206,7 +232,7 @@ def main() -> None:
     selected_levels = LEVELS if args.scope == "all" else ((args.scope,) if args.scope in LEVELS else ())
     targets: list[Target] = []
     if args.scope in ("all", "kana"):
-        targets.extend(load_kana_targets(args.kana_source, args.kana_rate))
+        targets.extend(load_kana_targets(args.kana_source, args.kana_rate, args.kana_subset))
     if selected_levels:
         targets.extend(load_vocab_targets(args.vocab_dir, selected_levels, args.word_rate))
     targets = dedupe_targets(targets)
@@ -216,6 +242,7 @@ def main() -> None:
     manifest = load_manifest(manifest_path)
     manifest["schemaVersion"] = MANIFEST_SCHEMA
     manifest["voice"] = args.voice
+    manifest["voices"] = {"kana": args.kana_voice, "default": args.voice}
     manifest["rates"] = {"kana": args.kana_rate, "default": args.word_rate}
 
     if args.scope == "all":
@@ -223,22 +250,23 @@ def main() -> None:
     elif args.scope == "kana":
         manifest["profiles"]["kana"] = {}
 
-    synth_by_path: dict[Path, Target] = {}
+    synth_by_path: dict[Path, tuple[Target, str]] = {}
     for target in targets:
-        filename = asset_name(target, args.voice)
+        target_voice = args.kana_voice if target.profile == "kana" else args.voice
+        filename = asset_name(target, target_voice)
         path = args.output / filename
         manifest["profiles"][target.profile][target.key] = f"./audio/ja/{filename}"
-        synth_by_path.setdefault(path, target)
+        synth_by_path.setdefault(path, (target, target_voice))
 
     pending = [
-        (path, target)
-        for path, target in synth_by_path.items()
+        (path, target, target_voice)
+        for path, (target, target_voice) in synth_by_path.items()
         if args.force or not path.exists()
     ]
 
     requests_per_minute = 60 / args.min_request_interval
     print(
-        f"Voice={args.voice}; scope={args.scope}; aliases={len(targets):,}; "
+        f"Voice={args.voice}; kana_voice={args.kana_voice}; scope={args.scope}; aliases={len(targets):,}; "
         f"unique assets={len(synth_by_path):,}; pending={len(pending):,}; "
         f"max start rate≈{requests_per_minute:.1f}/min"
     )
@@ -249,8 +277,8 @@ def main() -> None:
         completed = 0
         with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, args.workers)) as executor:
             futures = {
-                executor.submit(synthesize_one, target, path, args.voice): (path, target)
-                for path, target in pending
+                executor.submit(synthesize_one, target, path, target_voice): (path, target)
+                for path, target, target_voice in pending
             }
             for future in concurrent.futures.as_completed(futures):
                 future.result()

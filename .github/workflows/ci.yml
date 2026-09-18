@@ -33,3 +33,31 @@ jobs:
             --output /tmp/kotoba-audio-dry-run \
             --scope all \
             --dry-run
+
+      - name: Validate verified lyric catalog
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("public/data/verified-lyrics.json")
+          assert path.exists(), "missing verified lyric catalog"
+          data = json.loads(path.read_text())
+          entries = data.get("entries", [])
+          assert len(entries) >= 12, f"only {len(entries)} verified lyric cards"
+          assert all(e.get("verificationScore", 0) >= 76 for e in entries)
+          assert all(e.get("verificationCommonChars", 0) >= 4 for e in entries)
+          assert all(e.get("verificationCoverage", 0) >= 0.78 for e in entries)
+          assert all(
+              e.get("verificationExactInclusion", False)
+              or (
+                  e.get("verificationFullScore", 0) >= 82
+                  and e.get("verificationScore", 0) >= 86
+              )
+              for e in entries
+          )
+          assert all(
+              0 <= e["previewLineStartSeconds"] < e["previewLineEndSeconds"] <= 30
+              for e in entries
+          )
+          print("VERIFIED_LYRIC_CARDS", len(entries))
+          PY

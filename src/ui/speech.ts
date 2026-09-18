@@ -1,7 +1,7 @@
 const JA_LOCALE = 'ja-JP';
-const KANA_RATE = 0.62;
+const KANA_RATE = 0.90;
 const DEFAULT_RATE = 0.96;
-const KANA_TARGET_RATE = 0.62;
+const KANA_TARGET_RATE = 0.90;
 const VOICE_LOAD_TIMEOUT_MS = 400;
 const HD_AUDIO_START_TIMEOUT_MS = 1400;
 const HD_AUDIO_MANIFEST_URL = './audio/ja/manifest.json';
@@ -19,6 +19,20 @@ type HdAudioManifest = {
 let activeUtterance: SpeechSynthesisUtterance | undefined;
 let activeAudio: HTMLAudioElement | undefined;
 let speechRequestId = 0;
+
+function getAudioElement(): HTMLAudioElement {
+  if (activeAudio?.isConnected) return activeAudio;
+  const audio = document.createElement('audio');
+  audio.preload = 'auto';
+  audio.volume = 1;
+  audio.muted = false;
+  audio.setAttribute('playsinline', '');
+  audio.setAttribute('webkit-playsinline', '');
+  audio.hidden = true;
+  document.body.appendChild(audio);
+  activeAudio = audio;
+  return audio;
+}
 let hdAudioManifest: HdAudioManifest | undefined;
 let hdManifestLoad: Promise<void> | undefined;
 
@@ -162,66 +176,55 @@ function speakWithBrowser(text: string, requestId: number): void {
   window.setTimeout(finish, VOICE_LOAD_TIMEOUT_MS);
 }
 
-function disposeActiveAudio(): void {
+function stopActiveAudio(): void {
   if (!activeAudio) return;
   activeAudio.pause();
-  activeAudio.removeAttribute('src');
-  activeAudio.load();
-  activeAudio.remove();
-  activeAudio = undefined;
+  try { activeAudio.currentTime = 0; } catch { /* metadata may not be ready */ }
 }
 
 function speakWithHdAsset(text: string, src: string, requestId: number): boolean {
   try {
-    const audio = document.createElement('audio');
+    const audio = getAudioElement();
+    stopActiveAudio();
     audio.src = src;
-    audio.preload = 'auto';
-    audio.volume = 1;
-    audio.muted = false;
     audio.playbackRate = hdPlaybackRate(text);
     audio.defaultPlaybackRate = audio.playbackRate;
-    audio.setAttribute('playsinline', '');
-    audio.setAttribute('webkit-playsinline', '');
-    audio.hidden = true;
-    document.body.appendChild(audio);
-    activeAudio = audio;
+    audio.load();
 
     let settled = false;
     let startTimer: number | undefined;
 
-    const cleanup = (): void => {
+    const clearStartTimer = (): void => {
       if (startTimer !== undefined) {
         window.clearTimeout(startTimer);
         startTimer = undefined;
       }
-      if (activeAudio === audio) activeAudio = undefined;
-      audio.pause();
-      audio.remove();
     };
 
     const fallback = (): void => {
       if (settled || requestId !== speechRequestId) return;
       settled = true;
-      cleanup();
+      clearStartTimer();
+      audio.pause();
       speakWithBrowser(text, requestId);
     };
 
-    audio.addEventListener('playing', () => {
-      if (startTimer !== undefined) {
-        window.clearTimeout(startTimer);
-        startTimer = undefined;
-      }
-    }, { once: true });
-
-    audio.addEventListener('ended', () => {
-      if (settled) return;
+    const onPlaying = (): void => {
+      if (requestId !== speechRequestId) return;
+      clearStartTimer();
+    };
+    const onEnded = (): void => {
+      if (requestId !== speechRequestId) return;
       settled = true;
-      cleanup();
-    }, { once: true });
+      clearStartTimer();
+    };
+    const onError = (): void => fallback();
 
-    audio.addEventListener('error', fallback, { once: true });
+    audio.addEventListener('playing', onPlaying, { once: true });
+    audio.addEventListener('ended', onEnded, { once: true });
+    audio.addEventListener('error', onError, { once: true });
+
     startTimer = window.setTimeout(fallback, HD_AUDIO_START_TIMEOUT_MS);
-
     const play = audio.play();
     if (play) void play.catch(fallback);
     return true;
@@ -239,7 +242,7 @@ export function speakJapanese(text: string): void {
   if (!clean) return;
 
   const requestId = ++speechRequestId;
-  disposeActiveAudio();
+  stopActiveAudio();
   if (canSpeakJapanese()) window.speechSynthesis.cancel();
 
   const staticAudio = hdAudioUrl(clean);

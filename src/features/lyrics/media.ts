@@ -379,6 +379,47 @@ async function deezerJsonp(query: string): Promise<DeezerSearchResponse> {
   });
 }
 
+async function lookupAppleExact(trackId: number): Promise<AppleTrack | undefined> {
+  const url = new URL('https://itunes.apple.com/lookup');
+  url.searchParams.set('id', String(trackId));
+  url.searchParams.set('country', 'JP');
+  url.searchParams.set('entity', 'song');
+
+  try {
+    const response = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (response.ok) {
+      const data = await response.json() as AppleSearchResponse;
+      return (data.results ?? []).find((item) => item.trackId === trackId && !!item.previewUrl);
+    }
+  } catch {
+    // Fall through to JSONP for Safari/PWA cross-origin quirks.
+  }
+
+  return await new Promise<AppleTrack | undefined>((resolve) => {
+    const callbackName = '__kotobaAppleLookup' + Date.now().toString(36)
+      + Math.random().toString(36).slice(2, 6);
+    const globals = window as unknown as Record<string, unknown>;
+    const script = document.createElement('script');
+    const timeout = window.setTimeout(() => cleanup(undefined), 3500);
+
+    const cleanup = (value: AppleTrack | undefined): void => {
+      window.clearTimeout(timeout);
+      delete globals[callbackName];
+      script.remove();
+      resolve(value);
+    };
+
+    globals[callbackName] = (data: AppleSearchResponse): void => {
+      cleanup((data.results ?? []).find((item) => item.trackId === trackId && !!item.previewUrl));
+    };
+    url.searchParams.set('callback', callbackName);
+    script.src = url.toString();
+    script.async = true;
+    script.addEventListener('error', () => cleanup(undefined), { once: true });
+    document.head.appendChild(script);
+  });
+}
+
 async function searchDeezer(lesson: DailyLyricLesson): Promise<DeezerTrack | undefined> {
   const merged: DeezerTrack[] = [];
 
@@ -402,6 +443,24 @@ async function searchDeezer(lesson: DailyLyricLesson): Promise<DeezerTrack | und
 
 export async function resolveOriginalClip(lesson: DailyLyricLesson): Promise<OriginalClipResolution> {
   try {
+    if (lesson.appleTrackId) {
+      const apple = await lookupAppleExact(lesson.appleTrackId);
+      if (!apple?.previewUrl) return { state: 'not-found' };
+      return {
+        state: 'ready',
+        source: {
+          provider: 'apple-preview',
+          previewUrl: apple.previewUrl,
+          title: apple.trackName ?? lesson.trackName,
+          artistName: apple.artistName ?? lesson.artistName,
+          ...(apple.collectionName ? { albumName: apple.collectionName } : {}),
+          ...(apple.artworkUrl100 ? { artworkUrl: apple.artworkUrl100.replace('100x100bb', '300x300bb') } : {}),
+          previewSeconds: 30,
+          fullTrackStartSeconds: 0,
+        },
+      };
+    }
+
     const deezer = await searchDeezer(lesson);
     if (!deezer?.preview) return { state: 'not-found' };
 

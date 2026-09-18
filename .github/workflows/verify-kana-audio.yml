@@ -1,0 +1,86 @@
+name: Verify every kana audio asset
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/generate_hd_audio.py
+      - scripts/import_human_kana.py
+      - scripts/audit_kana_audio.py
+      - scripts/audit_kana_provenance.py
+      - vendor/kana-human/**
+      - src/features/kana/data.ts
+      - src/ui/speech.ts
+      - .github/workflows/verify-kana-audio.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/generate_hd_audio.py
+      - scripts/import_human_kana.py
+      - scripts/audit_kana_audio.py
+      - scripts/audit_kana_provenance.py
+      - src/features/kana/data.ts
+      - src/ui/speech.ts
+      - .github/workflows/verify-kana-audio.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-kana-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_TTS_CREDENTIALS_JSON }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install audio tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python -m pip install --disable-pip-version-check google-cloud-texttospeech
+      - name: Validate vendored native source set
+        run: |
+          count=$(find vendor/kana-human -maxdepth 1 -name '*.mp3' | wc -l | tr -d ' ')
+          echo "VENDORED_NATIVE_KANA=$count"
+          test "$count" = "71"
+
+      - name: Build all kana audio from authoritative sources
+        env:
+          GCP_TTS_VOICE: ja-JP-Chirp3-HD-Zephyr
+          GCP_KANA_VOICE: ja-JP-Neural2-B
+          KOTOBA_KANA_RATE: '0.90'
+          KOTOBA_TTS_MIN_REQUEST_INTERVAL: '1.25'
+        run: |
+          rm -rf /tmp/kana-audit
+          python scripts/generate_hd_audio.py \
+            --kana-source src/features/kana/data.ts \
+            --output /tmp/kana-audit \
+            --scope kana \
+            --kana-subset yoon \
+            --workers 4 \
+            --force
+          python scripts/import_human_kana.py \
+            --kana-source src/features/kana/data.ts \
+            --vendor-dir vendor/kana-human \
+            --audio-dir /tmp/kana-audit
+      - name: Audit 208 aliases / 104 canonical audio assets
+        run: |
+          python scripts/audit_kana_audio.py \
+            --kana-source src/features/kana/data.ts \
+            --audio-dir /tmp/kana-audit
+      - name: Verify pronunciation provenance for all 104 kana
+        run: |
+          python scripts/audit_kana_provenance.py \
+            --kana-source src/features/kana/data.ts \
+            --audio-dir /tmp/kana-audit
