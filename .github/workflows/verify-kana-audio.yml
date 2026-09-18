@@ -6,7 +6,9 @@ on:
     branches: [main]
     paths:
       - scripts/generate_hd_audio.py
+      - scripts/import_human_kana.py
       - scripts/audit_kana_audio.py
+      - scripts/audit_kana_provenance.py
       - src/features/kana/data.ts
       - src/ui/speech.ts
       - .github/workflows/verify-kana-audio.yml
@@ -14,7 +16,9 @@ on:
     branches: [main]
     paths:
       - scripts/generate_hd_audio.py
+      - scripts/import_human_kana.py
       - scripts/audit_kana_audio.py
+      - scripts/audit_kana_provenance.py
       - src/features/kana/data.ts
       - src/ui/speech.ts
       - .github/workflows/verify-kana-audio.yml
@@ -29,6 +33,7 @@ concurrency:
 jobs:
   audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - name: Authenticate to Google Cloud
@@ -42,8 +47,8 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
-          python -m pip install --disable-pip-version-check google-cloud-texttospeech faster-whisper pydub
-      - name: Generate all kana from scratch
+          python -m pip install --disable-pip-version-check google-cloud-texttospeech
+      - name: Build all kana audio from authoritative sources
         env:
           GCP_TTS_VOICE: ja-JP-Chirp3-HD-Zephyr
           GCP_KANA_VOICE: ja-JP-Neural2-B
@@ -51,16 +56,22 @@ jobs:
           KOTOBA_TTS_MIN_REQUEST_INTERVAL: '1.25'
         run: |
           rm -rf /tmp/kana-audit
-          python scripts/generate_hd_audio.py             --kana-source src/features/kana/data.ts             --output /tmp/kana-audit             --scope kana             --workers 4             --force
-      - name: Audit all 208 aliases / 104 unique audio files
+          python scripts/generate_hd_audio.py \
+            --kana-source src/features/kana/data.ts \
+            --output /tmp/kana-audit \
+            --scope kana \
+            --workers 4 \
+            --force
+          python scripts/import_human_kana.py \
+            --kana-source src/features/kana/data.ts \
+            --audio-dir /tmp/kana-audit
+      - name: Audit 208 aliases / 104 canonical audio assets
         run: |
           python scripts/audit_kana_audio.py \
             --kana-source src/features/kana/data.ts \
             --audio-dir /tmp/kana-audit
-
-      - name: Verify all 104 unique pronunciations with independent ASR
+      - name: Verify pronunciation provenance for all 104 kana
         run: |
-          python scripts/audit_kana_asr.py \
+          python scripts/audit_kana_provenance.py \
             --kana-source src/features/kana/data.ts \
-            --audio-dir /tmp/kana-audit \
-            --model small
+            --audio-dir /tmp/kana-audit
