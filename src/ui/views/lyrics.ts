@@ -6,10 +6,16 @@ import {
   pickDailyArtist,
 } from '../../features/lyrics/provider.js';
 import { resolveOriginalClip } from '../../features/lyrics/media.js';
+import {
+  playPreciseSegment,
+  resolvePrecisePlayback,
+  type PrecisePlaybackController,
+} from '../../features/lyrics/musickit.js';
 import type {
   DailyLyricLesson,
   FollowedArtist,
   OriginalClipSource,
+  PrecisePlaybackSource,
 } from '../../features/lyrics/models.js';
 import { lyricsStore } from '../../features/lyrics/store.js';
 import { icons } from '../components/icons.js';
@@ -19,6 +25,7 @@ const SUGGESTED_ARTISTS = ['YOASOBI', '藤井 風', '米津玄師', 'Aimer', '�
 
 let activePreview: HTMLAudioElement | undefined;
 let activePreviewTimer: number | undefined;
+let activePreciseController: PrecisePlaybackController | undefined;
 
 function stopActivePreview(): void {
   if (activePreviewTimer !== undefined) {
@@ -30,6 +37,17 @@ function stopActivePreview(): void {
     activePreview.currentTime = 0;
     activePreview = undefined;
   }
+}
+
+async function stopActivePrecise(): Promise<void> {
+  const controller = activePreciseController;
+  activePreciseController = undefined;
+  if (controller) await controller.stop().catch(() => undefined);
+}
+
+function stopAllPlayback(): void {
+  stopActivePreview();
+  void stopActivePrecise();
 }
 
 function escapeHtml(value: string): string {
@@ -135,7 +153,7 @@ function loadingDaily(artist: FollowedArtist): string {
       <div>
         <p class="eyebrow">TODAY · ${escapeHtml(artist.name)}</p>
         <h2>正在替你挑今天的一句…</h2>
-        <p>會優先挑有同步時間戳的歌詞，之後才能直接播放這一句的原曲片段。</p>
+        <p>優先使用精準同步歌詞，讓原曲播放與文字 highlight 對得上。</p>
       </div>
     </section>`;
 }
@@ -151,6 +169,17 @@ function errorDaily(artist: FollowedArtist, message: string): string {
         <button class="secondary-button" id="lyric-retry" type="button">再試一次</button>
       </div>
     </section>`;
+}
+
+function lyricMarkup(lesson: DailyLyricLesson): string {
+  if (lesson.words?.length) {
+    return lesson.words.map((word, index) =>
+      '<span class="lyric-sync-word" data-lyric-word="' + index + '">'
+      + escapeHtml(word.text)
+      + '</span>',
+    ).join('');
+  }
+  return '<span class="lyric-sync-line" id="lyric-sync-line">' + escapeHtml(lesson.lineJa) + '</span>';
 }
 
 function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
@@ -175,7 +204,7 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
       </div>
 
       <div class="lyric-quote">
-        <p lang="ja">${escapeHtml(lesson.lineJa)}</p>
+        <p lang="ja" id="lyric-sync-text">${lyricMarkup(lesson)}</p>
         <div class="lyric-translation">
           <span>繁中</span>
           <strong>${escapeHtml(lesson.lineZhTw)}</strong>
@@ -185,7 +214,7 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
           <button class="lyric-primary-play" id="lyric-original" type="button" disabled>
             <span class="lyric-play-symbol" id="lyric-original-icon">${icons.play}</span>
             <span class="lyric-play-copy">
-              <strong>原曲試聽</strong>
+              <strong id="lyric-original-label">原曲片段</strong>
               <small id="lyric-original-status">音訊準備中</small>
             </span>
             <span class="lyric-audio-progress" aria-hidden="true"><span id="lyric-audio-progress-fill"></span></span>
@@ -195,7 +224,6 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
             <span>發音</span>
           </button>
         </div>
-
       </div>
 
       <div class="lyric-learning-grid">
@@ -217,7 +245,7 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
         </article>
       </div>
 
-      <p class="lyric-source">LRCLIB 同步歌詞 · 原曲音訊試聽 · MyMemory 繁中對照。</p>
+      <p class="lyric-source">LRCLIB 精準時間 · 原曲音訊 · MyMemory 繁中對照。</p>
     </section>`;
 }
 
@@ -251,43 +279,84 @@ function bindSharedInteractions(root: HTMLElement): void {
   });
 }
 
-function setPlaybackButtonState(
+function setBasicPlaybackState(
+  root: HTMLElement,
+  playing: boolean,
+  progress: number,
+): void {
+  const icon = root.querySelector<HTMLElement>('#lyric-original-icon');
+  const fill = root.querySelector<HTMLElement>('#lyric-audio-progress-fill');
+  const button = root.querySelector<HTMLButtonElement>('#lyric-original');
+  if (!icon || !fill || !button) return;
+
+  icon.innerHTML = playing ? icons.pause : icons.play;
+  button.classList.toggle('playing', playing);
+  fill.style.width = (Math.max(0, Math.min(1, progress)) * 100).toFixed(1) + '%';
+}
+
+function resetLyricHighlight(root: HTMLElement): void {
+  root.querySelectorAll<HTMLElement>('.lyric-sync-word, .lyric-sync-line').forEach((element) => {
+    element.classList.remove('active');
+  });
+}
+
+function updateLyricHighlight(
+  root: HTMLElement,
+  lesson: DailyLyricLesson,
+  currentSeconds: number,
+): void {
+  resetLyricHighlight(root);
+
+  if (lesson.words?.length) {
+    lesson.words.forEach((word, index) => {
+      if (currentSeconds >= word.startSeconds && currentSeconds < word.endSeconds) {
+        root.querySelector<HTMLElement>('[data-lyric-word="' + index + '"]')?.classList.add('active');
+      }
+    });
+    return;
+  }
+
+  if (
+    lesson.lineStartSeconds !== undefined
+    && lesson.lineEndSeconds !== undefined
+    && currentSeconds >= lesson.lineStartSeconds
+    && currentSeconds < lesson.lineEndSeconds
+  ) {
+    root.querySelector<HTMLElement>('#lyric-sync-line')?.classList.add('active');
+  }
+}
+
+function setPreviewState(
   root: HTMLElement,
   source: OriginalClipSource,
   playing: boolean,
   elapsedSeconds = 0,
 ): void {
-  const icon = root.querySelector<HTMLElement>('#lyric-original-icon');
+  const label = root.querySelector<HTMLElement>('#lyric-original-label');
   const status = root.querySelector<HTMLElement>('#lyric-original-status');
-  const fill = root.querySelector<HTMLElement>('#lyric-audio-progress-fill');
-  const button = root.querySelector<HTMLButtonElement>('#lyric-original');
-  if (!icon || !status || !fill || !button) return;
+  if (!label || !status) return;
 
-  icon.innerHTML = playing ? icons.pause : icons.play;
-  button.classList.toggle('playing', playing);
-
-  const targetSeconds = source.previewSeconds;
-  const progress = Math.max(0, Math.min(1, elapsedSeconds / targetSeconds));
-  fill.style.width = (progress * 100).toFixed(1) + '%';
+  label.textContent = '原曲試聽';
+  setBasicPlaybackState(root, playing, elapsedSeconds / source.previewSeconds);
 
   if (playing) {
-    status.textContent = Math.max(0, Math.ceil(targetSeconds - elapsedSeconds)) + ' 秒 · 播放中';
+    status.textContent = Math.max(0, Math.ceil(source.previewSeconds - elapsedSeconds)) + ' 秒 · 播放中';
   } else {
-    status.textContent = targetSeconds + ' 秒 · 純音訊';
+    status.textContent = source.previewSeconds + ' 秒 · 純音訊';
   }
 }
 
 function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): void {
-  const button = root.querySelector<HTMLButtonElement>('#lyric-original');
-  if (!button) return;
-
   if (activePreview && !activePreview.paused) {
     stopActivePreview();
-    setPlaybackButtonState(root, source, false);
+    setPreviewState(root, source, false);
     return;
   }
 
+  void stopActivePrecise();
   stopActivePreview();
+  resetLyricHighlight(root);
+
   const audio = new Audio(source.previewUrl);
   activePreview = audio;
   audio.preload = 'auto';
@@ -300,7 +369,7 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
     audio.pause();
     audio.currentTime = 0;
     if (activePreview === audio) activePreview = undefined;
-    if (root.isConnected) setPlaybackButtonState(root, source, false);
+    if (root.isConnected) setPreviewState(root, source, false);
   };
 
   audio.addEventListener('ended', finish, { once: true });
@@ -311,14 +380,14 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
       finish();
       return;
     }
-    setPlaybackButtonState(root, source, true, 0);
+    setPreviewState(root, source, true, 0);
     activePreviewTimer = window.setInterval(() => {
       if (activePreview !== audio || audio.paused || !root.isConnected) {
         finish();
         return;
       }
       const elapsed = Math.min(audio.currentTime, source.previewSeconds);
-      setPlaybackButtonState(root, source, true, elapsed);
+      setPreviewState(root, source, true, elapsed);
       if (elapsed >= source.previewSeconds) finish();
     }, 180);
   }).catch(() => {
@@ -326,28 +395,107 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
   });
 }
 
+async function playPrecise(
+  root: HTMLElement,
+  lesson: DailyLyricLesson,
+  source: PrecisePlaybackSource,
+  fallback?: OriginalClipSource,
+): Promise<void> {
+  const status = root.querySelector<HTMLElement>('#lyric-original-status');
+  const label = root.querySelector<HTMLElement>('#lyric-original-label');
+  if (!status || !label) return;
+
+  if (activePreciseController) {
+    await stopActivePrecise();
+    resetLyricHighlight(root);
+    setBasicPlaybackState(root, false, 0);
+    label.textContent = '原曲片段';
+    status.textContent = '前後各 7 秒 · 精準同步';
+    return;
+  }
+
+  stopActivePreview();
+  label.textContent = '原曲片段';
+  status.textContent = '連接 Apple Music…';
+  setBasicPlaybackState(root, true, 0);
+
+  try {
+    activePreciseController = await playPreciseSegment(source, ({ currentSeconds, progress }) => {
+      if (!root.isConnected) return;
+      setBasicPlaybackState(root, true, progress);
+      updateLyricHighlight(root, lesson, currentSeconds);
+
+      const remaining = Math.max(0, Math.ceil(source.endSeconds - currentSeconds));
+      const inLine = lesson.lineStartSeconds !== undefined
+        && lesson.lineEndSeconds !== undefined
+        && currentSeconds >= lesson.lineStartSeconds
+        && currentSeconds <= lesson.lineEndSeconds;
+      status.textContent = inLine
+        ? '正在唱這一句 · ' + remaining + ' 秒'
+        : '精準片段 · ' + remaining + ' 秒';
+
+      if (progress >= 0.999) {
+        activePreciseController = undefined;
+        resetLyricHighlight(root);
+        setBasicPlaybackState(root, false, 0);
+        status.textContent = '前後各 7 秒 · 精準同步';
+      }
+    });
+  } catch {
+    activePreciseController = undefined;
+    resetLyricHighlight(root);
+    setBasicPlaybackState(root, false, 0);
+
+    if (fallback) {
+      setPreviewState(root, fallback, false);
+      status.textContent = fallback.previewSeconds + ' 秒 · 試聽模式';
+      playOriginalPreview(root, fallback);
+    } else {
+      status.textContent = 'Apple Music 授權後可精準播放';
+    }
+  }
+}
+
 async function hydrateOriginalPlayback(root: HTMLElement, lesson: DailyLyricLesson): Promise<void> {
   const button = root.querySelector<HTMLButtonElement>('#lyric-original');
+  const label = root.querySelector<HTMLElement>('#lyric-original-label');
   const status = root.querySelector<HTMLElement>('#lyric-original-status');
-  if (!button || !status) return;
+  if (!button || !label || !status) return;
 
-  const resolution = await resolveOriginalClip(lesson);
+  const [precise, preview] = await Promise.all([
+    resolvePrecisePlayback(lesson),
+    resolveOriginalClip(lesson),
+  ]);
   if (!root.isConnected) return;
 
-  if (resolution.state === 'ready') {
+  const fallback = preview.state === 'ready' ? preview.source : undefined;
+
+  if (precise.state === 'ready') {
     button.disabled = false;
-    setPlaybackButtonState(root, resolution.source, false);
-    button.addEventListener('click', () => playOriginalPreview(root, resolution.source));
+    label.textContent = '原曲片段';
+    status.textContent = '前後各 7 秒 · 精準同步';
+    button.addEventListener('click', () => {
+      void playPrecise(root, lesson, precise.source, fallback);
+    });
+    return;
+  }
+
+  if (fallback) {
+    button.disabled = false;
+    setPreviewState(root, fallback, false);
+    button.addEventListener('click', () => playOriginalPreview(root, fallback));
     return;
   }
 
   button.disabled = true;
-  status.textContent = '這首暫無官方音訊試聽';
+  label.textContent = '原曲片段';
+  status.textContent = '暫時無法取得音訊';
 }
 
 function bindLessonInteractions(root: HTMLElement, lesson: DailyLyricLesson): void {
   root.querySelector<HTMLButtonElement>('#lyric-pronounce')?.addEventListener('click', () => {
-    stopActivePreview();
+    stopAllPlayback();
+    resetLyricHighlight(root);
     speakJapanese(lesson.lineJa);
   });
 
@@ -404,7 +552,7 @@ async function fetchAndRenderLesson(
 }
 
 export async function renderLyrics(root: HTMLElement, context: AppContext): Promise<void> {
-  stopActivePreview();
+  stopAllPlayback();
   const state = lyricsStore.getState();
   const dateKey = localDateKey();
   const artist = pickDailyArtist(state.artists, dateKey);
@@ -418,7 +566,7 @@ export async function renderLyrics(root: HTMLElement, context: AppContext): Prom
   const key = cacheKey(dateKey, artist);
   const cached = lyricsStore.cachedLesson(key);
 
-  if (cached?.timingResolved) {
+  if (cached?.timingResolved && cached.timingVersion === 2) {
     root.innerHTML = pageHtml(state.artists, dailyLesson(context, cached));
     bindSharedInteractions(root);
     bindLessonInteractions(root, cached);
