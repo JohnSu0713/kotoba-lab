@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-18T21:01:03.345161+00:00",
+  "generatedAt": "2026-09-18T21:04:22.085676+00:00",
   "verifier": "faster-whisper/small",
   "storefront": "JP",
   "entries": [
@@ -62,15 +62,15 @@
       "trackDurationSeconds": 225.924,
       "lineJa": "比べるものは何もない",
       "previewLineStartSeconds": 18.18,
-      "previewLineEndSeconds": 20.48,
+      "previewLineEndSeconds": 23.3,
       "verificationScore": 100.0,
-      "verificationFullScore": 100.0,
+      "verificationFullScore": 64.5,
       "verificationCoverage": 1.0,
       "verificationCommonChars": 10,
-      "verifiedTranscript": "比べるものは何もない"
+      "verifiedTranscript": "比べるものは何もない 価値は負けとか一切ない"
     },
     {
-      "id": "apple:1611482688:10.46:毎日愛しき何かの",
+      "id": "apple:1611482688:8.28:毎日愛しき何かの",
       "artistName": "藤井 風",
       "artistAliases": [
         "藤井 風",
@@ -84,13 +84,13 @@
       "storefront": "JP",
       "trackDurationSeconds": 225.924,
       "lineJa": "毎日愛しき何かの",
-      "previewLineStartSeconds": 10.46,
+      "previewLineStartSeconds": 8.28,
       "previewLineEndSeconds": 13.24,
       "verificationScore": 100.0,
-      "verificationFullScore": 100.0,
+      "verificationFullScore": 69.6,
       "verificationCoverage": 1.0,
       "verificationCommonChars": 8,
-      "verifiedTranscript": "毎日愛しき何かの"
+      "verifiedTranscript": "Matsumi 毎日愛しき何かの"
     },
     {
       "id": "apple:1505498783:7.84:別の恐怖と今は戦ってるの",
@@ -108,15 +108,38 @@
       "trackDurationSeconds": 214.2,
       "lineJa": "別の恐怖と　今は戦ってるの",
       "previewLineStartSeconds": 7.84,
-      "previewLineEndSeconds": 13.12,
+      "previewLineEndSeconds": 13.16,
       "verificationScore": 100.0,
       "verificationFullScore": 82.8,
       "verificationCoverage": 1.0,
       "verificationCommonChars": 12,
-      "verifiedTranscript": "堪え堅いの別の恐怖と今は戦ってるの"
+      "verifiedTranscript": "答え硬いの別の恐怖と今は戦ってるの"
     },
     {
-      "id": "apple:1505498783:13.12:おっと罪の香り",
+      "id": "apple:1505498783:15.88:抜き足差し足忍び足",
+      "artistName": "藤井 風",
+      "artistAliases": [
+        "藤井 風",
+        "Fujii Kaze",
+        "藤井風"
+      ],
+      "trackName": "罪の香り",
+      "albumName": "HELP EVER HURT NEVER",
+      "lrclibTrackId": 24899418,
+      "appleTrackId": 1505498783,
+      "storefront": "JP",
+      "trackDurationSeconds": 214.2,
+      "lineJa": "抜き足差し足忍び足",
+      "previewLineStartSeconds": 15.88,
+      "previewLineEndSeconds": 18.62,
+      "verificationScore": 100.0,
+      "verificationFullScore": 100.0,
+      "verificationCoverage": 1.0,
+      "verificationCommonChars": 9,
+      "verifiedTranscript": "抜き足 差し足 忍び足"
+    },
+    {
+      "id": "apple:1505498783:13.16:おっと罪の香り",
       "artistName": "藤井 風",
       "artistAliases": [
         "藤井 風",
@@ -130,7 +153,7 @@
       "storefront": "JP",
       "trackDurationSeconds": 214.2,
       "lineJa": "おっと　罪の香り",
-      "previewLineStartSeconds": 13.12,
+      "previewLineStartSeconds": 13.16,
       "previewLineEndSeconds": 15.88,
       "verificationScore": 100.0,
       "verificationFullScore": 100.0,
@@ -175,7 +198,7 @@
       "trackDurationSeconds": 235.723,
       "lineJa": "生きてゆくでしょう",
       "previewLineStartSeconds": 7.34,
-      "previewLineEndSeconds": 13.94,
+      "previewLineEndSeconds": 13.88,
       "verificationScore": 100.0,
       "verificationFullScore": 62.1,
       "verificationCoverage": 1.0,
@@ -183,7 +206,7 @@
       "verifiedTranscript": "追い風に昼帰り 私はまだ生きてゆくでしょう"
     },
     {
-      "id": "apple:1538265734:14.8:寄り添うように",
+      "id": "apple:1538265734:14.88:寄り添うように",
       "artistName": "米津玄師",
       "artistAliases": [
         "米津玄師",
@@ -196,7 +219,7 @@
       "storefront": "JP",
       "trackDurationSeconds": 235.723,
       "lineJa": "寄り添うように",
-      "previewLineStartSeconds": 14.8,
+      "previewLineStartSeconds": 14.88,
       "previewLineEndSeconds": 21.3,
       "verificationScore": 100.0,
       "verificationFullScore": 50.0,
@@ -249,7 +272,7 @@
       "verifiedTranscript": "話をしている"
     },
     {
-      "id": "apple:1445023277:10.24:いくつも嘘をついて歩いて",
+      "id": "apple:1445023277:10.26:いくつも嘘をついて歩いて",
       "artistName": "米津玄師",
       "artistAliases": [
         "米津玄師",
@@ -262,7 +285,7 @@
       "storefront": "JP",
       "trackDurationSeconds": 334.147,
       "lineJa": "いくつも嘘をついて歩いていくのだろうか",
-      "previewLineStartSeconds": 10.24,
+      "previewLineStartSeconds": 10.26,
       "previewLineEndSeconds": 17.98,
       "verificationScore": 89.5,
       "verificationFullScore": 82.9,
@@ -284,12 +307,12 @@
       "trackDurationSeconds": 294.147,
       "lineJa": "廃墟の屋上に",
       "previewLineStartSeconds": 0.0,
-      "previewLineEndSeconds": 2.26,
+      "previewLineEndSeconds": 5.52,
       "verificationScore": 100.0,
-      "verificationFullScore": 100.0,
+      "verificationFullScore": 63.2,
       "verificationCoverage": 1.0,
       "verificationCommonChars": 6,
-      "verifiedTranscript": "廃墟の屋上に"
+      "verifiedTranscript": "廃墟の屋上に 辿り着く渡辺の"
     },
     {
       "id": "apple:1536130472:13.0:灰色の地上に",
@@ -305,12 +328,12 @@
       "trackDurationSeconds": 294.147,
       "lineJa": "灰色の地上に",
       "previewLineStartSeconds": 13.0,
-      "previewLineEndSeconds": 16.1,
+      "previewLineEndSeconds": 19.14,
       "verificationScore": 100.0,
-      "verificationFullScore": 100.0,
+      "verificationFullScore": 66.7,
       "verificationCoverage": 1.0,
       "verificationCommonChars": 6,
-      "verifiedTranscript": "灰色の地上に"
+      "verifiedTranscript": "灰色の地上に 飾られた光の"
     },
     {
       "id": "apple:1538259791:8.54:許されない約束飾られた記",
@@ -326,7 +349,7 @@
       "trackDurationSeconds": 296.307,
       "lineJa": "許されない約束 飾られた記憶",
       "previewLineStartSeconds": 8.54,
-      "previewLineEndSeconds": 15.74,
+      "previewLineEndSeconds": 15.72,
       "verificationScore": 100.0,
       "verificationFullScore": 100.0,
       "verificationCoverage": 1.0,
@@ -334,7 +357,7 @@
       "verifiedTranscript": "許されない約束 飾られた記憶"
     },
     {
-      "id": "apple:1538127362:3.72:知らないどこかで手にした",
+      "id": "apple:1538127362:3.74:知らないどこかで手にした",
       "artistName": "Aimer",
       "artistAliases": [
         "Aimer"
@@ -346,7 +369,7 @@
       "storefront": "JP",
       "trackDurationSeconds": 309.1,
       "lineJa": "知らないどこかで手にした何かは",
-      "previewLineStartSeconds": 3.72,
+      "previewLineStartSeconds": 3.74,
       "previewLineEndSeconds": 9.66,
       "verificationScore": 100.0,
       "verificationFullScore": 100.0,
@@ -376,7 +399,7 @@
       "verifiedTranscript": "そう 世界の片隅で祈りとか誓いすら君をなさない"
     },
     {
-      "id": "apple:1538127487:14.0:背伸びして覗いた街は揺れ",
+      "id": "apple:1538127487:13.8:背伸びして覗いた街は揺れ",
       "artistName": "Aimer",
       "artistAliases": [
         "Aimer"
@@ -388,7 +411,7 @@
       "storefront": "JP",
       "trackDurationSeconds": 328.031,
       "lineJa": "背伸びして覗いた街は揺れてる",
-      "previewLineStartSeconds": 14.0,
+      "previewLineStartSeconds": 13.8,
       "previewLineEndSeconds": 19.44,
       "verificationScore": 100.0,
       "verificationFullScore": 100.0,
@@ -411,7 +434,7 @@
       "trackDurationSeconds": 218.58,
       "lineJa": "揺れるスカートは恋してるって証",
       "previewLineStartSeconds": 9.16,
-      "previewLineEndSeconds": 13.12,
+      "previewLineEndSeconds": 13.14,
       "verificationScore": 100.0,
       "verificationFullScore": 100.0,
       "verificationCoverage": 1.0,
@@ -419,7 +442,7 @@
       "verifiedTranscript": "揺れるスカートは 恋してるって証"
     },
     {
-      "id": "apple:1753269920:14.12:小さなところで気づいて",
+      "id": "apple:1753269920:14.0:小さなところで気づいて",
       "artistName": "あいみょん",
       "artistAliases": [
         "あいみょん",
@@ -432,7 +455,7 @@
       "storefront": "JP",
       "trackDurationSeconds": 218.58,
       "lineJa": "小さなところで気づいて",
-      "previewLineStartSeconds": 14.12,
+      "previewLineStartSeconds": 14.0,
       "previewLineEndSeconds": 17.88,
       "verificationScore": 100.0,
       "verificationFullScore": 78.6,
@@ -441,7 +464,7 @@
       "verifiedTranscript": "小さなところで気づいて 恋してるの私"
     },
     {
-      "id": "apple:1753269920:18.52:今日もまつ毛を空に高くあ",
+      "id": "apple:1753269920:18.44:今日もまつ毛を空に高くあ",
       "artistName": "あいみょん",
       "artistAliases": [
         "あいみょん",
@@ -454,13 +477,128 @@
       "storefront": "JP",
       "trackDurationSeconds": 218.58,
       "lineJa": "今日もまつ毛を空に高くあげる",
-      "previewLineStartSeconds": 18.52,
-      "previewLineEndSeconds": 24.62,
+      "previewLineStartSeconds": 18.44,
+      "previewLineEndSeconds": 24.0,
       "verificationScore": 92.9,
       "verificationFullScore": 92.9,
       "verificationCoverage": 1.0,
       "verificationCommonChars": 8,
       "verifiedTranscript": "今日もまつけを空に 高くあげる"
+    },
+    {
+      "id": "apple:1628261505:22.22:誰もがそれぞれ出会った誰",
+      "artistName": "Official髭男dism",
+      "artistAliases": [
+        "Official髭男dism",
+        "Official HIGE DANdism",
+        "Official Hige Dandism"
+      ],
+      "trackName": "ミックスナッツ",
+      "albumName": "ミックスナッツEP",
+      "lrclibTrackId": 11038115,
+      "appleTrackId": 1628261505,
+      "storefront": "JP",
+      "trackDurationSeconds": 213.987,
+      "lineJa": "誰もがそれぞれ出会った誰かと寄り添い合ってる",
+      "previewLineStartSeconds": 22.22,
+      "previewLineEndSeconds": 29.04,
+      "verificationScore": 100.0,
+      "verificationFullScore": 100.0,
+      "verificationCoverage": 1.0,
+      "verificationCommonChars": 16,
+      "verifiedTranscript": "誰もが それぞれ出会った誰かと寄り添い合ってる"
+    },
+    {
+      "id": "apple:1754117470:21.74:誰もがそれぞれ出会った誰",
+      "artistName": "Official髭男dism",
+      "artistAliases": [
+        "Official髭男dism",
+        "Official HIGE DANdism",
+        "Official Hige Dandism"
+      ],
+      "trackName": "ミックスナッツ",
+      "albumName": "Rejoice",
+      "lrclibTrackId": 11591128,
+      "appleTrackId": 1754117470,
+      "storefront": "JP",
+      "trackDurationSeconds": 211.348,
+      "lineJa": "誰もがそれぞれ出会った誰かと寄り添い合ってる",
+      "previewLineStartSeconds": 21.74,
+      "previewLineEndSeconds": 28.56,
+      "verificationScore": 100.0,
+      "verificationFullScore": 100.0,
+      "verificationCoverage": 1.0,
+      "verificationCommonChars": 16,
+      "verifiedTranscript": "誰もがそれぞれ出会った誰かと寄り添い合ってる"
+    },
+    {
+      "id": "apple:1616586639:21.88:誰もがそれぞれ出会った誰",
+      "artistName": "Official髭男dism",
+      "artistAliases": [
+        "Official髭男dism",
+        "Official HIGE DANdism",
+        "Official Hige Dandism"
+      ],
+      "trackName": "ミックスナッツ",
+      "albumName": "ミックスナッツ - Single",
+      "lrclibTrackId": 35394825,
+      "appleTrackId": 1616586639,
+      "storefront": "JP",
+      "trackDurationSeconds": 213.438,
+      "lineJa": "誰もがそれぞれ出会った誰かと寄り添い合ってる",
+      "previewLineStartSeconds": 21.88,
+      "previewLineEndSeconds": 28.7,
+      "verificationScore": 100.0,
+      "verificationFullScore": 100.0,
+      "verificationCoverage": 1.0,
+      "verificationCommonChars": 16,
+      "verifiedTranscript": "誰もがそれぞれ出会った誰かと寄り添い合ってる"
+    },
+    {
+      "id": "apple:1492963535:22.74:僕が見つめる景色のその中",
+      "artistName": "Official髭男dism",
+      "artistAliases": [
+        "Official髭男dism",
+        "Official HIGE DANdism",
+        "Official Hige Dandism"
+      ],
+      "trackName": "I Love...",
+      "albumName": "I Love...",
+      "lrclibTrackId": 14016058,
+      "appleTrackId": 1492963535,
+      "storefront": "JP",
+      "trackDurationSeconds": 282.036,
+      "lineJa": "僕が見つめる 景色のその中に",
+      "previewLineStartSeconds": 22.74,
+      "previewLineEndSeconds": 29.92,
+      "verificationScore": 100.0,
+      "verificationFullScore": 83.9,
+      "verificationCoverage": 1.0,
+      "verificationCommonChars": 13,
+      "verifiedTranscript": "僕が見つめる景色のその中に君が履いて"
+    },
+    {
+      "id": "apple:1578260041:22.78:僕が見つめる景色のその中",
+      "artistName": "Official髭男dism",
+      "artistAliases": [
+        "Official髭男dism",
+        "Official HIGE DANdism",
+        "Official Hige Dandism"
+      ],
+      "trackName": "I LOVE...",
+      "albumName": "Editorial",
+      "lrclibTrackId": 2521668,
+      "appleTrackId": 1578260041,
+      "storefront": "JP",
+      "trackDurationSeconds": 282.687,
+      "lineJa": "僕が 見つめる 景色の その中に",
+      "previewLineStartSeconds": 22.78,
+      "previewLineEndSeconds": 29.92,
+      "verificationScore": 100.0,
+      "verificationFullScore": 83.9,
+      "verificationCoverage": 1.0,
+      "verificationCommonChars": 13,
+      "verifiedTranscript": "僕が見つめる景色のその中に君が履いて"
     }
   ]
 }
