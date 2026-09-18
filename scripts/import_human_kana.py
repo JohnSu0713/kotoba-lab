@@ -11,7 +11,7 @@ https://commons.wikimedia.org/wiki/Category:Audio_files_of_hiragana_(set_by_Haka
 """
 
 from __future__ import annotations
-import argparse, hashlib, json, re, subprocess, tempfile, urllib.parse, urllib.request
+import argparse, hashlib, json, re, subprocess, tempfile, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 
 SEED_RE=re.compile(r"\['([^']+)','([^']+)','([^']+)','[^']+','(gojuon|dakuten|handakuten|yoon)'\]")
@@ -66,12 +66,37 @@ def main()->None:
         if not out.exists():
             with tempfile.TemporaryDirectory() as td:
                 raw=Path(td)/filename.replace(" ","_")
-                request=urllib.request.Request(url,headers={"User-Agent":"Kotoba-Lab/1.0 educational kana importer"})
-                try:
-                    with urllib.request.urlopen(request,timeout=30) as response:
-                        raw.write_bytes(response.read())
-                except Exception as exc:
-                    raise RuntimeError(f"{hira}: failed {filename} {url}: {exc}") from exc
+                request=urllib.request.Request(
+                    url,
+                    headers={
+                        "User-Agent":"Kotoba-Lab/1.0 (educational kana importer; contact via GitHub JohnSu0713/kotoba-lab)",
+                        "Accept":"audio/ogg,application/ogg;q=0.9,*/*;q=0.1",
+                    },
+                )
+                last_error=None
+                for attempt in range(6):
+                    try:
+                        if imported:
+                            time.sleep(2.2)
+                        with urllib.request.urlopen(request,timeout=30) as response:
+                            raw.write_bytes(response.read())
+                        last_error=None
+                        break
+                    except urllib.error.HTTPError as exc:
+                        last_error=exc
+                        if exc.code!=429 or attempt==5:
+                            break
+                        retry_after=exc.headers.get("Retry-After")
+                        wait=float(retry_after) if retry_after and retry_after.isdigit() else min(8*(attempt+1),40)
+                        print(f"{hira}: Wikimedia rate limit; retrying in {wait:.0f}s")
+                        time.sleep(wait)
+                    except Exception as exc:
+                        last_error=exc
+                        if attempt==5:
+                            break
+                        time.sleep(min(3*(attempt+1),15))
+                if last_error is not None:
+                    raise RuntimeError(f"{hira}: failed {filename} {url}: {last_error}") from last_error
                 master(raw,out)
         asset=f"./audio/ja/{out_name}"
         manifest["profiles"]["kana"][hira]=asset
