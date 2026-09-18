@@ -25,6 +25,10 @@ import requests
 from faster_whisper import WhisperModel
 from rapidfuzz.fuzz import partial_ratio, ratio
 
+ARTIST_TRACK_HINTS: dict[str, list[str]] = {
+    "Official髭男dism": ["Pretender", "I LOVE...", "Subtitle", "宿命", "ミックスナッツ"],
+}
+
 ARTISTS: dict[str, list[str]] = {
     "YOASOBI": ["YOASOBI"],
     "藤井 風": ["藤井 風", "Fujii Kaze", "藤井風"],
@@ -147,14 +151,41 @@ def parse_synced(raw: str | None) -> list[dict[str, Any]]:
 
 
 def lrclib_tracks(artist: str) -> list[dict[str, Any]]:
-    data = request_json(
+    headers = {
+        "Accept": "application/json",
+        "Lrclib-Client": "Kotoba Lab verified-preview-builder",
+    }
+    data: list[dict[str, Any]] = []
+    seen_ids: set[int] = set()
+
+    # Artist-only search can be sparse for stylized names such as
+    # Official髭男dism. Seed exact popular track lookups first, then broaden.
+    for title in ARTIST_TRACK_HINTS.get(artist, []):
+        try:
+            hinted = request_json(
+                "https://lrclib.net/api/search",
+                params={"artist_name": artist, "track_name": title},
+                headers=headers,
+            )
+            for row in hinted:
+                row_id = int(row.get("id") or 0)
+                if row_id and row_id not in seen_ids:
+                    seen_ids.add(row_id)
+                    data.append(row)
+        except Exception as exc:
+            print("  LRCLIB hinted search failed", repr(title), exc)
+
+    broad = request_json(
         "https://lrclib.net/api/search",
         params={"q": artist},
-        headers={
-            "Accept": "application/json",
-            "Lrclib-Client": "Kotoba Lab verified-preview-builder",
-        },
+        headers=headers,
     )
+    for row in broad:
+        row_id = int(row.get("id") or 0)
+        if row_id and row_id not in seen_ids:
+            seen_ids.add(row_id)
+            data.append(row)
+
     aliases = ARTISTS[artist]
     rows = []
     for row in data:
