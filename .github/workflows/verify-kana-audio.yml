@@ -60,6 +60,7 @@ jobs:
             --kana-source src/features/kana/data.ts \
             --output /tmp/kana-audit \
             --scope kana \
+            --kana-subset yoon \
             --workers 4 \
             --force
           python scripts/import_human_kana.py \
