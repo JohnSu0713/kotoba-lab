@@ -38,7 +38,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
-          python -m pip install --disable-pip-version-check google-cloud-texttospeech
+          python -m pip install --disable-pip-version-check google-cloud-texttospeech faster-whisper pydub
       - name: Generate all kana from scratch
         env:
           GCP_TTS_VOICE: ja-JP-Chirp3-HD-Zephyr
@@ -50,4 +50,13 @@ jobs:
           python scripts/generate_hd_audio.py             --kana-source src/features/kana/data.ts             --output /tmp/kana-audit             --scope kana             --workers 4             --force
       - name: Audit all 208 aliases / 104 unique audio files
         run: |
-          python scripts/audit_kana_audio.py             --kana-source src/features/kana/data.ts             --audio-dir /tmp/kana-audit
+          python scripts/audit_kana_audio.py \
+            --kana-source src/features/kana/data.ts \
+            --audio-dir /tmp/kana-audit
+
+      - name: Verify all 104 unique pronunciations with independent ASR
+        run: |
+          python scripts/audit_kana_asr.py \
+            --kana-source src/features/kana/data.ts \
+            --audio-dir /tmp/kana-audit \
+            --model small
