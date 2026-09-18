@@ -1,0 +1,60 @@
+name: Probe Apple preview transcription
+
+on:
+  push:
+    branches: [fix-audited-kana-lyrics]
+    paths:
+      - .github/workflows/probe-apple-transcribe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download and transcribe Matsuri preview
+        run: |
+          python -m pip install --disable-pip-version-check requests faster-whisper
+          python - <<'PY'
+          import json, pathlib, tempfile, requests
+          from faster_whisper import WhisperModel
+
+          params = {
+              'term': 'Fujii Kaze Matsuri',
+              'country': 'JP',
+              'media': 'music',
+              'entity': 'song',
+              'limit': 25,
+          }
+          data = requests.get('https://itunes.apple.com/search', params=params, timeout=15).json()
+          rows = [
+              row for row in data.get('results', [])
+              if row.get('previewUrl')
+              and 'fujii' in row.get('artistName','').lower()
+              and 'matsuri' in row.get('trackName','').lower()
+          ]
+          if not rows:
+              print(json.dumps(data, ensure_ascii=False)[:6000])
+              raise SystemExit('No Apple Matsuri result')
+          row = rows[0]
+          print('APPLE', row.get('trackId'), row.get('artistName'), row.get('trackName'), row.get('trackTimeMillis'), row.get('collectionName'))
+          preview = requests.get(row['previewUrl'], timeout=30)
+          preview.raise_for_status()
+          suffix = '.m4a' if 'm4a' in row['previewUrl'] else '.mp3'
+          path = pathlib.Path(tempfile.mkdtemp()) / ('preview' + suffix)
+          path.write_bytes(preview.content)
+          print('PREVIEW_BYTES', len(preview.content), 'URL', row['previewUrl'])
+
+          model = WhisperModel('small', device='cpu', compute_type='int8')
+          segments, info = model.transcribe(str(path), language='ja', beam_size=5, vad_filter=False, word_timestamps=True)
+          print('LANG', info.language, info.language_probability)
+          for seg in segments:
+              print('SEG', f'{seg.start:.2f}-{seg.end:.2f}', repr(seg.text))
+              for word in seg.words or []:
+                  print('WORD', f'{word.start:.2f}-{word.end:.2f}', repr(word.word), f'{word.probability:.3f}')
+          PY
