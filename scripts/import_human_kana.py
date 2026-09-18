@@ -111,7 +111,20 @@ def main()->None:
         "items":sources,
     }
     manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
+
+    referenced={
+        Path(url).name
+        for profile in manifest.get("profiles",{}).values()
+        for url in profile.values()
+    }
+    removed=0
+    for path in args.audio_dir.glob("*.mp3"):
+        if path.name not in referenced:
+            path.unlink()
+            removed+=1
+
     print("HUMAN_KANA_IMPORTED",imported)
+    print("ORPHAN_AUDIO_REMOVED",removed)
     if imported!=71:
         raise SystemExit(f"expected 71 human kana, imported {imported}")
 
