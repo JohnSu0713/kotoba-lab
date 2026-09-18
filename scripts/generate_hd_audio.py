@@ -64,9 +64,14 @@ def load_kana_targets(source: Path, rate: float) -> list[Target]:
     targets: list[Target] = []
     for hira, kata in rows:
         canonical = normalize(hira)
-        # A sentence boundary prevents Chirp from clipping isolated morae such as
-        # い / き / し / ち. The manifest key remains the raw kana.
-        spoken = canonical + "。"
+        # Use Google's Japanese-specific yomigana phoneme control so isolated
+        # morae are explicit rather than inferred from a one-character sentence.
+        # Small leading/trailing breaks prevent edge clipping on mobile playback.
+        spoken = (
+            '<speak><break time="80ms"/>'
+            f'<phoneme alphabet="yomigana" ph="{canonical}">{canonical}</phoneme>'
+            '<break time="120ms"/></speak>'
+        )
         targets.append(Target("kana", normalize(hira), spoken, rate))
         targets.append(Target("kana", normalize(kata), spoken, rate))
     return targets
@@ -146,8 +151,13 @@ def synthesize_one(target: Target, output: Path, voice: str, attempts: int = 7) 
         client = texttospeech.TextToSpeechClient()
         local.client = client
 
+    synthesis_input = (
+        texttospeech.SynthesisInput(ssml=target.spoken_text)
+        if target.profile == "kana"
+        else texttospeech.SynthesisInput(text=target.spoken_text)
+    )
     request = {
-        "input": texttospeech.SynthesisInput(text=target.spoken_text),
+        "input": synthesis_input,
         "voice": texttospeech.VoiceSelectionParams(language_code="ja-JP", name=voice),
         "audio_config": texttospeech.AudioConfig(
             audio_encoding=texttospeech.AudioEncoding.MP3,
