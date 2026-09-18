@@ -372,8 +372,13 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
   document.body.appendChild(audio);
 
   activePreview = audio;
+  audio.load();
 
   let finished = false;
+  let startWatchdog: number | undefined = window.setTimeout(() => {
+    if (audio.currentTime < 0.05) finish(true);
+  }, 5000);
+
   const finish = (failed = false): void => {
     if (finished) return;
     finished = true;
@@ -381,6 +386,10 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
     if (activePreviewTimer !== undefined) {
       window.clearInterval(activePreviewTimer);
       activePreviewTimer = undefined;
+    }
+    if (startWatchdog !== undefined) {
+      window.clearTimeout(startWatchdog);
+      startWatchdog = undefined;
     }
 
     audio.pause();
@@ -396,6 +405,12 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
 
   audio.addEventListener('ended', () => finish(false), { once: true });
   audio.addEventListener('error', () => finish(true), { once: true });
+  audio.addEventListener('playing', () => {
+    if (startWatchdog !== undefined) {
+      window.clearTimeout(startWatchdog);
+      startWatchdog = undefined;
+    }
+  }, { once: true });
 
   if (status) status.textContent = '正在載入音訊…';
 
