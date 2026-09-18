@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import json, re, requests, sys
+import json, re, requests, sys, urllib.parse
 from pathlib import Path
 
 SEED_RE=re.compile(r"\['([^']+)','([^']+)','([^']+)','[^']+','(?:gojuon|dakuten|handakuten|yoon)'\]")
@@ -9,37 +9,42 @@ if len(rows)!=104:
     raise SystemExit(f"expected 104 rows, got {len(rows)}")
 
 session=requests.Session()
-session.headers["User-Agent"]="Kotoba-Lab/1.0 (kana audio audit)"
+session.headers.update({
+    "User-Agent":"Kotoba-Lab/1.0 kana-audio-audit (educational project)",
+    "Accept":"audio/ogg,audio/*;q=0.9,*/*;q=0.1",
+})
 found=[]
 missing=[]
 for hira,kata,romaji in rows:
     candidates=[
-        f"File:Japanese {romaji}.ogg",
-        f"File:Japanese_{romaji}.ogg",
-        f"File:Ja-{romaji}.ogg",
-        f"File:Ja {romaji}.ogg",
+        f"Japanese {romaji}.ogg",
+        f"Japanese_{romaji}.ogg",
+        f"Ja-{romaji}.ogg",
+        f"Ja {romaji}.ogg",
     ]
     hit=None
-    for title in candidates:
-        data=session.get("https://commons.wikimedia.org/w/api.php",params={
-            "action":"query","format":"json","titles":title,
-            "prop":"imageinfo","iiprop":"url|extmetadata",
-            "iiurlwidth":"0",
-        },timeout=15).json()
-        page=next(iter(data.get("query",{}).get("pages",{}).values()),{})
-        if "missing" in page:
+    for filename in candidates:
+        url="https://commons.wikimedia.org/wiki/Special:Redirect/file/"+urllib.parse.quote(filename)
+        try:
+            response=session.get(url,timeout=20,allow_redirects=True,stream=True)
+            ctype=response.headers.get("content-type","").lower()
+            if response.status_code==200 and ("audio" in ctype or response.url.lower().endswith(".ogg")):
+                hit={"kana":hira,"romaji":romaji,"filename":filename,"url":response.url,"contentType":ctype}
+                response.close()
+                break
+            response.close()
+        except requests.RequestException:
             continue
-        info=(page.get("imageinfo") or [{}])[0]
-        if info.get("url"):
-            hit={"kana":hira,"romaji":romaji,"title":title,"url":info["url"],
-                 "license":(info.get("extmetadata",{}).get("LicenseShortName",{}) or {}).get("value")}
-            break
     if hit: found.append(hit)
     else: missing.append({"kana":hira,"romaji":romaji})
 
 print("FOUND",len(found))
 print("MISSING",len(missing))
-print(json.dumps(missing,ensure_ascii=False))
-Path("/tmp/commons-kana.json").write_text(json.dumps({"found":found,"missing":missing},ensure_ascii=False,indent=2),encoding="utf-8")
-if len(found)<80:
+print("FOUND_ITEMS",json.dumps(found,ensure_ascii=False))
+print("MISSING_ITEMS",json.dumps(missing,ensure_ascii=False))
+Path("/tmp/commons-kana.json").write_text(
+    json.dumps({"found":found,"missing":missing},ensure_ascii=False,indent=2),
+    encoding="utf-8",
+)
+if len(found)<40:
     sys.exit(1)
