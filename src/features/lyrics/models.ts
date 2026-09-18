@@ -22,7 +22,7 @@ export interface DailyLyricLesson {
   lineJa: string;
   lineZhTw: string;
   timingResolved?: boolean;
-  timingVersion?: 3;
+  timingVersion?: 4;
   lineStartSeconds?: number;
   lineEndSeconds?: number;
   words?: LyricWordTiming[];

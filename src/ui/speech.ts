@@ -1,7 +1,9 @@
 const JA_LOCALE = 'ja-JP';
-const KANA_RATE = 0.1125;
+const KANA_RATE = 0.62;
 const DEFAULT_RATE = 0.96;
+const KANA_TARGET_RATE = 0.62;
 const VOICE_LOAD_TIMEOUT_MS = 400;
+const HD_AUDIO_START_TIMEOUT_MS = 1400;
 const HD_AUDIO_MANIFEST_URL = './audio/ja/manifest.json';
 
 type AudioProfile = 'kana' | 'default';
@@ -10,6 +12,7 @@ type HdAudioManifest = {
   schemaVersion: 1;
   generatedAt?: string;
   voice?: string;
+  rates?: Partial<Record<AudioProfile, number>>;
   profiles: Record<AudioProfile, Record<string, string>>;
 };
 
@@ -49,8 +52,6 @@ export function initJapaneseAudio(): Promise<void> {
       if (isHdAudioManifest(parsed)) hdAudioManifest = parsed;
     })
     .catch((error) => {
-      // HD audio is an enhancement. A missing manifest must never prevent study;
-      // browser speech synthesis remains the offline/first-deploy fallback.
       console.info('Kotoba HD audio manifest unavailable; using browser speech.', error);
     });
   return hdManifestLoad;
@@ -60,6 +61,13 @@ function hdAudioUrl(text: string): string | undefined {
   const key = normalizeAudioKey(text);
   if (!key || !hdAudioManifest) return undefined;
   return hdAudioManifest.profiles[audioProfile(key)]?.[key];
+}
+
+function hdPlaybackRate(text: string): number {
+  if (!isShortKana(text)) return 1;
+  const generatedRate = hdAudioManifest?.rates?.kana;
+  if (!generatedRate || generatedRate <= 0) return 1.7;
+  return Math.max(0.8, Math.min(2, KANA_TARGET_RATE / generatedRate));
 }
 
 function voiceScore(voice: SpeechSynthesisVoice): number {
@@ -86,8 +94,6 @@ function bestJapaneseVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice
 }
 
 function speechRate(text: string): number {
-  // This rate is only used by the browser fallback. Generated Chirp audio has its
-  // learning pace baked into the asset at generation time.
   return isShortKana(text) ? KANA_RATE : DEFAULT_RATE;
 }
 
@@ -156,24 +162,65 @@ function speakWithBrowser(text: string, requestId: number): void {
   window.setTimeout(finish, VOICE_LOAD_TIMEOUT_MS);
 }
 
+function disposeActiveAudio(): void {
+  if (!activeAudio) return;
+  activeAudio.pause();
+  activeAudio.removeAttribute('src');
+  activeAudio.load();
+  activeAudio.remove();
+  activeAudio = undefined;
+}
+
 function speakWithHdAsset(text: string, src: string, requestId: number): boolean {
   try {
-    const audio = new Audio(src);
-    activeAudio = audio;
+    const audio = document.createElement('audio');
+    audio.src = src;
     audio.preload = 'auto';
+    audio.volume = 1;
+    audio.muted = false;
+    audio.playbackRate = hdPlaybackRate(text);
+    audio.defaultPlaybackRate = audio.playbackRate;
+    audio.setAttribute('playsinline', '');
+    audio.setAttribute('webkit-playsinline', '');
+    audio.hidden = true;
+    document.body.appendChild(audio);
+    activeAudio = audio;
 
-    let fellBack = false;
-    const fallback = (): void => {
-      if (fellBack || requestId !== speechRequestId) return;
-      fellBack = true;
+    let settled = false;
+    let startTimer: number | undefined;
+
+    const cleanup = (): void => {
+      if (startTimer !== undefined) {
+        window.clearTimeout(startTimer);
+        startTimer = undefined;
+      }
       if (activeAudio === audio) activeAudio = undefined;
+      audio.pause();
+      audio.remove();
+    };
+
+    const fallback = (): void => {
+      if (settled || requestId !== speechRequestId) return;
+      settled = true;
+      cleanup();
       speakWithBrowser(text, requestId);
     };
 
-    audio.addEventListener('ended', () => {
-      if (activeAudio === audio) activeAudio = undefined;
+    audio.addEventListener('playing', () => {
+      if (startTimer !== undefined) {
+        window.clearTimeout(startTimer);
+        startTimer = undefined;
+      }
     }, { once: true });
+
+    audio.addEventListener('ended', () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+    }, { once: true });
+
     audio.addEventListener('error', fallback, { once: true });
+    startTimer = window.setTimeout(fallback, HD_AUDIO_START_TIMEOUT_MS);
 
     const play = audio.play();
     if (play) void play.catch(fallback);
@@ -192,11 +239,7 @@ export function speakJapanese(text: string): void {
   if (!clean) return;
 
   const requestId = ++speechRequestId;
-  if (activeAudio) {
-    activeAudio.pause();
-    activeAudio.currentTime = 0;
-    activeAudio = undefined;
-  }
+  disposeActiveAudio();
   if (canSpeakJapanese()) window.speechSynthesis.cancel();
 
   const staticAudio = hdAudioUrl(clean);
@@ -204,9 +247,6 @@ export function speakJapanese(text: string): void {
   speakWithBrowser(clean, requestId);
 }
 
-// Warm both sources at startup. The manifest is intentionally loaded in advance
-// so a later user tap can call HTMLMediaElement.play() synchronously, which keeps
-// iOS/Safari and Chrome inside their user-gesture media policy.
 void initJapaneseAudio();
 if (canSpeakJapanese()) {
   const synth = window.speechSynthesis;

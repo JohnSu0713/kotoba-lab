@@ -260,14 +260,9 @@ export function pickDeckArtist(
 
 function previewWindow(trackDuration?: number): { start: number; end: number } | undefined {
   if (!trackDuration || trackDuration <= 0) return undefined;
-  const start = trackDuration > 60
-    ? 30
-    : trackDuration > 30
-      ? Math.max(0, trackDuration - 30)
-      : 0;
   return {
-    start,
-    end: Math.min(trackDuration, start + 30),
+    start: 0,
+    end: Math.min(trackDuration, 30),
   };
 }
 
@@ -287,6 +282,20 @@ function focusableTimedLines(lines: SyncedLine[], trackDuration?: number): Synce
   );
 }
 
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  timeoutMs = 2800,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 async function translateToTraditionalChinese(text: string): Promise<string> {
   const pairs = ['ja-JP|zh-TW', 'ja|zh-TW'];
   for (const pair of pairs) {
@@ -294,7 +303,11 @@ async function translateToTraditionalChinese(text: string): Promise<string> {
       const url = new URL('https://api.mymemory.translated.net/get');
       url.searchParams.set('q', text);
       url.searchParams.set('langpair', pair);
-      const response = await fetch(url, { headers: { Accept: 'application/json' } });
+      const response = await fetchWithTimeout(
+        url,
+        { headers: { Accept: 'application/json' } },
+        1800,
+      );
       if (!response.ok) continue;
       const data = await response.json() as MyMemoryResponse;
       const translated = data.responseData?.translatedText?.trim();
@@ -309,12 +322,16 @@ async function translateToTraditionalChinese(text: string): Promise<string> {
 async function searchArtistTracks(artist: FollowedArtist): Promise<LrcLibTrack[]> {
   const url = new URL('https://lrclib.net/api/search');
   url.searchParams.set('q', artist.name);
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'application/json',
-      'Lrclib-Client': 'Kotoba Lab (https://github.com/JohnSu0713/kotoba-lab)',
+  const response = await fetchWithTimeout(
+    url,
+    {
+      headers: {
+        Accept: 'application/json',
+        'Lrclib-Client': 'Kotoba Lab (https://github.com/JohnSu0713/kotoba-lab)',
+      },
     },
-  });
+    3200,
+  );
   if (!response.ok) throw new Error('Lyrics search failed: ' + response.status);
 
   const results = await response.json() as LrcLibTrack[];
@@ -330,6 +347,7 @@ export async function fetchDailyLyric(
   artist: FollowedArtist,
   dateKey: string,
   selectionSeed = dateKey,
+  options: { translate?: boolean } = {},
 ): Promise<DailyLyricLesson> {
   const tracks = await searchArtistTracks(artist);
   if (!tracks.length) throw new Error('目前找不到 ' + artist.name + ' 的可用歌詞。');
@@ -371,7 +389,9 @@ export async function fetchDailyLyric(
     ?? plain[stableHash('line:' + selectionSeed + ':' + track.id) % plain.length];
 
   if (!lineJa) throw new Error('目前找不到適合學習的日文歌詞。');
-  const lineZhTw = await translateToTraditionalChinese(lineJa);
+  const lineZhTw = options.translate === false
+    ? ''
+    : await translateToTraditionalChinese(lineJa);
 
   return {
     id: dateKey + ':' + track.id + ':' + stableHash(lineJa).toString(36),
@@ -385,7 +405,7 @@ export async function fetchDailyLyric(
     lineJa,
     lineZhTw,
     timingResolved: true,
-    timingVersion: 3,
+    timingVersion: 4,
     ...(timedLine ? {
       lineStartSeconds: timedLine.startSeconds,
       lineEndSeconds: timedLine.endSeconds,
@@ -393,5 +413,16 @@ export async function fetchDailyLyric(
     } : {}),
     fetchedAt: new Date().toISOString(),
     source: 'lrclib+mymemory',
+  };
+}
+
+
+export async function finalizeDailyLyricTranslation(
+  lesson: DailyLyricLesson,
+): Promise<DailyLyricLesson> {
+  if (lesson.lineZhTw.trim()) return lesson;
+  return {
+    ...lesson,
+    lineZhTw: await translateToTraditionalChinese(lesson.lineJa),
   };
 }

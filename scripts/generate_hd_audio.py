@@ -25,7 +25,7 @@ from typing import Iterable
 
 LEVELS = ("N5", "N4", "N3", "N2", "N1")
 DEFAULT_VOICE = "ja-JP-Chirp3-HD-Zephyr"
-DEFAULT_KANA_RATE = 0.35
+DEFAULT_KANA_RATE = 0.62
 DEFAULT_WORD_RATE = 0.92
 # Chirp 3 HD currently has a dedicated 200 requests/min/project quota. Keep a
 # conservative margin so parallel workers never burst through the minute bucket.
