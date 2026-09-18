@@ -1,0 +1,43 @@
+name: Verify Google audio understanding
+
+on:
+  push:
+    branches: [fix-audited-kana-lyrics]
+    paths:
+      - .github/workflows/verify-google-audio.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_TTS_CREDENTIALS_JSON }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test Vertex AI audio access
+        run: |
+          python -m pip install --disable-pip-version-check google-genai google-auth requests
+          python - <<'PY'
+          import google.auth
+          from google import genai
+
+          _, project = google.auth.default()
+          if not project:
+              raise SystemExit("No GCP project from ADC")
+          print("project:", project)
+          client = genai.Client(vertexai=True, project=project, location="global")
+          response = client.models.generate_content(
+              model="gemini-3.5-flash",
+              contents="Reply with exactly AUDIO_VERIFY_OK",
+          )
+          print("model:", response.text)
+          if "AUDIO_VERIFY_OK" not in (response.text or ""):
+              raise SystemExit("Unexpected model response")
+          PY
