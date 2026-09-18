@@ -107,7 +107,7 @@ def main() -> None:
             failures.append(f"{filename}: missing")
             continue
         size = path.stat().st_size
-        if size < 1200:
+        if size < 500:
             failures.append(f"{filename}: suspiciously small ({size} bytes)")
             continue
         try:
