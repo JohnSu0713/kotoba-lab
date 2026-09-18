@@ -1,0 +1,49 @@
+name: Probe lyric preview fingerprinting
+
+on:
+  push:
+    branches: [fix-audited-kana-lyrics]
+    paths:
+      - .github/workflows/probe-lyric-fingerprint.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fingerprint two preview slices
+        run: |
+          python -m pip install --disable-pip-version-check requests
+          python - <<'PY'
+          import json, subprocess, tempfile, pathlib, requests
+
+          q = 'artist:"Fujii Kaze" track:"Matsuri"'
+          data = requests.get('https://api.deezer.com/search', params={'q': q, 'limit': 10}, timeout=10).json()
+          rows = data.get('data') or []
+          if not rows:
+              raise SystemExit('No Deezer result')
+          track = rows[0]
+          print('DEEZER', track.get('id'), track.get('artist',{}).get('name'), track.get('title'), track.get('duration'))
+          preview = track.get('preview')
+          if not preview:
+              raise SystemExit('No preview')
+          mp3 = requests.get(preview, timeout=20).content
+          base = pathlib.Path(tempfile.mkdtemp())
+          source = base/'preview.mp3'
+          source.write_bytes(mp3)
+          print('PREVIEW_BYTES', len(mp3))
+          for i, start in enumerate((1, 17), 1):
+              clip = base/f'clip{i}.mp3'
+              subprocess.run(['ffmpeg','-y','-v','error','-ss',str(start),'-t','8','-i',str(source),str(clip)],check=True)
+              resp = requests.post('https://api.audd.io/', data={
+                  'api_token':'test',
+                  'return':'deezer',
+              }, files={'file': open(clip,'rb')}, timeout=30).json()
+              print('AUDD', i, 'preview_start', start, json.dumps(resp, ensure_ascii=False))
+          PY
