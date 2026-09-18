@@ -1,8 +1,9 @@
 name: Build verified lyric catalog
 
 on:
+  workflow_dispatch:
   push:
-    branches: [fix-audited-kana-lyrics]
+    branches: [main]
     paths:
       - scripts/generate_verified_lyrics.py
       - .github/workflows/build-verified-lyrics.yml
@@ -17,36 +18,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: fix-audited-kana-lyrics
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
       - name: Install verifier
         run: python -m pip install --disable-pip-version-check requests faster-whisper rapidfuzz
+
       - name: Build audio-verified catalog
         run: |
           python scripts/generate_verified_lyrics.py \
             --output public/data/verified-lyrics.json \
             --per-artist 6 \
             --model small
+
       - name: Validate catalog
         run: |
           python - <<'PY'
           import json
           from collections import Counter
           from pathlib import Path
-          data=json.loads(Path("public/data/verified-lyrics.json").read_text())
-          entries=data.get("entries", [])
+
+          data = json.loads(Path("public/data/verified-lyrics.json").read_text())
+          entries = data.get("entries", [])
           assert len(entries) >= 12, f"only {len(entries)} verified entries"
-          counts=Counter(e["artistName"] for e in entries)
           assert all(e["verificationScore"] >= 76 for e in entries)
           assert all(e["verificationCommonChars"] >= 4 for e in entries)
-          assert all(0 <= e["previewLineStartSeconds"] < e["previewLineEndSeconds"] <= 30 for e in entries)
+          assert all(
+              0 <= e["previewLineStartSeconds"] < e["previewLineEndSeconds"] <= 30
+              for e in entries
+          )
+          counts = Counter(e["artistName"] for e in entries)
           print("VERIFIED_ENTRIES", len(entries))
           print("COUNTS", dict(counts))
           PY
+
       - name: Commit verified catalog
+        if: github.event_name == 'workflow_dispatch'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -55,5 +66,5 @@ jobs:
             echo "Catalog unchanged"
           else
             git commit -m "lyrics: refresh audio-verified catalog"
-            git push origin HEAD:fix-audited-kana-lyrics
+            git push origin HEAD:${{ github.ref_name }}
           fi
