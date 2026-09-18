@@ -47,6 +47,9 @@ jobs:
           python scripts/audit_kana_audio.py \
             --kana-source src/features/kana/data.ts \
             --audio-dir /tmp/kana-human
+          python scripts/audit_kana_provenance.py \
+            --kana-source src/features/kana/data.ts \
+            --audio-dir /tmp/kana-human
           python - <<'PY'
           import json
           from pathlib import Path
