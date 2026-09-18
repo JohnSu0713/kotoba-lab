@@ -1,5 +1,5 @@
-const CACHE = 'kotoba-lab-v0.6.0';
-const AUDIO_CACHE = 'kotoba-lab-audio-runtime-v1';
+const CACHE = 'kotoba-lab-v0.7.0';
+const AUDIO_CACHE = 'kotoba-lab-audio-runtime-v2';
 const MANIFEST = './asset-manifest.json';
 
 self.addEventListener('install', (event) => {
