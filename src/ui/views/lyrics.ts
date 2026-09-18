@@ -377,9 +377,58 @@ function updateLyricHighlight(
   }
 }
 
+interface PreviewFocusWindow {
+  start: number;
+  end: number;
+  duration: number;
+  focused: boolean;
+}
+
+function previewFocusWindow(
+  source: OriginalClipSource,
+  lesson: DailyLyricLesson,
+): PreviewFocusWindow {
+  const clipEnd = Math.max(1, source.previewSeconds);
+  const fullTrackStart = source.fullTrackStartSeconds;
+
+  if (
+    fullTrackStart !== undefined
+    && lesson.lineStartSeconds !== undefined
+    && lesson.lineEndSeconds !== undefined
+  ) {
+    const localLineStart = lesson.lineStartSeconds - fullTrackStart;
+    const localLineEnd = lesson.lineEndSeconds - fullTrackStart;
+
+    if (localLineEnd >= 0 && localLineStart <= clipEnd) {
+      const start = Math.max(0, localLineStart - 5);
+      const end = Math.min(
+        clipEnd,
+        Math.max(localLineEnd + 5, start + 6),
+      );
+      if (end > start + 1) {
+        return {
+          start,
+          end,
+          duration: end - start,
+          focused: true,
+        };
+      }
+    }
+  }
+
+  const end = Math.min(12, clipEnd);
+  return {
+    start: 0,
+    end,
+    duration: end,
+    focused: false,
+  };
+}
+
 function setPreviewState(
   root: HTMLElement,
   source: OriginalClipSource,
+  focus: PreviewFocusWindow,
   playing: boolean,
   elapsedSeconds = 0,
 ): void {
@@ -387,22 +436,32 @@ function setPreviewState(
   const status = root.querySelector<HTMLElement>('#lyric-original-status');
   if (!label || !status) return;
 
-  label.textContent = '原曲試聽';
-  setBasicPlaybackState(root, playing, elapsedSeconds / source.previewSeconds);
+  label.textContent = focus.focused ? '原曲片段' : '原曲試聽';
+  setBasicPlaybackState(root, playing, elapsedSeconds / focus.duration);
 
   if (playing) {
-    status.textContent = Math.max(0, Math.ceil(source.previewSeconds - elapsedSeconds)) + ' 秒 · 播放中';
+    const remaining = Math.max(0, Math.ceil(focus.duration - elapsedSeconds));
+    status.textContent = focus.focused
+      ? remaining + ' 秒 · 歌詞聚焦'
+      : remaining + ' 秒 · 播放中';
   } else {
-    status.textContent = source.previewSeconds + ' 秒 · 純音訊';
+    status.textContent = Math.ceil(focus.duration)
+      + (focus.focused ? ' 秒 · 前後各約 5 秒' : ' 秒 · 純音訊');
   }
 }
 
-function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): void {
+function playOriginalPreview(
+  root: HTMLElement,
+  source: OriginalClipSource,
+  lesson: DailyLyricLesson,
+): void {
   const status = root.querySelector<HTMLElement>('#lyric-original-status');
+  const focus = previewFocusWindow(source, lesson);
 
   if (activePreview && !activePreview.paused) {
     stopActivePreview();
-    setPreviewState(root, source, false);
+    resetLyricHighlight(root);
+    setPreviewState(root, source, focus, false);
     return;
   }
 
@@ -410,8 +469,6 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
   stopActivePreview();
   resetLyricHighlight(root);
 
-  // Keep a real media element attached to the document. This is more reliable
-  // than a detached Audio() object in iOS standalone PWAs.
   const audio = document.createElement('audio');
   audio.src = source.previewUrl;
   audio.preload = 'auto';
@@ -427,8 +484,19 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
 
   let finished = false;
   let startWatchdog: number | undefined = window.setTimeout(() => {
-    if (audio.currentTime < 0.05) finish(true);
+    if (audio.currentTime < Math.max(0.05, focus.start - 0.5)) finish(true);
   }, 5000);
+
+  const seekToFocus = (): void => {
+    if (focus.start <= 0) return;
+    try {
+      if (Math.abs(audio.currentTime - focus.start) > 0.35) {
+        audio.currentTime = focus.start;
+      }
+    } catch {
+      // Safari can reject an early seek until metadata is available.
+    }
+  };
 
   const finish = (failed = false): void => {
     if (finished) return;
@@ -448,22 +516,26 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
     if (activePreview === audio) activePreview = undefined;
 
     if (!root.isConnected) return;
-    setPreviewState(root, source, false);
+    resetLyricHighlight(root);
+    setPreviewState(root, source, focus, false);
     if (failed && status) {
       status.textContent = '音訊載入失敗 · 再按一次重試';
     }
   };
 
+  audio.addEventListener('loadedmetadata', seekToFocus, { once: true });
+  audio.addEventListener('canplay', seekToFocus, { once: true });
   audio.addEventListener('ended', () => finish(false), { once: true });
   audio.addEventListener('error', () => finish(true), { once: true });
   audio.addEventListener('playing', () => {
+    seekToFocus();
     if (startWatchdog !== undefined) {
       window.clearTimeout(startWatchdog);
       startWatchdog = undefined;
     }
   }, { once: true });
 
-  if (status) status.textContent = '正在載入音訊…';
+  if (status) status.textContent = focus.focused ? '正在定位這句…' : '正在載入音訊…';
 
   void audio.play().then(() => {
     if (!root.isConnected) {
@@ -471,7 +543,9 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
       return;
     }
 
-    setPreviewState(root, source, true, 0);
+    seekToFocus();
+    setPreviewState(root, source, focus, true, 0);
+
     activePreviewTimer = window.setInterval(() => {
       if (activePreview !== audio || !root.isConnected) {
         finish(false);
@@ -483,10 +557,27 @@ function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): voi
         return;
       }
 
-      const elapsed = Math.min(audio.currentTime, source.previewSeconds);
-      setPreviewState(root, source, true, elapsed);
-      if (elapsed >= source.previewSeconds) finish(false);
-    }, 180);
+      if (audio.currentTime + 0.35 < focus.start) {
+        seekToFocus();
+        return;
+      }
+
+      const elapsed = Math.max(0, Math.min(
+        focus.duration,
+        audio.currentTime - focus.start,
+      ));
+      setPreviewState(root, source, focus, true, elapsed);
+
+      if (source.fullTrackStartSeconds !== undefined) {
+        updateLyricHighlight(
+          root,
+          lesson,
+          source.fullTrackStartSeconds + audio.currentTime,
+        );
+      }
+
+      if (audio.currentTime >= focus.end - 0.05) finish(false);
+    }, 90);
   }).catch(() => {
     finish(true);
   });
