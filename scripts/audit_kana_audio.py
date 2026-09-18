@@ -64,7 +64,7 @@ def main() -> None:
     args = parser.parse_args()
 
     manifest = json.loads((args.audio_dir / "manifest.json").read_text(encoding="utf-8"))
-    voice = manifest.get("voice")
+    voice = manifest.get("voices", {}).get("kana") or manifest.get("voice")
     rate = float(manifest.get("rates", {}).get("kana", 0))
     profile = manifest.get("profiles", {}).get("kana", {})
     if not voice or rate <= 0:
