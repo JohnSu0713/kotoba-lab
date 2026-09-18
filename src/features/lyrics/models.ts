@@ -14,6 +14,7 @@ export interface DailyLyricLesson {
   albumName?: string;
   lineJa: string;
   lineZhTw: string;
+  timingResolved?: boolean;
   lineStartSeconds?: number;
   lineEndSeconds?: number;
   fetchedAt: string;
