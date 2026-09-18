@@ -302,23 +302,34 @@ def audio_matches(
             heard = lyric_norm(str(window["text"]))
             if not heard:
                 continue
-            score = max(ratio(target, heard), partial_ratio(target, heard))
+            full_score = ratio(target, heard)
+            partial_score = partial_ratio(target, heard)
             common = common_substring_len(target, heard)
-            strong = (
-                score >= 90 and common >= 4
-            ) or (
-                score >= 82 and common >= 6
-            ) or (
-                score >= 76 and common >= 8
+            coverage = min(1.0, len(heard) / max(1, len(target)))
+            exact_inclusion = target in heard
+
+            # A preview card must contain essentially the whole displayed line.
+            # partial_ratio alone is unsafe: a four-character fragment can score
+            # 100 against a much longer lyric. Require either exact inclusion or
+            # strong full-line similarity with substantial transcript coverage.
+            strong = exact_inclusion or (
+                coverage >= 0.78
+                and full_score >= 82
+                and partial_score >= 86
+                and common >= max(4, min(8, len(target) // 3))
             )
             if not strong:
                 continue
+
+            score = max(full_score, partial_score)
             candidate = {
                 "line": str(line["text"]),
                 "start": max(0.0, float(window["start"])),
                 "end": min(30.0, float(window["end"])),
                 "transcript": str(window["text"]),
                 "score": float(score),
+                "fullScore": float(full_score),
+                "coverage": float(coverage),
                 "common": int(common),
             }
             if best_for_line is None or (
@@ -426,6 +437,8 @@ def main() -> None:
                     "previewLineStartSeconds": round(match["start"], 2),
                     "previewLineEndSeconds": round(match["end"], 2),
                     "verificationScore": round(match["score"], 1),
+                    "verificationFullScore": round(match["fullScore"], 1),
+                    "verificationCoverage": round(match["coverage"], 3),
                     "verificationCommonChars": int(match["common"]),
                     "verifiedTranscript": match["transcript"],
                 }
