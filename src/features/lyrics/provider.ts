@@ -281,11 +281,10 @@ function focusableTimedLines(lines: SyncedLine[], trackDuration?: number): Synce
   );
   if (withContext.length) return withContext;
 
-  const insidePreview = lines.filter((line) =>
+  return lines.filter((line) =>
     line.startSeconds >= window.start
     && line.endSeconds <= window.end,
   );
-  return insidePreview.length ? insidePreview : lines;
 }
 
 async function translateToTraditionalChinese(text: string): Promise<string> {
@@ -353,14 +352,20 @@ export async function fetchDailyLyric(
     throw new Error('目前找到的歌曲沒有適合學習的日文歌詞，請再試一次或加入其他歌手。');
   }
 
-  const synchronized = prepared.filter(({ focusedTimed }) => focusedTimed.length > 0);
-  const pool = synchronized.length ? synchronized : prepared;
+  const previewSynchronized = prepared.filter(({ focusedTimed }) => focusedTimed.length > 0);
+  const synchronized = prepared.filter(({ timed }) => timed.length > 0);
+  const pool = previewSynchronized.length
+    ? previewSynchronized
+    : synchronized.length
+      ? synchronized
+      : prepared;
   const selected = pool[stableHash('track:' + selectionSeed + ':' + artist.id) % pool.length];
   if (!selected) throw new Error('目前找不到適合學習的日文歌詞。');
 
-  const { track, focusedTimed, plain } = selected;
-  const timedLine = focusedTimed.length
-    ? focusedTimed[stableHash('line:' + selectionSeed + ':' + track.id) % focusedTimed.length]
+  const { track, timed, focusedTimed, plain } = selected;
+  const timedPool = focusedTimed.length ? focusedTimed : timed;
+  const timedLine = timedPool.length
+    ? timedPool[stableHash('line:' + selectionSeed + ':' + track.id) % timedPool.length]
     : undefined;
   const lineJa = timedLine?.text
     ?? plain[stableHash('line:' + selectionSeed + ':' + track.id) % plain.length];
