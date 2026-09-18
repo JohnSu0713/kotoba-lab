@@ -22,7 +22,7 @@ export interface DailyLyricLesson {
 }
 
 export interface OriginalClipSource {
-  provider: 'apple-preview';
+  provider: 'apple-preview' | 'deezer-preview';
   previewUrl: string;
   title: string;
   artistName: string;
