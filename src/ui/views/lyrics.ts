@@ -5,11 +5,7 @@ import {
   localDateKey,
   pickDailyArtist,
 } from '../../features/lyrics/provider.js';
-import {
-  resolveOriginalClip,
-  youtubeEmbedUrl,
-  youtubeSearchUrl,
-} from '../../features/lyrics/media.js';
+import { resolveOriginalClip } from '../../features/lyrics/media.js';
 import type {
   DailyLyricLesson,
   FollowedArtist,
@@ -20,6 +16,21 @@ import { icons } from '../components/icons.js';
 import { speakJapanese } from '../speech.js';
 
 const SUGGESTED_ARTISTS = ['YOASOBI', '藤井 風', '米津玄師', 'Aimer', 'あいみょん', 'Official髭男dism'];
+
+let activePreview: HTMLAudioElement | undefined;
+let activePreviewTimer: number | undefined;
+
+function stopActivePreview(): void {
+  if (activePreviewTimer !== undefined) {
+    window.clearInterval(activePreviewTimer);
+    activePreviewTimer = undefined;
+  }
+  if (activePreview) {
+    activePreview.pause();
+    activePreview.currentTime = 0;
+    activePreview = undefined;
+  }
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -142,16 +153,10 @@ function errorDaily(artist: FollowedArtist, message: string): string {
     </section>`;
 }
 
-function clipDuration(lesson: DailyLyricLesson): number | undefined {
-  if (lesson.lineStartSeconds === undefined || lesson.lineEndSeconds === undefined) return undefined;
-  return Math.max(1, Math.round(lesson.lineEndSeconds - lesson.lineStartSeconds));
-}
-
 function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
   const vocab = lessonVocabulary(context, lesson.lineJa);
   const grammar = grammarHint(lesson.lineJa);
   const favorite = lyricsStore.isFavorite(lesson.id);
-  const duration = clipDuration(lesson);
 
   return `
     <section class="lyric-daily-card">
@@ -178,11 +183,12 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
 
         <div class="lyric-playback-row">
           <button class="lyric-primary-play" id="lyric-original" type="button" disabled>
-            <span class="lyric-play-symbol">${icons.play}</span>
-            <span>
-              <strong>原曲片段</strong>
-              <small id="lyric-original-status">${duration ? duration + ' 秒 · 準備中' : '這句沒有同步時間'}</small>
+            <span class="lyric-play-symbol" id="lyric-original-icon">${icons.play}</span>
+            <span class="lyric-play-copy">
+              <strong>原曲試聽</strong>
+              <small id="lyric-original-status">音訊準備中</small>
             </span>
+            <span class="lyric-audio-progress" aria-hidden="true"><span id="lyric-audio-progress-fill"></span></span>
           </button>
           <button class="lyric-pronounce" id="lyric-pronounce" type="button" aria-label="播放標準日文發音">
             ${icons.volume}
@@ -190,7 +196,6 @@ function dailyLesson(context: AppContext, lesson: DailyLyricLesson): string {
           </button>
         </div>
 
-        <div class="lyric-player-shell" id="lyric-player-shell" hidden></div>
       </div>
 
       <div class="lyric-learning-grid">
@@ -246,31 +251,79 @@ function bindSharedInteractions(root: HTMLElement): void {
   });
 }
 
-function openPlayer(root: HTMLElement, source: OriginalClipSource): void {
-  const shell = root.querySelector<HTMLElement>('#lyric-player-shell');
-  if (!shell) return;
+function setPlaybackButtonState(
+  root: HTMLElement,
+  source: OriginalClipSource,
+  playing: boolean,
+  elapsedSeconds = 0,
+): void {
+  const icon = root.querySelector<HTMLElement>('#lyric-original-icon');
+  const status = root.querySelector<HTMLElement>('#lyric-original-status');
+  const fill = root.querySelector<HTMLElement>('#lyric-audio-progress-fill');
+  const button = root.querySelector<HTMLButtonElement>('#lyric-original');
+  if (!icon || !status || !fill || !button) return;
 
-  shell.hidden = false;
-  shell.innerHTML = `
-    <div class="lyric-player-frame">
-      <button class="lyric-player-close" id="lyric-player-close" type="button" aria-label="關閉原曲播放器">×</button>
-      <iframe
-        src="${escapeHtml(youtubeEmbedUrl(source))}"
-        title="${escapeHtml(source.title)}"
-        allow="autoplay; encrypted-media; picture-in-picture"
-        referrerpolicy="strict-origin-when-cross-origin"
-        allowfullscreen
-      ></iframe>
-    </div>
-    <div class="lyric-player-meta">
-      <span>原曲 · ${Math.max(1, Math.round(source.endSeconds - source.startSeconds))} 秒</span>
-      <strong>${escapeHtml(source.title)}</strong>
-    </div>
-  `;
+  icon.innerHTML = playing ? icons.pause : icons.play;
+  button.classList.toggle('playing', playing);
 
-  shell.querySelector<HTMLButtonElement>('#lyric-player-close')?.addEventListener('click', () => {
-    shell.innerHTML = '';
-    shell.hidden = true;
+  const targetSeconds = source.previewSeconds;
+  const progress = Math.max(0, Math.min(1, elapsedSeconds / targetSeconds));
+  fill.style.width = (progress * 100).toFixed(1) + '%';
+
+  if (playing) {
+    status.textContent = Math.max(0, Math.ceil(targetSeconds - elapsedSeconds)) + ' 秒 · 播放中';
+  } else {
+    status.textContent = targetSeconds + ' 秒 · 純音訊';
+  }
+}
+
+function playOriginalPreview(root: HTMLElement, source: OriginalClipSource): void {
+  const button = root.querySelector<HTMLButtonElement>('#lyric-original');
+  if (!button) return;
+
+  if (activePreview && !activePreview.paused) {
+    stopActivePreview();
+    setPlaybackButtonState(root, source, false);
+    return;
+  }
+
+  stopActivePreview();
+  const audio = new Audio(source.previewUrl);
+  activePreview = audio;
+  audio.preload = 'auto';
+  audio.playsInline = true;
+
+  const finish = (): void => {
+    if (activePreviewTimer !== undefined) {
+      window.clearInterval(activePreviewTimer);
+      activePreviewTimer = undefined;
+    }
+    audio.pause();
+    audio.currentTime = 0;
+    if (activePreview === audio) activePreview = undefined;
+    if (root.isConnected) setPlaybackButtonState(root, source, false);
+  };
+
+  audio.addEventListener('ended', finish, { once: true });
+  audio.addEventListener('error', finish, { once: true });
+
+  void audio.play().then(() => {
+    if (!root.isConnected) {
+      finish();
+      return;
+    }
+    setPlaybackButtonState(root, source, true, 0);
+    activePreviewTimer = window.setInterval(() => {
+      if (activePreview !== audio || audio.paused || !root.isConnected) {
+        finish();
+        return;
+      }
+      const elapsed = Math.min(audio.currentTime, source.previewSeconds);
+      setPlaybackButtonState(root, source, true, elapsed);
+      if (elapsed >= source.previewSeconds) finish();
+    }, 180);
+  }).catch(() => {
+    finish();
   });
 }
 
@@ -283,23 +336,19 @@ async function hydrateOriginalPlayback(root: HTMLElement, lesson: DailyLyricLess
   if (!root.isConnected) return;
 
   if (resolution.state === 'ready') {
-    const seconds = Math.max(1, Math.round(resolution.source.endSeconds - resolution.source.startSeconds));
     button.disabled = false;
-    status.textContent = seconds + ' 秒 · 原曲';
-    button.addEventListener('click', () => openPlayer(root, resolution.source));
+    setPlaybackButtonState(root, resolution.source, false);
+    button.addEventListener('click', () => playOriginalPreview(root, resolution.source));
     return;
   }
 
-  button.disabled = false;
-  button.classList.add('fallback');
-  status.textContent = resolution.state === 'untimed' ? '找原曲' : '找原曲 · 外部開啟';
-  button.addEventListener('click', () => {
-    window.open(youtubeSearchUrl(lesson), '_blank', 'noopener,noreferrer');
-  });
+  button.disabled = true;
+  status.textContent = '這首暫無官方音訊試聽';
 }
 
 function bindLessonInteractions(root: HTMLElement, lesson: DailyLyricLesson): void {
   root.querySelector<HTMLButtonElement>('#lyric-pronounce')?.addEventListener('click', () => {
+    stopActivePreview();
     speakJapanese(lesson.lineJa);
   });
 
@@ -356,6 +405,7 @@ async function fetchAndRenderLesson(
 }
 
 export async function renderLyrics(root: HTMLElement, context: AppContext): Promise<void> {
+  stopActivePreview();
   const state = lyricsStore.getState();
   const dateKey = localDateKey();
   const artist = pickDailyArtist(state.artists, dateKey);
