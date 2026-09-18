@@ -28,6 +28,7 @@ const DECK_POSITION_PREFIX = 'kotoba-lab:lyrics-deck-position:';
 let activePreview: HTMLAudioElement | undefined;
 let activePreviewTimer: number | undefined;
 let activePreciseController: PrecisePlaybackController | undefined;
+const verifiedPreviewSources = new Map<string, OriginalClipSource>();
 
 function stopActivePreview(): void {
   if (activePreviewTimer !== undefined) {
@@ -655,12 +656,16 @@ async function hydrateOriginalPlayback(root: HTMLElement, lesson: DailyLyricLess
   // upgrade the same button to precise playback in the background when possible.
   const precisePromise = resolvePrecisePlayback(lesson);
 
-  const preview = await resolveOriginalClip(lesson);
+  const remembered = verifiedPreviewSources.get(lesson.id);
+  const preview = remembered
+    ? { state: 'ready' as const, source: remembered }
+    : await resolveOriginalClip(lesson);
   if (!root.isConnected) return;
 
   let fallback: OriginalClipSource | undefined;
   if (preview.state === 'ready') {
     fallback = preview.source;
+    verifiedPreviewSources.set(lesson.id, fallback);
     button.disabled = false;
     const focus = previewFocusWindow(fallback, lesson);
     setPreviewState(root, fallback, focus, false);
@@ -731,6 +736,55 @@ function pageHtml(artists: FollowedArtist[], daily: string): string {
 
 const deckPrefetches = new Map<string, Promise<void>>();
 
+function sourceContainsLesson(
+  source: OriginalClipSource,
+  lesson: DailyLyricLesson,
+): boolean {
+  if (
+    source.provider !== 'deezer-preview'
+    || source.fullTrackStartSeconds === undefined
+    || lesson.lineStartSeconds === undefined
+    || lesson.lineEndSeconds === undefined
+  ) return false;
+
+  const previewStart = source.fullTrackStartSeconds;
+  const previewEnd = previewStart + source.previewSeconds;
+  return lesson.lineStartSeconds >= previewStart + 0.5
+    && lesson.lineEndSeconds <= previewEnd - 0.5;
+}
+
+async function resolveVerifiedLesson(
+  artist: FollowedArtist,
+  dateKey: string,
+  cardIndex: number,
+): Promise<DailyLyricLesson> {
+  const baseSeed = deckSelectionSeed(dateKey, cardIndex);
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      const lesson = await fetchDailyLyric(
+        artist,
+        dateKey,
+        baseSeed + ':verified:' + attempt,
+      );
+      const preview = await resolveOriginalClip(lesson);
+      if (
+        preview.state === 'ready'
+        && sourceContainsLesson(preview.source, lesson)
+      ) {
+        verifiedPreviewSources.set(lesson.id, preview.source);
+        return lesson;
+      }
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError instanceof Error) throw lastError;
+  throw new Error('這位歌手目前找不到「音訊與歌詞時間都能驗證」的卡片，請翻下一張。');
+}
+
 async function prefetchDeckCard(
   artists: FollowedArtist[],
   dateKey: string,
@@ -742,18 +796,17 @@ async function prefetchDeckCard(
 
   const key = cacheKey(dateKey, artist, index);
   const cached = lyricsStore.cachedLesson(key);
-  if (cached?.timingResolved && cached.timingVersion === 2) return;
+  if (cached?.timingResolved && cached.timingVersion === 3) return;
   if (deckPrefetches.has(key)) return await deckPrefetches.get(key);
 
-  const promise = fetchDailyLyric(
-    artist,
-    dateKey,
-    deckSelectionSeed(dateKey, index),
-  ).then((lesson) => {
-    lyricsStore.cacheLesson(key, lesson);
-  }).catch(() => undefined).finally(() => {
-    deckPrefetches.delete(key);
-  });
+  const promise = resolveVerifiedLesson(artist, dateKey, index)
+    .then((lesson) => {
+      lyricsStore.cacheLesson(key, lesson);
+    })
+    .catch(() => undefined)
+    .finally(() => {
+      deckPrefetches.delete(key);
+    });
 
   deckPrefetches.set(key, promise);
   await promise;
@@ -815,11 +868,7 @@ async function fetchAndRenderLesson(
   bindSharedInteractions(root);
 
   try {
-    const lesson = await fetchDailyLyric(
-      artist,
-      dateKey,
-      deckSelectionSeed(dateKey, cardIndex),
-    );
+    const lesson = await resolveVerifiedLesson(artist, dateKey, cardIndex);
     if (!root.isConnected) return;
 
     lyricsStore.cacheLesson(key, lesson);
@@ -854,6 +903,17 @@ async function fetchAndRenderLesson(
   }
 }
 
+async function cachedLessonIsVerified(
+  lesson: DailyLyricLesson,
+): Promise<boolean> {
+  if (!lesson.timingResolved || lesson.timingVersion !== 3) return false;
+  const preview = await resolveOriginalClip(lesson);
+  if (preview.state !== 'ready') return false;
+  if (!sourceContainsLesson(preview.source, lesson)) return false;
+  verifiedPreviewSources.set(lesson.id, preview.source);
+  return true;
+}
+
 async function renderDeckCard(
   root: HTMLElement,
   context: AppContext,
@@ -876,7 +936,7 @@ async function renderDeckCard(
   const key = cacheKey(dateKey, artist, cardIndex);
   const cached = lyricsStore.cachedLesson(key);
 
-  if (cached?.timingResolved && cached.timingVersion === 2) {
+  if (cached && await cachedLessonIsVerified(cached)) {
     root.innerHTML = pageHtml(artists, dailyLesson(context, cached, cardIndex));
     bindSharedInteractions(root);
     bindLessonInteractions(root, cached);
