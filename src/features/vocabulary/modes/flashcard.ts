@@ -27,12 +27,10 @@ function posLabel(raw: string): string {
 
 function exampleFor(example: VocabularyExample | undefined): FlashcardQuestion['example'] | undefined {
   if (!example) return undefined;
-  const translation = example.zhTw ?? example.en;
   return {
     ja: example.ja,
-    ...(example.romaji ? { romaji: example.romaji } : {}),
-    ...(translation ? { translation } : {}),
-    ...(example.zhTw ? { translationLabel: '繁中' } : example.en ? { translationLabel: 'EN' } : {}),
+    ...(example.kana ? { kana: example.kana } : {}),
+    ...(example.zhTw ? { translation: example.zhTw, translationLabel: '中文' } : {}),
     ...(example.source === 'tatoeba' ? { sourceLabel: example.sourceId ? `Tatoeba #${example.sourceId}` : 'Tatoeba' } : {}),
   };
 }
