@@ -23,7 +23,6 @@ import { speakJapanese } from '../speech.js';
 
 const SUGGESTED_ARTISTS = ['YOASOBI', '藤井 風', '米津玄師', 'Aimer', 'あいみょん', 'Official髭男dism'];
 const DECK_POSITION_PREFIX = 'kotoba-lab:lyrics-deck-position:';
-const MAX_DECK_INDEX = 1_000_000;
 
 let activePreview: HTMLAudioElement | undefined;
 let activePreviewTimer: number | undefined;
@@ -64,7 +63,7 @@ function escapeHtml(value: string): string {
 
 function sanitizeDeckIndex(index: number): number {
   if (!Number.isFinite(index)) return 0;
-  return Math.max(0, Math.min(MAX_DECK_INDEX, Math.floor(index)));
+  return Math.max(0, Math.floor(index));
 }
 
 function deckSlotKey(dateKey: string, cardIndex: number): string {
