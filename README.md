@@ -1,3 +1,21 @@
+## September 2026 · Learning studio (v0.10.0)
+
+Kotoba Lab now brings the daily review plan, a searchable word notebook, and practical Japanese into one calm workspace.
+
+- **Today:** local-date goal ring, seven-day activity, selected N5–N1 level, daily word, and due-first mixed practice.
+- **Word notebook:** search the existing 7,777-word corpus by Japanese, reading, or Traditional Chinese; filter by level, save words, and practice a saved word or collection.
+- **Studio:** 12 introductory grammar lessons with checks, four original reading passages with optional readings/translations, and six speaking scenarios with normal/slow playback and self-marked practice. These are introductory materials, not a complete JLPT curriculum; speaking has no automated pronunciation assessment.
+- **Progress:** actual activity history, a local-calendar streak, an 84-day activity map, weak-item practice, and a session summary.
+- **Usability:** warm light/dark surfaces, mobile layouts, focus states, skip link, and study shortcuts (Space/Enter to reveal/continue, 1–4 to answer, R to replay).
+
+Existing review records survive the IndexedDB v1 → v2 upgrade. New activity history starts with this release; old daily history is not reconstructed. JSON backup schema 1 remains readable, with optional `activities` and `notebook` fields. Import validates all fields before atomically replacing the learning data. The backup does **not** include the separate lyric store or appearance preference.
+
+Daily new-card limits are shared across scheduled sessions. A card is an item/mode pair. Explicit notebook practice can bypass this limit and updates the same review schedule. The scheduler remains the existing adaptive scheduler, **not exact FSRS**. Local state is device-specific; use export/import for transfer. Audio availability depends on the existing audio assets and the device's Japanese voices.
+
+Validation: `npm run build && npm test`. The optional browser regression script (`node tests/browser.cjs`, with Playwright available) starts a local server and checks the main interactions, mobile layouts, offline reload, and migration from the old database. `CHROMIUM_EXECUTABLE` can select an installed Chromium binary; `QA_FONT_CSS` supplies optional local CJK fonts for screenshots. No new runtime dependency is required.
+
+---
+
 # Kotoba Lab
 
 A calm, local-first Japanese learning PWA for Traditional Chinese learners.

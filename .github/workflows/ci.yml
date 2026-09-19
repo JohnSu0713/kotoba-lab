@@ -27,6 +27,9 @@ jobs:
       - name: Type-check and build
         run: npm run build
 
+      - name: Validate learning sessions and backup compatibility
+        run: npm test
+
       - name: Validate HD audio target manifest
         run: |
           python scripts/generate_hd_audio.py \
