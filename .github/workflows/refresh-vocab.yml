@@ -3,7 +3,7 @@ name: Refresh vocabulary data
 on:
   workflow_dispatch:
   push:
-    branches: [main, feat/example-audio-romaji]
+    branches: [main, feat/hiragana-chinese-examples]
     paths:
       - scripts/import_tomoshi.py
       - .github/workflows/refresh-vocab.yml
@@ -60,29 +60,37 @@ jobs:
             --cmn-links /tmp/jpn-cmn_links.tsv.bz2
           cat public/data/vocab/manifest.json
 
-      - name: Validate example pronunciation guides
+      - name: Validate hiragana guides and Chinese translations
         run: |
           python - <<'PY'
           import json
+          import re
           from pathlib import Path
 
           total = 0
-          missing = []
+          bad = []
           for path in sorted(Path("public/data/vocab").glob("n[1-5].json")):
               pack = json.loads(path.read_text(encoding="utf-8"))
               for item in pack.get("items", []):
                   for example in item.get("examples", []):
                       total += 1
-                      if not str(example.get("romaji") or "").strip():
-                          missing.append((path.name, item.get("id"), example.get("ja")))
-          print("EXAMPLES_WITH_PRONUNCIATION_GUIDE", total - len(missing))
-          print("TOTAL_EXAMPLES", total)
+                      kana = str(example.get("kana") or "").strip()
+                      zh_tw = str(example.get("zhTw") or "").strip()
+                      if not kana:
+                          bad.append((path.name, item.get("id"), "missing kana"))
+                      elif re.search(r"[ァ-ヺ一-龯]", kana):
+                          bad.append((path.name, item.get("id"), f"non-hiragana guide: {kana}"))
+                      if not zh_tw:
+                          bad.append((path.name, item.get("id"), "missing zhTw"))
+                      if "romaji" in example or "en" in example:
+                          bad.append((path.name, item.get("id"), "legacy romaji/en field present"))
+          print("TOTAL_CHINESE_HIRAGANA_EXAMPLES", total)
           if total == 0:
-              raise SystemExit("No examples found in generated vocabulary packs")
-          if missing:
-              for row in missing[:20]:
-                  print("MISSING", row)
-              raise SystemExit(f"{len(missing)} examples are missing romaji")
+              raise SystemExit("No Chinese + hiragana examples found")
+          if bad:
+              for row in bad[:20]:
+                  print("INVALID", row)
+              raise SystemExit(f"{len(bad)} invalid learner-facing examples")
           PY
 
       - name: Commit generated vocabulary packs
