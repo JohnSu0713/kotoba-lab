@@ -40,6 +40,7 @@ ARTISTS: dict[str, list[str]] = {
         "Official HIGE DANdism",
         "Official Hige Dandism",
     ],
+    "Vaundy": ["Vaundy", "バウンディ"],
 }
 
 NOISY_VERSION = re.compile(
