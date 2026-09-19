@@ -27,6 +27,27 @@ LEVELS = ("N5", "N4", "N3", "N2", "N1")
 LEVEL_BASE = {"N5": 20_000, "N4": 40_000, "N3": 60_000, "N2": 80_000, "N1": 100_000}
 SOURCE_VERSION = "2026-09-02"
 
+_ROMAJIZER: Any | None = None
+
+
+def romanize_japanese(value: str) -> str:
+    """Return pronunciation-oriented Hepburn-style romaji for one sentence."""
+    global _ROMAJIZER
+    if _ROMAJIZER is None:
+        try:
+            import cutlet  # type: ignore
+        except ImportError as exc:
+            raise RuntimeError(
+                "cutlet is required to build pronunciation guides for examples"
+            ) from exc
+        _ROMAJIZER = cutlet.Cutlet()
+        _ROMAJIZER.use_foreign_spelling = False
+
+    romaji = str(_ROMAJIZER.romaji(value) or "").strip()
+    if not romaji:
+        raise RuntimeError(f"Could not romanize example sentence: {value}")
+    return romaji
+
 
 def priority_score(form: dict[str, Any]) -> tuple[int, str]:
     priority = form.get("priority") or []
@@ -157,7 +178,11 @@ def load_curated_examples(words_path: Path | None, cmn_sentences: Path | None, c
                 seen.add(ja)
                 sentence_id = str(example.get("sentence_id") or "")
                 numeric_id = sentence_id.removeprefix("tatoeba-")
-                record: dict[str, str] = {"ja": ja, "source": "tatoeba"}
+                record: dict[str, str] = {
+                    "ja": ja,
+                    "romaji": romanize_japanese(ja),
+                    "source": "tatoeba",
+                }
                 if numeric_id:
                     record["sourceId"] = numeric_id
                     for translated_id in links.get(numeric_id, []):
