@@ -1,6 +1,7 @@
 import type { DailyLyricLesson, FollowedArtist, LyricsState } from './models.js';
 
 const STORAGE_KEY = 'kotoba-lab:lyrics:v1';
+const RECENT_LESSON_LIMIT = 120;
 
 function initialState(): LyricsState {
   return { schemaVersion: 1, artists: [], favoriteLessonIds: [], cachedLessons: {} };
@@ -34,6 +35,22 @@ function read(): LyricsState {
 
 function write(state: LyricsState): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function trimLessonCache(state: LyricsState): void {
+  const favoriteIds = new Set(state.favoriteLessonIds);
+  const entries = Object.entries(state.cachedLessons)
+    .sort(([, a], [, b]) => b.fetchedAt.localeCompare(a.fetchedAt));
+
+  // Saved lyric cards are learning material, not disposable cache. Keep every
+  // favorite available for later review while bounding only the recent,
+  // non-favorite browsing history.
+  const favorites = entries.filter(([, lesson]) => favoriteIds.has(lesson.id));
+  const recent = entries
+    .filter(([, lesson]) => !favoriteIds.has(lesson.id))
+    .slice(0, RECENT_LESSON_LIMIT);
+
+  state.cachedLessons = Object.fromEntries([...favorites, ...recent]);
 }
 
 export class LyricsStore {
@@ -70,14 +87,18 @@ export class LyricsStore {
       .find((lesson) => lesson.id === lessonId);
   }
 
+  favoriteLessons(): DailyLyricLesson[] {
+    const state = read();
+    const order = new Map(state.favoriteLessonIds.map((id, index) => [id, index]));
+    return Object.values(state.cachedLessons)
+      .filter((lesson) => order.has(lesson.id))
+      .sort((a, b) => (order.get(b.id) ?? 0) - (order.get(a.id) ?? 0));
+  }
+
   cacheLesson(key: string, lesson: DailyLyricLesson): void {
     const state = read();
     state.cachedLessons[key] = lesson;
-    state.cachedLessons = Object.fromEntries(
-      Object.entries(state.cachedLessons)
-        .sort(([, a], [, b]) => b.fetchedAt.localeCompare(a.fetchedAt))
-        .slice(0, 120),
-    );
+    trimLessonCache(state);
     write(state);
   }
 
@@ -87,6 +108,7 @@ export class LyricsStore {
     state.favoriteLessonIds = selected
       ? state.favoriteLessonIds.filter((id) => id !== lessonId)
       : [...state.favoriteLessonIds, lessonId];
+    trimLessonCache(state);
     write(state);
     return !selected;
   }
