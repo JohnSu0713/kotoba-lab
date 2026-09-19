@@ -1,4 +1,4 @@
-const CACHE = 'kotoba-lab-v0.9.0';
+const CACHE = 'kotoba-lab-v0.10.0';
 const AUDIO_CACHE = 'kotoba-lab-audio-runtime-v3';
 const AUDIO_CACHE_LIMIT = 80;
 const MANIFEST = './asset-manifest.json';
@@ -20,7 +20,7 @@ self.addEventListener('install', (event) => {
     const response = await fetch(MANIFEST, { cache: 'no-store' });
     const assets = response.ok
       ? await response.json()
-      : ['./', './index.html', './styles.css', './visual-polish.css', './corpus-polish.css', './flashcard-polish.css', './lyrics.css'];
+      : ['./', './index.html', './styles.css', './visual-polish.css', './corpus-polish.css', './flashcard-polish.css', './lyrics.css', './learning-studio.css', './accessibility.css'];
     await cache.addAll([...new Set(['./', MANIFEST, ...assets])]);
     await self.skipWaiting();
   })());
@@ -31,7 +31,7 @@ self.addEventListener('activate', (event) => {
     const keys = await caches.keys();
     await Promise.all(
       keys
-        .filter((key) => key !== CACHE && key !== AUDIO_CACHE)
+        .filter((key) => key.startsWith('kotoba-lab-') && key !== CACHE && key !== AUDIO_CACHE)
         .map((key) => caches.delete(key)),
     );
     await self.clients.claim();
