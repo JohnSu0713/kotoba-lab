@@ -23,6 +23,7 @@ import { speakJapanese } from '../speech.js';
 
 const SUGGESTED_ARTISTS = ['YOASOBI', '藤井 風', '米津玄師', 'Aimer', 'あいみょん', 'Official髭男dism'];
 const DECK_POSITION_PREFIX = 'kotoba-lab:lyrics-deck-position:';
+const FOCUS_MODE_KEY = 'kotoba-lab:lyrics-focus-mode:v1';
 
 let activePreview: HTMLAudioElement | undefined;
 let activePreviewTimer: number | undefined;
@@ -59,6 +60,22 @@ function escapeHtml(value: string): string {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
+}
+
+function readFocusMode(): boolean {
+  try {
+    return localStorage.getItem(FOCUS_MODE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeFocusMode(enabled: boolean): void {
+  try {
+    localStorage.setItem(FOCUS_MODE_KEY, enabled ? '1' : '0');
+  } catch {
+    // Focus mode is a local UI preference only.
+  }
 }
 
 function sanitizeDeckIndex(index: number): number {
@@ -227,6 +244,7 @@ function dailyLesson(
   const vocab = lessonVocabulary(context, lesson.lineJa);
   const grammar = grammarHint(lesson.lineJa);
   const favorite = lyricsStore.isFavorite(lesson.id);
+  const focusMode = readFocusMode();
 
   return `
     <section class="lyric-daily-card" data-lyric-card>
@@ -239,16 +257,38 @@ function dailyLesson(
             <span>${escapeHtml(lesson.artistName)}${lesson.albumName ? ' · ' + escapeHtml(lesson.albumName) : ''}</span>
           </div>
         </div>
-        <button class="lyric-save-button ${favorite ? 'selected' : ''}" id="lyric-favorite" type="button" aria-label="${favorite ? '取消收藏' : '收藏這句'}">
-          ${favorite ? icons.heartFilled : icons.heart}
-        </button>
+        <div class="lyric-card-actions">
+          <button
+            class="lyric-focus-toggle ${focusMode ? 'selected' : ''}"
+            id="lyric-focus-toggle"
+            type="button"
+            aria-pressed="${focusMode}"
+            aria-label="${focusMode ? '關閉先想後看模式' : '開啟先想後看模式'}"
+          >
+            <span class="lyric-focus-dot" aria-hidden="true"></span>
+            <span>先想後看</span>
+          </button>
+          <button class="lyric-save-button ${favorite ? 'selected' : ''}" id="lyric-favorite" type="button" aria-label="${favorite ? '取消收藏' : '收藏這句'}">
+            ${favorite ? icons.heartFilled : icons.heart}
+          </button>
+        </div>
       </div>
 
       ${deckNav(cardIndex)}
 
       <div class="lyric-quote">
         <p lang="ja" id="lyric-sync-text">${lyricMarkup(lesson)}</p>
-        <div class="lyric-translation">
+        ${focusMode ? `
+          <div class="lyric-recall-prompt" id="lyric-recall-prompt">
+            <div>
+              <span>ACTIVE RECALL</span>
+              <strong>先聽原曲、自己說一次，再看中文。</strong>
+            </div>
+            <button id="lyric-reveal" type="button">看答案</button>
+          </div>
+        ` : ''}
+
+        <div class="lyric-translation" id="lyric-translation" ${focusMode ? 'hidden' : ''}>
           <span>繁中</span>
           <strong>${escapeHtml(lesson.lineZhTw)}</strong>
         </div>
@@ -269,7 +309,7 @@ function dailyLesson(
         </div>
       </div>
 
-      <div class="lyric-learning-grid">
+      <div class="lyric-learning-grid" id="lyric-learning-grid" ${focusMode ? 'hidden' : ''}>
         <article>
           <p class="eyebrow">WORDS</p>
           <h3>這句值得帶走的詞</h3>
@@ -698,6 +738,26 @@ async function hydrateOriginalPlayback(root: HTMLElement, lesson: DailyLyricLess
 }
 
 function bindLessonInteractions(root: HTMLElement, lesson: DailyLyricLesson): void {
+  root.querySelector<HTMLButtonElement>('#lyric-focus-toggle')?.addEventListener('click', () => {
+    writeFocusMode(!readFocusMode());
+    window.dispatchEvent(new CustomEvent('kotoba:rerender'));
+  });
+
+  root.querySelector<HTMLButtonElement>('#lyric-reveal')?.addEventListener('click', () => {
+    const prompt = root.querySelector<HTMLElement>('#lyric-recall-prompt');
+    const translation = root.querySelector<HTMLElement>('#lyric-translation');
+    const learning = root.querySelector<HTMLElement>('#lyric-learning-grid');
+    if (prompt) prompt.hidden = true;
+    if (translation) {
+      translation.hidden = false;
+      translation.classList.add('is-revealed');
+    }
+    if (learning) {
+      learning.hidden = false;
+      learning.classList.add('is-revealed');
+    }
+  });
+
   root.querySelector<HTMLButtonElement>('#lyric-pronounce')?.addEventListener('click', () => {
     stopAllPlayback();
     resetLyricHighlight(root);
@@ -718,7 +778,7 @@ function pageHtml(artists: FollowedArtist[], daily: string): string {
       <div>
         <p class="eyebrow">MUSIC → LANGUAGE</p>
         <h1>每日歌詞</h1>
-        <p>左右翻一張，聽原曲，再把這一句記住。</p>
+        <p>無限翻卡，先聽原曲，再用主動回想把這一句記住。</p>
       </div>
       <div class="lyric-header-mark" aria-hidden="true">歌</div>
     </section>
