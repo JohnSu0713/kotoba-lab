@@ -219,13 +219,13 @@
   font-weight: 620;
   line-height: 1.65;
 }
-.vocab-example-romaji {
-  margin-top: 3px !important;
-  color: var(--muted);
-  font-size: clamp(11px, 2.4vw, 13px);
-  font-weight: 560;
-  line-height: 1.55;
-  letter-spacing: .015em;
+.vocab-example-kana {
+  margin-top: 4px !important;
+  color: var(--ink-soft);
+  font-size: clamp(13px, 2.7vw, 15px);
+  font-weight: 600;
+  line-height: 1.65;
+  letter-spacing: .025em;
   overflow-wrap: anywhere;
 }
 .vocab-example-translation {
