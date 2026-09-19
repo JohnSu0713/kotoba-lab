@@ -736,6 +736,10 @@ async function resolveCatalogLesson(
   cardIndex: number,
 ): Promise<DailyLyricLesson> {
   const lesson = await verifiedDeckLesson(artists, dateKey, cardIndex);
+  const cached = lyricsStore.cachedLessonById(lesson.id);
+  if (cached?.lineZhTw.trim()) {
+    return { ...lesson, lineZhTw: cached.lineZhTw };
+  }
   return await finalizeDailyLyricTranslation(lesson);
 }
 
