@@ -65,6 +65,36 @@ async function loadCatalog(): Promise<VerifiedCatalog> {
   return await catalogPromise;
 }
 
+function sortedForCycle(
+  entries: VerifiedCatalogEntry[],
+  dateKey: string,
+  cycle: number,
+): VerifiedCatalogEntry[] {
+  return [...entries].sort((a, b) => {
+    const ha = stableHash(dateKey + ':cycle:' + cycle + ':' + a.id);
+    const hb = stableHash(dateKey + ':cycle:' + cycle + ':' + b.id);
+    if (ha !== hb) return ha - hb;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+function orderForCycle(
+  entries: VerifiedCatalogEntry[],
+  dateKey: string,
+  cycle: number,
+): VerifiedCatalogEntry[] {
+  const ordered = sortedForCycle(entries, dateKey, cycle);
+
+  // Avoid showing the same card on the boundary between two reshuffled cycles.
+  if (cycle > 0 && ordered.length > 1) {
+    const previous = sortedForCycle(entries, dateKey, cycle - 1);
+    if (previous.at(-1)?.id === ordered[0]?.id) {
+      ordered.push(ordered.shift()!);
+    }
+  }
+  return ordered;
+}
+
 export async function verifiedDeckLesson(
   artists: FollowedArtist[],
   dateKey: string,
@@ -79,13 +109,11 @@ export async function verifiedDeckLesson(
     throw new Error('目前追蹤的歌手還沒有通過實際原曲音訊驗證的歌詞卡。');
   }
 
-  const ordered = [...followed].sort((a, b) => {
-    const ha = stableHash(dateKey + ':' + a.id);
-    const hb = stableHash(dateKey + ':' + b.id);
-    if (ha !== hb) return ha - hb;
-    return a.id.localeCompare(b.id);
-  });
-  const entry = ordered[((cardIndex % ordered.length) + ordered.length) % ordered.length];
+  const safeIndex = Math.max(0, Math.floor(cardIndex));
+  const cycle = Math.floor(safeIndex / followed.length);
+  const position = safeIndex % followed.length;
+  const ordered = orderForCycle(followed, dateKey, cycle);
+  const entry = ordered[position];
   if (!entry) throw new Error('Verified lyric card unavailable.');
 
   const artist = artists.find((candidate) => matchesArtist(entry, candidate)) ?? artists[0];
