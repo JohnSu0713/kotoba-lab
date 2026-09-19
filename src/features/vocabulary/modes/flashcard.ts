@@ -30,6 +30,7 @@ function exampleFor(example: VocabularyExample | undefined): FlashcardQuestion['
   const translation = example.zhTw ?? example.en;
   return {
     ja: example.ja,
+    ...(example.romaji ? { romaji: example.romaji } : {}),
     ...(translation ? { translation } : {}),
     ...(example.zhTw ? { translationLabel: '繁中' } : example.en ? { translationLabel: 'EN' } : {}),
     ...(example.source === 'tatoeba' ? { sourceLabel: example.sourceId ? `Tatoeba #${example.sourceId}` : 'Tatoeba' } : {}),
