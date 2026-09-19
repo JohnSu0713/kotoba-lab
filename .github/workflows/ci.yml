@@ -37,7 +37,7 @@ jobs:
             --scope all \
             --dry-run
 
-      - name: Validate example pronunciation guides
+      - name: Validate hiragana example guides
         run: |
           python - <<'PY'
           import json
@@ -45,28 +45,31 @@ jobs:
           from pathlib import Path
 
           total = 0
-          missing = []
-          suspicious = []
+          translated = 0
+          bad = []
           for path in sorted(Path("public/data/vocab").glob("n[1-5].json")):
               pack = json.loads(path.read_text(encoding="utf-8"))
               for item in pack.get("items", []):
                   for example in item.get("examples", []):
                       total += 1
-                      romaji = str(example.get("romaji") or "").strip()
-                      if not romaji:
-                          missing.append((path.name, item.get("id"), example.get("ja")))
-                      elif re.search(r"[ぁ-ゖァ-ヺ一-龯]", romaji):
-                          suspicious.append((path.name, item.get("id"), romaji))
-          print("TOTAL_EXAMPLES", total)
-          print("EXAMPLES_WITH_ROMAJI", total - len(missing))
+                      kana = str(example.get("kana") or "").strip()
+                      if not kana:
+                          bad.append((path.name, item.get("id"), "missing kana"))
+                      elif re.search(r"[ァ-ヺ一-龯]", kana):
+                          bad.append((path.name, item.get("id"), f"non-hiragana guide: {kana}"))
+                      if str(example.get("zhTw") or "").strip():
+                          translated += 1
+                      if "romaji" in example or "en" in example:
+                          bad.append((path.name, item.get("id"), "legacy romaji/en field present"))
+          print("TOTAL_HIRAGANA_EXAMPLES", total)
+          print("CHINESE_TRANSLATED_EXAMPLES", translated)
           if total == 0:
               raise SystemExit("No vocabulary examples found")
-          if missing:
-              print("MISSING_ROMAJI", missing[:20])
-              raise SystemExit(f"{len(missing)} examples are missing romaji")
-          if suspicious:
-              print("NON_LATIN_ROMAJI", suspicious[:20])
-              raise SystemExit(f"{len(suspicious)} romaji fields still contain Japanese script")
+          if translated == 0:
+              raise SystemExit("No Traditional Chinese example translations found")
+          if bad:
+              print("INVALID_EXAMPLES", bad[:20])
+              raise SystemExit(f"{len(bad)} invalid learner-facing examples")
           PY
 
       - name: Validate verified lyric catalog
