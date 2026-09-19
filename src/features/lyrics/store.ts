@@ -65,13 +65,18 @@ export class LyricsStore {
     return read().cachedLessons[key];
   }
 
+  cachedLessonById(lessonId: string): DailyLyricLesson | undefined {
+    return Object.values(read().cachedLessons)
+      .find((lesson) => lesson.id === lessonId);
+  }
+
   cacheLesson(key: string, lesson: DailyLyricLesson): void {
     const state = read();
     state.cachedLessons[key] = lesson;
     state.cachedLessons = Object.fromEntries(
       Object.entries(state.cachedLessons)
         .sort(([, a], [, b]) => b.fetchedAt.localeCompare(a.fetchedAt))
-        .slice(0, 30),
+        .slice(0, 120),
     );
     write(state);
   }
