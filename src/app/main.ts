@@ -70,7 +70,7 @@ async function bootstrap(): Promise<void> {
         }
 
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          const key = 'kotoba-lab:sw-refresh:v0.8.0';
+          const key = 'kotoba-lab:sw-refresh:v0.9.0';
           if (sessionStorage.getItem(key)) return;
           sessionStorage.setItem(key, '1');
           location.reload();
