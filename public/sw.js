@@ -1,6 +1,18 @@
 const CACHE = 'kotoba-lab-v0.9.0';
 const AUDIO_CACHE = 'kotoba-lab-audio-runtime-v3';
+const AUDIO_CACHE_LIMIT = 80;
 const MANIFEST = './asset-manifest.json';
+
+async function trimAudioCache(cache) {
+  const keys = await cache.keys();
+  const overflow = keys.length - AUDIO_CACHE_LIMIT;
+  if (overflow <= 0) return;
+
+  // CacheStorage preserves insertion order. Evict the oldest runtime audio
+  // entries first so repeated Japanese playback stays fast without letting a
+  // long study session consume storage indefinitely.
+  await Promise.all(keys.slice(0, overflow).map((request) => cache.delete(request)));
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -42,7 +54,10 @@ self.addEventListener('fetch', (event) => {
       if (cached) return cached;
 
       const response = await fetch(event.request);
-      if (response.ok) await cache.put(event.request, response.clone());
+      if (response.ok) {
+        await cache.put(event.request, response.clone());
+        await trimAudioCache(cache);
+      }
       return response;
     })());
     return;
@@ -82,7 +97,6 @@ self.addEventListener('fetch', (event) => {
     }
   })());
 });
-
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') {
