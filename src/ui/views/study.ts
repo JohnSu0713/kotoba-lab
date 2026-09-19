@@ -103,7 +103,7 @@ function renderFlashcard(
                 </div>
               </div>
               <p class="vocab-example-ja" lang="ja">${escapeHtml(question.example.ja)}</p>
-              ${question.example.romaji ? `<p class="vocab-example-romaji" lang="ja-Latn">${escapeHtml(question.example.romaji)}</p>` : ""}
+              ${question.example.kana ? `<p class="vocab-example-kana" lang="ja">${escapeHtml(question.example.kana)}</p>` : ""}
               ${question.example.translation ? `<div class="vocab-example-translation"><small>${escapeHtml(question.example.translationLabel ?? "翻譯")}</small><span>${escapeHtml(question.example.translation)}</span></div>` : ""}
             </div>`
               : `
