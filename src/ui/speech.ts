@@ -1,12 +1,12 @@
-const JA_LOCALE = 'ja-JP';
-const KANA_RATE = 0.90;
+const JA_LOCALE = "ja-JP";
+const KANA_RATE = 0.9;
 const DEFAULT_RATE = 0.96;
-const KANA_TARGET_RATE = 0.90;
+const KANA_TARGET_RATE = 0.9;
 const VOICE_LOAD_TIMEOUT_MS = 400;
 const HD_AUDIO_START_TIMEOUT_MS = 1400;
-const HD_AUDIO_MANIFEST_URL = './audio/ja/manifest.json';
+const HD_AUDIO_MANIFEST_URL = "./audio/ja/manifest.json";
 
-type AudioProfile = 'kana' | 'default';
+type AudioProfile = "kana" | "default";
 
 type HdAudioManifest = {
   schemaVersion: 1;
@@ -19,15 +19,16 @@ type HdAudioManifest = {
 let activeUtterance: SpeechSynthesisUtterance | undefined;
 let activeAudio: HTMLAudioElement | undefined;
 let speechRequestId = 0;
+let requestedRate = 1;
 
 function getAudioElement(): HTMLAudioElement {
   if (activeAudio?.isConnected) return activeAudio;
-  const audio = document.createElement('audio');
-  audio.preload = 'auto';
+  const audio = document.createElement("audio");
+  audio.preload = "auto";
   audio.volume = 1;
   audio.muted = false;
-  audio.setAttribute('playsinline', '');
-  audio.setAttribute('webkit-playsinline', '');
+  audio.setAttribute("playsinline", "");
+  audio.setAttribute("webkit-playsinline", "");
   audio.hidden = true;
   document.body.appendChild(audio);
   activeAudio = audio;
@@ -41,32 +42,37 @@ function isShortKana(text: string): boolean {
 }
 
 function audioProfile(text: string): AudioProfile {
-  return isShortKana(text) ? 'kana' : 'default';
+  return isShortKana(text) ? "kana" : "default";
 }
 
 function normalizeAudioKey(text: string): string {
-  return text.trim().normalize('NFC');
+  return text.trim().normalize("NFC");
 }
 
 function isHdAudioManifest(value: unknown): value is HdAudioManifest {
-  if (!value || typeof value !== 'object') return false;
+  if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<HdAudioManifest>;
-  return candidate.schemaVersion === 1
-    && !!candidate.profiles
-    && typeof candidate.profiles.kana === 'object'
-    && typeof candidate.profiles.default === 'object';
+  return (
+    candidate.schemaVersion === 1 &&
+    !!candidate.profiles &&
+    typeof candidate.profiles.kana === "object" &&
+    typeof candidate.profiles.default === "object"
+  );
 }
 
 export function initJapaneseAudio(): Promise<void> {
   if (hdManifestLoad) return hdManifestLoad;
-  hdManifestLoad = fetch(HD_AUDIO_MANIFEST_URL, { cache: 'no-store' })
+  hdManifestLoad = fetch(HD_AUDIO_MANIFEST_URL, { cache: "no-store" })
     .then(async (response) => {
       if (!response.ok) return;
-      const parsed = await response.json() as unknown;
+      const parsed = (await response.json()) as unknown;
       if (isHdAudioManifest(parsed)) hdAudioManifest = parsed;
     })
     .catch((error) => {
-      console.info('Kotoba HD audio manifest unavailable; using browser speech.', error);
+      console.info(
+        "Kotoba HD audio manifest unavailable; using browser speech.",
+        error,
+      );
     });
   return hdManifestLoad;
 }
@@ -89,11 +95,12 @@ function voiceScore(voice: SpeechSynthesisVoice): number {
   const name = voice.name.toLowerCase();
   let score = 0;
 
-  if (lang === 'ja-jp') score += 100;
-  else if (lang.startsWith('ja')) score += 70;
+  if (lang === "ja-jp") score += 100;
+  else if (lang.startsWith("ja")) score += 70;
 
   if (/(premium|enhanced|natural|neural|siri)/i.test(name)) score += 40;
-  if (/(google.*日本|google.*japanese|kyoko|otoya|nanami)/i.test(name)) score += 28;
+  if (/(google.*日本|google.*japanese|kyoko|otoya|nanami)/i.test(name))
+    score += 28;
   if (voice.localService) score += 12;
   if (voice.default) score += 5;
   if (/compact/i.test(name)) score -= 18;
@@ -101,9 +108,11 @@ function voiceScore(voice: SpeechSynthesisVoice): number {
   return score;
 }
 
-function bestJapaneseVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
+function bestJapaneseVoice(
+  voices: SpeechSynthesisVoice[],
+): SpeechSynthesisVoice | undefined {
   return voices
-    .filter((voice) => voice.lang.toLowerCase().startsWith('ja'))
+    .filter((voice) => voice.lang.toLowerCase().startsWith("ja"))
     .sort((a, b) => voiceScore(b) - voiceScore(a))[0];
 }
 
@@ -111,11 +120,14 @@ function speechRate(text: string): number {
   return isShortKana(text) ? KANA_RATE : DEFAULT_RATE;
 }
 
-function createUtterance(text: string, voice?: SpeechSynthesisVoice): SpeechSynthesisUtterance {
+function createUtterance(
+  text: string,
+  voice?: SpeechSynthesisVoice,
+): SpeechSynthesisUtterance {
   const spokenText = isShortKana(text) ? `${text}。` : text;
   const utterance = new SpeechSynthesisUtterance(spokenText);
   utterance.lang = JA_LOCALE;
-  utterance.rate = speechRate(text);
+  utterance.rate = speechRate(text) * requestedRate;
   utterance.pitch = 1;
   utterance.volume = 1;
   if (voice) utterance.voice = voice;
@@ -143,8 +155,15 @@ function speakWithVoice(
     if (requestId !== speechRequestId || !allowFallback || !voice) return;
 
     const error = (event as SpeechSynthesisErrorEvent).error;
-    if (error === 'voice-unavailable' || error === 'language-unavailable' || error === 'synthesis-failed') {
-      window.setTimeout(() => speakWithVoice(synth, text, undefined, requestId, false), 0);
+    if (
+      error === "voice-unavailable" ||
+      error === "language-unavailable" ||
+      error === "synthesis-failed"
+    ) {
+      window.setTimeout(
+        () => speakWithVoice(synth, text, undefined, requestId, false),
+        0,
+      );
     }
   };
 
@@ -167,27 +186,40 @@ function speakWithBrowser(text: string, requestId: number): void {
   const finish = (): void => {
     if (settled || requestId !== speechRequestId) return;
     settled = true;
-    synth.removeEventListener?.('voiceschanged', onVoicesChanged);
-    speakWithVoice(synth, text, bestJapaneseVoice(synth.getVoices()), requestId);
+    synth.removeEventListener?.("voiceschanged", onVoicesChanged);
+    speakWithVoice(
+      synth,
+      text,
+      bestJapaneseVoice(synth.getVoices()),
+      requestId,
+    );
   };
 
   const onVoicesChanged = (): void => finish();
-  synth.addEventListener?.('voiceschanged', onVoicesChanged, { once: true });
+  synth.addEventListener?.("voiceschanged", onVoicesChanged, { once: true });
   window.setTimeout(finish, VOICE_LOAD_TIMEOUT_MS);
 }
 
 function stopActiveAudio(): void {
   if (!activeAudio) return;
   activeAudio.pause();
-  try { activeAudio.currentTime = 0; } catch { /* metadata may not be ready */ }
+  try {
+    activeAudio.currentTime = 0;
+  } catch {
+    /* metadata may not be ready */
+  }
 }
 
-function speakWithHdAsset(text: string, src: string, requestId: number): boolean {
+function speakWithHdAsset(
+  text: string,
+  src: string,
+  requestId: number,
+): boolean {
   try {
     const audio = getAudioElement();
     stopActiveAudio();
     audio.src = src;
-    audio.playbackRate = hdPlaybackRate(text);
+    audio.playbackRate = hdPlaybackRate(text) * requestedRate;
     audio.defaultPlaybackRate = audio.playbackRate;
     audio.load();
 
@@ -220,9 +252,9 @@ function speakWithHdAsset(text: string, src: string, requestId: number): boolean
     };
     const onError = (): void => fallback();
 
-    audio.addEventListener('playing', onPlaying, { once: true });
-    audio.addEventListener('ended', onEnded, { once: true });
-    audio.addEventListener('error', onError, { once: true });
+    audio.addEventListener("playing", onPlaying, { once: true });
+    audio.addEventListener("ended", onEnded, { once: true });
+    audio.addEventListener("error", onError, { once: true });
 
     startTimer = window.setTimeout(fallback, HD_AUDIO_START_TIMEOUT_MS);
     const play = audio.play();
@@ -234,10 +266,17 @@ function speakWithHdAsset(text: string, src: string, requestId: number): boolean
 }
 
 export function canSpeakJapanese(): boolean {
-  return 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  return "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
 }
 
-export function speakJapanese(text: string): void {
+export function stopJapanese(): void {
+  speechRequestId++;
+  stopActiveAudio();
+  if (canSpeakJapanese()) window.speechSynthesis.cancel();
+}
+
+export function speakJapanese(text: string, rate = 1): void {
+  requestedRate = Math.max(0.5, Math.min(1.5, rate));
   const clean = normalizeAudioKey(text);
   if (!clean) return;
 
@@ -254,5 +293,11 @@ void initJapaneseAudio();
 if (canSpeakJapanese()) {
   const synth = window.speechSynthesis;
   synth.getVoices();
-  synth.addEventListener?.('voiceschanged', () => { synth.getVoices(); }, { once: true });
+  synth.addEventListener?.(
+    "voiceschanged",
+    () => {
+      synth.getVoices();
+    },
+    { once: true },
+  );
 }

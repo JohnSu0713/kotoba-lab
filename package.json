@@ -1,12 +1,13 @@
 {
   "name": "kotoba-lab-pwa",
-  "version": "0.4.0",
+  "version": "0.10.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/generate-asset-manifest.mjs",
     "watch": "tsc -p tsconfig.json --watch",
-    "serve": "python3 -m http.server 4173 -d public"
+    "serve": "python3 -m http.server 4173 -d public",
+    "test": "node --test tests/learning.test.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.3"
