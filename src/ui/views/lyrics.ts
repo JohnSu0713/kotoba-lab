@@ -22,8 +22,8 @@ import { icons } from '../components/icons.js';
 import { speakJapanese } from '../speech.js';
 
 const SUGGESTED_ARTISTS = ['YOASOBI', '藤井 風', '米津玄師', 'Aimer', 'あいみょん', 'Official髭男dism'];
-const LYRIC_DECK_SIZE = 6;
 const DECK_POSITION_PREFIX = 'kotoba-lab:lyrics-deck-position:';
+const MAX_DECK_INDEX = 1_000_000;
 
 let activePreview: HTMLAudioElement | undefined;
 let activePreviewTimer: number | undefined;
@@ -62,18 +62,19 @@ function escapeHtml(value: string): string {
     .replaceAll("'", '&#039;');
 }
 
-function deckSlotKey(dateKey: string, cardIndex: number): string {
-  return dateKey + ':verified-card:' + normalizedDeckIndex(cardIndex);
+function sanitizeDeckIndex(index: number): number {
+  if (!Number.isFinite(index)) return 0;
+  return Math.max(0, Math.min(MAX_DECK_INDEX, Math.floor(index)));
 }
 
-function normalizedDeckIndex(index: number): number {
-  return ((index % LYRIC_DECK_SIZE) + LYRIC_DECK_SIZE) % LYRIC_DECK_SIZE;
+function deckSlotKey(dateKey: string, cardIndex: number): string {
+  return dateKey + ':verified-card:' + sanitizeDeckIndex(cardIndex);
 }
 
 function readDeckIndex(dateKey: string): number {
   try {
     const value = Number(localStorage.getItem(DECK_POSITION_PREFIX + dateKey) ?? '0');
-    return Number.isFinite(value) ? normalizedDeckIndex(value) : 0;
+    return sanitizeDeckIndex(value);
   } catch {
     return 0;
   }
@@ -81,14 +82,10 @@ function readDeckIndex(dateKey: string): number {
 
 function writeDeckIndex(dateKey: string, index: number): void {
   try {
-    localStorage.setItem(DECK_POSITION_PREFIX + dateKey, String(normalizedDeckIndex(index)));
+    localStorage.setItem(DECK_POSITION_PREFIX + dateKey, String(sanitizeDeckIndex(index)));
   } catch {
     // Deck position is a convenience only.
   }
-}
-
-function deckSelectionSeed(dateKey: string, cardIndex: number): string {
-  return dateKey + ':card:' + normalizedDeckIndex(cardIndex);
 }
 
 function lessonVocabulary(context: AppContext, line: string): VocabularyItem[] {
@@ -146,7 +143,7 @@ function addArtistPanel(artists: FollowedArtist[]): string {
       <div class="lyric-add-copy">
         <p class="eyebrow">YOUR ARTISTS</p>
         <h2>把喜歡的歌手，變成一疊每日歌詞卡。</h2>
-        <p>每天會固定生成一組可左右翻閱的歌詞卡；同一天重開 App，卡片內容與位置都會保留。</p>
+        <p>每天都是一條可以一直往後翻的歌詞流；同一天重開 App，會回到你上次看到的位置。</p>
       </div>
       <form class="lyric-add-form" id="lyric-add-form">
         <label for="lyric-artist-input">歌手名稱</label>
@@ -175,17 +172,12 @@ function emptyDaily(): string {
 }
 
 function deckNav(cardIndex: number): string {
-  const index = normalizedDeckIndex(cardIndex);
-  const dots = Array.from({ length: LYRIC_DECK_SIZE }, (_, dotIndex) =>
-    '<span class="lyric-deck-dot ' + (dotIndex === index ? 'active' : '') + '" aria-hidden="true"></span>',
-  ).join('');
-
+  const index = sanitizeDeckIndex(cardIndex);
   return `
     <div class="lyric-deck-nav" aria-label="每日歌詞卡片">
-      <button id="lyric-deck-prev" type="button" aria-label="上一張歌詞卡">${icons.arrow}</button>
+      <button id="lyric-deck-prev" type="button" aria-label="上一張歌詞卡" ${index === 0 ? 'disabled' : ''}>${icons.arrow}</button>
       <div class="lyric-deck-position">
-        <div class="lyric-deck-dots">${dots}</div>
-        <span>${index + 1} / ${LYRIC_DECK_SIZE}</span>
+        <span>第 ${index + 1} 張 · ∞</span>
       </div>
       <button id="lyric-deck-next" type="button" aria-label="下一張歌詞卡">${icons.arrow}</button>
     </div>`;
@@ -196,7 +188,7 @@ function loadingDaily(artist: FollowedArtist, cardIndex: number): string {
     <section class="lyric-daily-card lyric-loading-card" data-lyric-card>
       <div class="lyric-record is-spinning" aria-hidden="true"><span>♪</span></div>
       <div>
-        <p class="eyebrow">CARD ${normalizedDeckIndex(cardIndex) + 1} · ${escapeHtml(artist.name)}</p>
+        <p class="eyebrow">CARD ${sanitizeDeckIndex(cardIndex) + 1} · ${escapeHtml(artist.name)}</p>
         <h2>正在替你挑這張歌詞卡…</h2>
         <p>優先挑能落在原曲試聽範圍裡的同步歌詞，讓播放更快進到這一句。</p>
       </div>
@@ -208,7 +200,7 @@ function errorDaily(artist: FollowedArtist, message: string, cardIndex: number):
     <section class="lyric-daily-card lyric-error-card" data-lyric-card>
       <div class="lyric-record" aria-hidden="true"><span>?</span></div>
       <div>
-        <p class="eyebrow">CARD ${normalizedDeckIndex(cardIndex) + 1} · ${escapeHtml(artist.name)}</p>
+        <p class="eyebrow">CARD ${sanitizeDeckIndex(cardIndex) + 1} · ${escapeHtml(artist.name)}</p>
         <h2>這張卡暫時沒有抓到可用句子。</h2>
         <p>${escapeHtml(message)}</p>
         <button class="secondary-button" id="lyric-retry" type="button">再試一次</button>
@@ -243,7 +235,7 @@ function dailyLesson(
         <div class="lyric-song-meta">
           <div class="lyric-record" aria-hidden="true"><span>♪</span></div>
           <div>
-            <p class="eyebrow">LYRIC CARD · ${normalizedDeckIndex(cardIndex) + 1}</p>
+            <p class="eyebrow">LYRIC CARD · ${sanitizeDeckIndex(cardIndex) + 1}</p>
             <strong>${escapeHtml(lesson.trackName)}</strong>
             <span>${escapeHtml(lesson.artistName)}${lesson.albumName ? ' · ' + escapeHtml(lesson.albumName) : ''}</span>
           </div>
@@ -297,7 +289,7 @@ function dailyLesson(
         </article>
       </div>
 
-      <p class="lyric-source">左右滑動翻卡 · LRCLIB 同步時間 · 原曲音訊 · MyMemory 繁中對照。</p>
+      <p class="lyric-source">左右滑動持續翻卡 · 已驗證卡池每輪重新洗牌 · 原曲音訊 · MyMemory 繁中對照。</p>
     </section>`;
 }
 
@@ -752,7 +744,7 @@ async function prefetchDeckCard(
   dateKey: string,
   cardIndex: number,
 ): Promise<void> {
-  const index = normalizedDeckIndex(cardIndex);
+  const index = sanitizeDeckIndex(cardIndex);
   const key = deckSlotKey(dateKey, index);
   const cached = lyricsStore.cachedLesson(key);
   if (cached?.timingResolved && cached.timingVersion === 5 && cached.source === 'verified-preview') return;
@@ -776,13 +768,13 @@ function bindDeckInteractions(
 ): void {
   const go = (nextIndex: number): void => {
     stopAllPlayback();
-    const normalized = normalizedDeckIndex(nextIndex);
-    writeDeckIndex(dateKey, normalized);
-    void renderDeckCard(root, context, artists, dateKey, normalized);
+    const index = sanitizeDeckIndex(nextIndex);
+    writeDeckIndex(dateKey, index);
+    void renderDeckCard(root, context, artists, dateKey, index);
   };
 
   root.querySelector<HTMLButtonElement>('#lyric-deck-prev')?.addEventListener('click', () => {
-    go(cardIndex - 1);
+    if (cardIndex > 0) go(cardIndex - 1);
   });
   root.querySelector<HTMLButtonElement>('#lyric-deck-next')?.addEventListener('click', () => {
     go(cardIndex + 1);
@@ -806,7 +798,8 @@ function bindDeckInteractions(
     const dx = touch.clientX - startX;
     const dy = touch.clientY - startY;
     if (Math.abs(dx) < 58 || Math.abs(dx) < Math.abs(dy) * 1.35) return;
-    go(dx < 0 ? cardIndex + 1 : cardIndex - 1);
+    if (dx < 0) go(cardIndex + 1);
+    else if (cardIndex > 0) go(cardIndex - 1);
   }, { passive: true });
 }
 
@@ -890,7 +883,7 @@ async function renderDeckCard(
 ): Promise<void> {
   stopAllPlayback();
 
-  const cardIndex = normalizedDeckIndex(requestedIndex);
+  const cardIndex = sanitizeDeckIndex(requestedIndex);
   writeDeckIndex(dateKey, cardIndex);
   const key = deckSlotKey(dateKey, cardIndex);
   const cached = lyricsStore.cachedLesson(key);
