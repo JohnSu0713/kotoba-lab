@@ -14,6 +14,7 @@ import {
   recentDays,
 } from "../public/app/features/progress/activity.js";
 import { grammar, readings } from "../public/app/features/studio/content.js";
+import { vocabFlashcardMode } from "../public/app/features/vocabulary/modes/flashcard.js";
 import { readFile } from "node:fs/promises";
 import {
   verifiedArtistCoverage,
@@ -231,4 +232,52 @@ test("verified lyric deck rotates supported artists fairly and keeps unsupported
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+
+test("vocabulary examples expose hiragana and Chinese without English fallback", () => {
+  const question = vocabFlashcardMode.createQuestion({
+    id: "vocab:test:classroom",
+    kind: "vocabulary",
+    expression: "教室",
+    reading: "きょうしつ",
+    meaningsZhTw: ["教室"],
+    jlpt: "N5",
+    tags: [],
+    examples: [{
+      ja: "教室は生徒でいっぱいだった。",
+      kana: "きょうしつはせいとでいっぱいだった。",
+      zhTw: "教室裡擠滿了學生。",
+      en: "The classroom was full of pupils.",
+      source: "tatoeba",
+      sourceId: "180166",
+    }],
+    order: 1,
+  }, { allItems: [], random: () => 0.5 });
+
+  assert.equal(question.type, "flashcard");
+  assert.equal(question.example?.kana, "きょうしつはせいとでいっぱいだった。");
+  assert.equal(question.example?.translation, "教室裡擠滿了學生。");
+  assert.equal(question.example?.translationLabel, "中文");
+  assert.equal("romaji" in (question.example ?? {}), false);
+
+  const noChinese = vocabFlashcardMode.createQuestion({
+    id: "vocab:test:no-chinese",
+    kind: "vocabulary",
+    expression: "教室",
+    reading: "きょうしつ",
+    meaningsZhTw: ["教室"],
+    jlpt: "N5",
+    tags: [],
+    examples: [{
+      ja: "教室です。",
+      kana: "きょうしつです。",
+      en: "It is a classroom.",
+      source: "tatoeba",
+    }],
+    order: 2,
+  }, { allItems: [], random: () => 0.5 });
+  assert.equal(noChinese.type, "flashcard");
+  assert.equal(noChinese.example?.translation, undefined);
+  assert.equal(noChinese.example?.translationLabel, undefined);
 });

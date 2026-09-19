@@ -20,7 +20,7 @@ export interface TextQuestion {
 
 export interface FlashcardExample {
   ja: string;
-  romaji?: string;
+  kana?: string;
   translation?: string;
   translationLabel?: string;
   sourceLabel?: string;

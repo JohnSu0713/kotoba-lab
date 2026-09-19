@@ -16,7 +16,7 @@ export interface KanaItem {
 
 export interface VocabularyExample {
   ja: string;
-  romaji?: string;
+  kana?: string;
   zhTw?: string;
   en?: string;
   source?: "tatoeba" | "project";

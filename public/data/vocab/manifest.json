@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "sourceVersion": "2026-09-02",
   "source": "Tomoshi Open Data / JMdict (EDRDG) / Jonathan Waller JLPT estimates",
-  "exampleSource": "JMdict editor-selected Tatoeba examples via japanese-language-data; Mandarin translations via Tatoeba when available",
+  "exampleSource": "JMdict editor-selected Tatoeba examples via japanese-language-data; Mandarin-linked examples are preferred and English is never shown",
   "license": "Mixed: CC BY-SA 4.0 (dictionary layer) + Tatoeba CC BY 2.0 FR (example sentences)",
   "jlptNotice": "N5-N1 vocabulary labels are community estimates; the JLPT does not publish an official vocabulary list.",
   "levels": {
