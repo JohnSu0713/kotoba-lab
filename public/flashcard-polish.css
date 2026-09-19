@@ -182,12 +182,51 @@
   letter-spacing: .08em;
 }
 .vocab-example-head small { font-weight: 600; letter-spacing: 0; }
+.vocab-example-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.vocab-example-speak {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-solid) 82%, transparent);
+  color: var(--accent);
+  cursor: pointer;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease;
+}
+.vocab-example-speak:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--line));
+  background: var(--surface-solid);
+}
+.vocab-example-speak:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 36%, transparent);
+  outline-offset: 2px;
+}
+.vocab-example-speak svg { width: 14px; height: 14px; }
 .vocab-example > p {
   margin: 10px 0 0;
+}
+.vocab-example-ja {
   color: var(--ink);
   font-size: clamp(15px, 3vw, 18px);
   font-weight: 620;
   line-height: 1.65;
+}
+.vocab-example-romaji {
+  margin-top: 3px !important;
+  color: var(--muted);
+  font-size: clamp(11px, 2.4vw, 13px);
+  font-weight: 560;
+  line-height: 1.55;
+  letter-spacing: .015em;
+  overflow-wrap: anywhere;
 }
 .vocab-example-translation {
   display: grid;
