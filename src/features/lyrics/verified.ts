@@ -65,21 +65,29 @@ async function loadCatalog(): Promise<VerifiedCatalog> {
   return await catalogPromise;
 }
 
-function orderForCycle(
+function sortedForCycle(
   entries: VerifiedCatalogEntry[],
   dateKey: string,
   cycle: number,
 ): VerifiedCatalogEntry[] {
-  const ordered = [...entries].sort((a, b) => {
+  return [...entries].sort((a, b) => {
     const ha = stableHash(dateKey + ':cycle:' + cycle + ':' + a.id);
     const hb = stableHash(dateKey + ':cycle:' + cycle + ':' + b.id);
     if (ha !== hb) return ha - hb;
     return a.id.localeCompare(b.id);
   });
+}
+
+function orderForCycle(
+  entries: VerifiedCatalogEntry[],
+  dateKey: string,
+  cycle: number,
+): VerifiedCatalogEntry[] {
+  const ordered = sortedForCycle(entries, dateKey, cycle);
 
   // Avoid showing the same card on the boundary between two reshuffled cycles.
   if (cycle > 0 && ordered.length > 1) {
-    const previous = orderForCycle(entries, dateKey, cycle - 1);
+    const previous = sortedForCycle(entries, dateKey, cycle - 1);
     if (previous.at(-1)?.id === ordered[0]?.id) {
       ordered.push(ordered.shift()!);
     }
