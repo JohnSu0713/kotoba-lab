@@ -1,35 +1,35 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "sourceVersion": "2026-09-02",
   "source": "Tomoshi Open Data / JMdict (EDRDG) / Jonathan Waller JLPT estimates",
-  "exampleSource": "JMdict editor-selected Tatoeba examples via japanese-language-data; Mandarin translations via Tatoeba when available",
+  "exampleSource": "JMdict editor-selected Tatoeba examples via japanese-language-data; learner-facing examples require a Tatoeba Mandarin translation",
   "license": "Mixed: CC BY-SA 4.0 (dictionary layer) + Tatoeba CC BY 2.0 FR (example sentences)",
   "jlptNotice": "N5-N1 vocabulary labels are community estimates; the JLPT does not publish an official vocabulary list.",
   "levels": {
     "N5": {
       "path": "./data/vocab/n5.json",
       "count": 692,
-      "withExamples": 672
+      "withExamples": 87
     },
     "N4": {
       "path": "./data/vocab/n4.json",
       "count": 646,
-      "withExamples": 633
+      "withExamples": 50
     },
     "N3": {
       "path": "./data/vocab/n3.json",
       "count": 1648,
-      "withExamples": 1593
+      "withExamples": 103
     },
     "N2": {
       "path": "./data/vocab/n2.json",
       "count": 1737,
-      "withExamples": 1540
+      "withExamples": 80
     },
     "N1": {
       "path": "./data/vocab/n1.json",
       "count": 3054,
-      "withExamples": 2461
+      "withExamples": 104
     }
   }
 }
