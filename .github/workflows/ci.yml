@@ -62,5 +62,9 @@ jobs:
               0 <= e["previewLineStartSeconds"] < e["previewLineEndSeconds"] <= 30
               for e in entries
           )
+          assert any(
+              "Vaundy" in e.get("artistAliases", [])
+              for e in entries
+          ), "Vaundy has no audio-verified cards"
           print("VERIFIED_LYRIC_CARDS", len(entries))
           PY

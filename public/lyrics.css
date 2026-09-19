@@ -370,12 +370,30 @@
   line-height: 1.12;
   letter-spacing: -.04em;
 }
-.lyric-add-copy > p:last-child {
+.lyric-add-copy > p:not(.eyebrow) {
   max-width: 560px;
   margin: 0;
   color: var(--muted);
   font-size: 12px;
   line-height: 1.7;
+}
+.lyric-coverage-note {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px !important;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+  font-size: 9px !important;
+}
+.lyric-coverage-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-soft) 68%, transparent);
 }
 .lyric-add-form { min-width: 0; }
 .lyric-add-form > label {
@@ -432,6 +450,23 @@
   overflow: hidden;
 }
 .lyric-artist-chip > span { padding: 8px 4px 8px 11px; }
+.lyric-artist-status {
+  margin-left: 4px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+.lyric-artist-status.ready {
+  background: color-mix(in srgb, var(--accent-soft) 74%, transparent);
+  color: var(--accent);
+}
+.lyric-artist-status.pending {
+  background: color-mix(in srgb, var(--surface-solid) 74%, transparent);
+  color: var(--muted);
+}
 .lyric-artist-chip button {
   width: 27px;
   height: 31px;

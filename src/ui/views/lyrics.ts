@@ -4,7 +4,11 @@ import {
   finalizeDailyLyricTranslation,
   localDateKey,
 } from '../../features/lyrics/provider.js';
-import { verifiedDeckLesson } from '../../features/lyrics/verified.js';
+import {
+  verifiedArtistCoverage,
+  verifiedDeckLesson,
+  type VerifiedArtistCoverage,
+} from '../../features/lyrics/verified.js';
 import { resolveOriginalClip } from '../../features/lyrics/media.js';
 import {
   playPreciseSegment,
@@ -21,7 +25,7 @@ import { lyricsStore } from '../../features/lyrics/store.js';
 import { icons } from '../components/icons.js';
 import { speakJapanese } from '../speech.js';
 
-const SUGGESTED_ARTISTS = ['YOASOBI', '藤井 風', '米津玄師', 'Aimer', 'あいみょん', 'Official髭男dism'];
+const SUGGESTED_ARTISTS = ['YOASOBI', '藤井 風', '米津玄師', 'Aimer', 'あいみょん', 'Official髭男dism', 'Vaundy'];
 const DECK_POSITION_PREFIX = 'kotoba-lab:lyrics-deck-position:';
 const FOCUS_MODE_KEY = 'kotoba-lab:lyrics-focus-mode:v1';
 
@@ -29,6 +33,11 @@ let activePreview: HTMLAudioElement | undefined;
 let activePreviewTimer: number | undefined;
 let activePreciseController: PrecisePlaybackController | undefined;
 const verifiedPreviewSources = new Map<string, OriginalClipSource>();
+let artistCoverage = new Map<string, number>();
+
+function setArtistCoverage(items: VerifiedArtistCoverage[]): void {
+  artistCoverage = new Map(items.map((item) => [item.artistId, item.count]));
+}
 
 function stopActivePreview(): void {
   if (activePreviewTimer !== undefined) {
@@ -143,28 +152,45 @@ function grammarHint(line: string): { title: string; copy: string } {
 
 function artistChips(artists: FollowedArtist[]): string {
   if (!artists.length) return '';
-  return '<div class="lyric-artist-row">' + artists.map((artist) =>
-    '<span class="lyric-artist-chip"><span>' + escapeHtml(artist.name) +
-    '</span><button type="button" data-remove-artist="' + escapeHtml(artist.id) +
-    '" aria-label="移除 ' + escapeHtml(artist.name) + '">×</button></span>',
-  ).join('') + '</div>';
+  return '<div class="lyric-artist-row">' + artists.map((artist) => {
+    const count = artistCoverage.get(artist.id) ?? 0;
+    const status = count > 0
+      ? '<small class="lyric-artist-status ready" title="已有 ' + count + ' 張已驗證歌詞卡">✓ ' + count + '</small>'
+      : '<small class="lyric-artist-status pending" title="目前還沒有實際音訊驗證卡">待驗證</small>';
+
+    return '<span class="lyric-artist-chip"><span>' + escapeHtml(artist.name) +
+      '</span>' + status +
+      '<button type="button" data-remove-artist="' + escapeHtml(artist.id) +
+      '" aria-label="移除 ' + escapeHtml(artist.name) + '">×</button></span>';
+  }).join('') + '</div>';
 }
 
 function addArtistPanel(artists: FollowedArtist[]): string {
   const existing = new Set(artists.map((artist) => artist.name.toLocaleLowerCase()));
   const suggestions = SUGGESTED_ARTISTS.filter((name) => !existing.has(name.toLocaleLowerCase()));
+  const readyCount = artists.filter((artist) => (artistCoverage.get(artist.id) ?? 0) > 0).length;
+  const pending = artists
+    .filter((artist) => (artistCoverage.get(artist.id) ?? 0) === 0)
+    .map((artist) => artist.name);
 
   return `
     <section class="lyric-add-card">
       <div class="lyric-add-copy">
         <p class="eyebrow">YOUR ARTISTS</p>
-        <h2>把喜歡的歌手，變成一疊每日歌詞卡。</h2>
-        <p>每天都是一條可以一直往後翻的歌詞流；同一天重開 App，會回到你上次看到的位置。</p>
+        <h2>把喜歡的歌手，變成一條自己的歌詞流。</h2>
+        <p>任何歌手都能加入清單；已通過原曲音訊驗證的歌手會公平輪流出卡，不會被卡片數量多的歌手淹沒。</p>
+        ${artists.length ? `
+          <p class="lyric-coverage-note">
+            <span class="lyric-coverage-dot"></span>
+            ${readyCount} / ${artists.length} 位目前有已驗證原曲卡
+            ${pending.length ? ' · ' + escapeHtml(pending.join('、')) + ' 尚未進入驗證卡池' : ''}
+          </p>
+        ` : ''}
       </div>
       <form class="lyric-add-form" id="lyric-add-form">
         <label for="lyric-artist-input">歌手名稱</label>
         <div>
-          <input id="lyric-artist-input" name="artist" autocomplete="off" placeholder="例如 YOASOBI、藤井 風" maxlength="80">
+          <input id="lyric-artist-input" name="artist" autocomplete="off" placeholder="例如 YOASOBI、Vaundy" maxlength="80">
           <button class="primary-button" type="submit">Add Artist</button>
         </div>
       </form>
@@ -206,7 +232,7 @@ function loadingDaily(artist: FollowedArtist, cardIndex: number): string {
       <div>
         <p class="eyebrow">CARD ${sanitizeDeckIndex(cardIndex) + 1} · ${escapeHtml(artist.name)}</p>
         <h2>正在替你挑這張歌詞卡…</h2>
-        <p>優先挑能落在原曲試聽範圍裡的同步歌詞，讓播放更快進到這一句。</p>
+        <p>正在從你追蹤且已驗證的歌手中公平輪選下一張。</p>
       </div>
     </section>`;
 }
@@ -969,9 +995,16 @@ export async function renderLyrics(root: HTMLElement, context: AppContext): Prom
   const dateKey = localDateKey();
 
   if (!state.artists.length) {
+    setArtistCoverage([]);
     root.innerHTML = pageHtml(state.artists, emptyDaily());
     bindSharedInteractions(root);
     return;
+  }
+
+  try {
+    setArtistCoverage(await verifiedArtistCoverage(state.artists));
+  } catch {
+    setArtistCoverage([]);
   }
 
   await renderDeckCard(
