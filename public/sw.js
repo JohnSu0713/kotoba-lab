@@ -1,4 +1,4 @@
-const CACHE = 'kotoba-lab-v0.8.0';
+const CACHE = 'kotoba-lab-v0.9.0';
 const AUDIO_CACHE = 'kotoba-lab-audio-runtime-v3';
 const MANIFEST = './asset-manifest.json';
 
