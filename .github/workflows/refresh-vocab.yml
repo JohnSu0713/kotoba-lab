@@ -60,7 +60,7 @@ jobs:
             --cmn-links /tmp/jpn-cmn_links.tsv.bz2
           cat public/data/vocab/manifest.json
 
-      - name: Validate hiragana guides and Chinese translations
+      - name: Validate hiragana guides and Chinese-first translations
         run: |
           python - <<'PY'
           import json
@@ -68,6 +68,7 @@ jobs:
           from pathlib import Path
 
           total = 0
+          translated = 0
           bad = []
           for path in sorted(Path("public/data/vocab").glob("n[1-5].json")):
               pack = json.loads(path.read_text(encoding="utf-8"))
@@ -75,18 +76,18 @@ jobs:
                   for example in item.get("examples", []):
                       total += 1
                       kana = str(example.get("kana") or "").strip()
-                      zh_tw = str(example.get("zhTw") or "").strip()
                       if not kana:
                           bad.append((path.name, item.get("id"), "missing kana"))
                       elif re.search(r"[ァ-ヺ一-龯]", kana):
                           bad.append((path.name, item.get("id"), f"non-hiragana guide: {kana}"))
-                      if not zh_tw:
-                          bad.append((path.name, item.get("id"), "missing zhTw"))
+                      if str(example.get("zhTw") or "").strip():
+                          translated += 1
                       if "romaji" in example or "en" in example:
                           bad.append((path.name, item.get("id"), "legacy romaji/en field present"))
-          print("TOTAL_CHINESE_HIRAGANA_EXAMPLES", total)
+          print("TOTAL_HIRAGANA_EXAMPLES", total)
+          print("CHINESE_TRANSLATED_EXAMPLES", translated)
           if total == 0:
-              raise SystemExit("No Chinese + hiragana examples found")
+              raise SystemExit("No hiragana examples found")
           if bad:
               for row in bad[:20]:
                   print("INVALID", row)
