@@ -9,7 +9,7 @@ Optional example enrichment:
 - japanese-language-data common-word dataset, whose JMdict editor-selected examples
   are sourced from Tatoeba
 - Tatoeba Japanese→Mandarin links for Traditional Chinese example translations.
-  Learner-facing examples are kept only when a Chinese translation is available.
+  Chinese-linked examples are preferred; untranslated examples still keep their hiragana guide.
 
 The JLPT levels are community estimates, not official Japan Foundation word lists.
 """
@@ -209,15 +209,10 @@ def load_curated_examples(words_path: Path | None, cmn_sentences: Path | None, c
                         if translated_id in chinese:
                             record["zhTw"] = to_traditional(chinese[translated_id])
                             break
-                if "zhTw" not in record:
-                    continue
                 examples.append(record)
-                if len(examples) >= 2:
-                    break
-            if len(examples) >= 2:
-                break
         if examples:
-            result[entry_id] = examples
+            examples.sort(key=lambda record: (0 if record.get("zhTw") else 1))
+            result[entry_id] = examples[:2]
     return result
 
 
@@ -278,7 +273,7 @@ def build(
         "schemaVersion": 3,
         "sourceVersion": SOURCE_VERSION,
         "source": "Tomoshi Open Data / JMdict (EDRDG) / Jonathan Waller JLPT estimates",
-        "exampleSource": "JMdict editor-selected Tatoeba examples via japanese-language-data; learner-facing examples require a Tatoeba Mandarin translation",
+        "exampleSource": "JMdict editor-selected Tatoeba examples via japanese-language-data; Mandarin-linked examples are preferred and English is never shown",
         "license": "Mixed: CC BY-SA 4.0 (dictionary layer) + Tatoeba CC BY 2.0 FR (example sentences)",
         "jlptNotice": "N5-N1 vocabulary labels are community estimates; the JLPT does not publish an official vocabulary list.",
         "levels": {},
