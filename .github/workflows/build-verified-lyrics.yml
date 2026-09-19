@@ -3,7 +3,7 @@ name: Build verified lyric catalog
 on:
   workflow_dispatch:
   push:
-    branches: [main, fix-audited-kana-lyrics]
+    branches: ['**']
     paths:
       - scripts/generate_verified_lyrics.py
       - .github/workflows/build-verified-lyrics.yml
@@ -65,12 +65,16 @@ jobs:
               for e in entries
           )
           counts = Counter(e["artistName"] for e in entries)
+          assert any(
+              "Vaundy" in e.get("artistAliases", [])
+              for e in entries
+          ), "Vaundy has no audio-verified cards"
           print("VERIFIED_ENTRIES", len(entries))
           print("COUNTS", dict(counts))
           PY
 
       - name: Commit verified catalog
-        if: github.event_name == 'workflow_dispatch' || github.ref_name == 'fix-audited-kana-lyrics'
+        if: github.event_name == 'workflow_dispatch' || github.ref_name != 'main'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
