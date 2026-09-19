@@ -8,8 +8,8 @@ Primary dictionary source:
 Optional example enrichment:
 - japanese-language-data common-word dataset, whose JMdict editor-selected examples
   are sourced from Tatoeba
-- Tatoeba Japanese→Mandarin links for a Traditional Chinese example translation
-  when one is available. English remains a fallback.
+- Tatoeba Japanese→Mandarin links for Traditional Chinese example translations.
+  Learner-facing examples are kept only when a Chinese translation is available.
 
 The JLPT levels are community estimates, not official Japan Foundation word lists.
 """
@@ -20,6 +20,7 @@ import argparse
 import bz2
 import json
 import sqlite3
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -27,27 +28,46 @@ LEVELS = ("N5", "N4", "N3", "N2", "N1")
 LEVEL_BASE = {"N5": 20_000, "N4": 40_000, "N3": 60_000, "N2": 80_000, "N1": 100_000}
 SOURCE_VERSION = "2026-09-02"
 
-_ROMAJIZER: Any | None = None
+_TAGGER: Any | None = None
 
+def katakana_to_hiragana(value: str) -> str:
+    """Normalize Japanese reading text to hiragana while preserving punctuation."""
+    normalized = unicodedata.normalize("NFKC", value)
+    converted: list[str] = []
+    for char in normalized:
+        code = ord(char)
+        if 0x30A1 <= code <= 0x30F6:
+            converted.append(chr(code - 0x60))
+        elif char == "ヽ":
+            converted.append("ゝ")
+        elif char == "ヾ":
+            converted.append("ゞ")
+        else:
+            converted.append(char)
+    return "".join(converted)
 
-def romanize_japanese(value: str) -> str:
-    """Return pronunciation-oriented Hepburn-style romaji for one sentence."""
-    global _ROMAJIZER
-    if _ROMAJIZER is None:
+def hiragana_reading(value: str) -> str:
+    """Return a full-sentence kana guide with kanji readings in hiragana."""
+    global _TAGGER
+    if _TAGGER is None:
         try:
-            import cutlet  # type: ignore
+            import fugashi  # type: ignore
         except ImportError as exc:
             raise RuntimeError(
-                "cutlet is required to build pronunciation guides for examples"
+                "fugashi[unidic-lite] is required to build hiragana guides"
             ) from exc
-        _ROMAJIZER = cutlet.Cutlet()
-        _ROMAJIZER.use_foreign_spelling = False
+        _TAGGER = fugashi.Tagger()
 
-    romaji = str(_ROMAJIZER.romaji(value) or "").strip()
-    if not romaji:
-        raise RuntimeError(f"Could not romanize example sentence: {value}")
-    return romaji
-
+    parts: list[str] = []
+    for token in _TAGGER(value):
+        kana = getattr(token.feature, "kana", None)
+        parts.append(katakana_to_hiragana(str(kana or token.surface)))
+    reading = "".join(parts).strip()
+    if not reading:
+        raise RuntimeError(f"Could not generate hiragana guide: {value}")
+    if any("\u30a1" <= char <= "\u30fa" or "\u4e00" <= char <= "\u9fff" for char in reading):
+        raise RuntimeError(f"Hiragana guide still contains Japanese non-hiragana script: {reading}")
+    return reading
 
 def priority_score(form: dict[str, Any]) -> tuple[int, str]:
     priority = form.get("priority") or []
@@ -180,7 +200,7 @@ def load_curated_examples(words_path: Path | None, cmn_sentences: Path | None, c
                 numeric_id = sentence_id.removeprefix("tatoeba-")
                 record: dict[str, str] = {
                     "ja": ja,
-                    "romaji": romanize_japanese(ja),
+                    "kana": hiragana_reading(ja),
                     "source": "tatoeba",
                 }
                 if numeric_id:
@@ -189,9 +209,8 @@ def load_curated_examples(words_path: Path | None, cmn_sentences: Path | None, c
                         if translated_id in chinese:
                             record["zhTw"] = to_traditional(chinese[translated_id])
                             break
-                english = str(example.get("english") or "").strip()
-                if english:
-                    record["en"] = english
+                if "zhTw" not in record:
+                    continue
                 examples.append(record)
                 if len(examples) >= 2:
                     break
@@ -256,10 +275,10 @@ def build(
 
     output_dir.mkdir(parents=True, exist_ok=True)
     manifest: dict[str, Any] = {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "sourceVersion": SOURCE_VERSION,
         "source": "Tomoshi Open Data / JMdict (EDRDG) / Jonathan Waller JLPT estimates",
-        "exampleSource": "JMdict editor-selected Tatoeba examples via japanese-language-data; Mandarin translations via Tatoeba when available",
+        "exampleSource": "JMdict editor-selected Tatoeba examples via japanese-language-data; learner-facing examples require a Tatoeba Mandarin translation",
         "license": "Mixed: CC BY-SA 4.0 (dictionary layer) + Tatoeba CC BY 2.0 FR (example sentences)",
         "jlptNotice": "N5-N1 vocabulary labels are community estimates; the JLPT does not publish an official vocabulary list.",
         "levels": {},
