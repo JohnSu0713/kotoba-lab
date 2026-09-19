@@ -25,6 +25,17 @@ interface VerifiedCatalog {
   entries: VerifiedCatalogEntry[];
 }
 
+export interface VerifiedArtistCoverage {
+  artistId: string;
+  artistName: string;
+  count: number;
+}
+
+interface SupportedArtist {
+  artist: FollowedArtist;
+  entries: VerifiedCatalogEntry[];
+}
+
 let catalogPromise: Promise<VerifiedCatalog> | undefined;
 
 function normalize(value: string): string {
@@ -47,7 +58,11 @@ function matchesArtist(entry: VerifiedCatalogEntry, artist: FollowedArtist): boo
   const wanted = normalize(artist.name);
   return [entry.artistName, ...entry.artistAliases]
     .map(normalize)
-    .some((candidate) => candidate === wanted || candidate.includes(wanted) || wanted.includes(candidate));
+    .some((candidate) =>
+      candidate === wanted
+      || (candidate.length >= 4 && candidate.includes(wanted))
+      || (wanted.length >= 4 && wanted.includes(candidate)),
+    );
 }
 
 async function loadCatalog(): Promise<VerifiedCatalog> {
@@ -65,34 +80,79 @@ async function loadCatalog(): Promise<VerifiedCatalog> {
   return await catalogPromise;
 }
 
+function entriesForArtist(
+  catalog: VerifiedCatalog,
+  artist: FollowedArtist,
+): VerifiedCatalogEntry[] {
+  return catalog.entries.filter((entry) => matchesArtist(entry, artist));
+}
+
 function sortedForCycle(
   entries: VerifiedCatalogEntry[],
-  dateKey: string,
+  seed: string,
   cycle: number,
 ): VerifiedCatalogEntry[] {
   return [...entries].sort((a, b) => {
-    const ha = stableHash(dateKey + ':cycle:' + cycle + ':' + a.id);
-    const hb = stableHash(dateKey + ':cycle:' + cycle + ':' + b.id);
+    const ha = stableHash(seed + ':cycle:' + cycle + ':' + a.id);
+    const hb = stableHash(seed + ':cycle:' + cycle + ':' + b.id);
     if (ha !== hb) return ha - hb;
     return a.id.localeCompare(b.id);
   });
 }
 
-function orderForCycle(
+function entryForVisit(
   entries: VerifiedCatalogEntry[],
   dateKey: string,
-  cycle: number,
-): VerifiedCatalogEntry[] {
-  const ordered = sortedForCycle(entries, dateKey, cycle);
+  artistId: string,
+  visitIndex: number,
+): VerifiedCatalogEntry | undefined {
+  if (!entries.length) return undefined;
+  const cycle = Math.floor(visitIndex / entries.length);
+  const position = visitIndex % entries.length;
+  const seed = dateKey + ':artist:' + artistId;
+  const ordered = sortedForCycle(entries, seed, cycle);
 
-  // Avoid showing the same card on the boundary between two reshuffled cycles.
-  if (cycle > 0 && ordered.length > 1) {
-    const previous = sortedForCycle(entries, dateKey, cycle - 1);
+  // Avoid repeating the exact same card at an artist-pool cycle boundary.
+  if (cycle > 0 && ordered.length > 1 && position === 0) {
+    const previous = sortedForCycle(entries, seed, cycle - 1);
     if (previous.at(-1)?.id === ordered[0]?.id) {
       ordered.push(ordered.shift()!);
     }
   }
-  return ordered;
+  return ordered[position];
+}
+
+function supportedArtists(
+  catalog: VerifiedCatalog,
+  artists: FollowedArtist[],
+): SupportedArtist[] {
+  return artists
+    .map((artist) => ({ artist, entries: entriesForArtist(catalog, artist) }))
+    .filter((item) => item.entries.length > 0);
+}
+
+function orderedArtistCycle(
+  supported: SupportedArtist[],
+  dateKey: string,
+  cycle: number,
+): SupportedArtist[] {
+  return [...supported].sort((a, b) => {
+    const ha = stableHash(dateKey + ':artist-cycle:' + cycle + ':' + a.artist.id);
+    const hb = stableHash(dateKey + ':artist-cycle:' + cycle + ':' + b.artist.id);
+    if (ha !== hb) return ha - hb;
+    return a.artist.id.localeCompare(b.artist.id);
+  });
+}
+
+export async function verifiedArtistCoverage(
+  artists: FollowedArtist[],
+): Promise<VerifiedArtistCoverage[]> {
+  const catalog = await loadCatalog();
+  return artists.map((artist) => ({
+    artistId: artist.id,
+    artistName: artist.name,
+    count: entriesForArtist(catalog, artist).length,
+  }));
 }
 
 export async function verifiedDeckLesson(
@@ -101,28 +161,36 @@ export async function verifiedDeckLesson(
   cardIndex: number,
 ): Promise<DailyLyricLesson> {
   const catalog = await loadCatalog();
-  const followed = catalog.entries.filter((entry) =>
-    artists.some((artist) => matchesArtist(entry, artist)),
-  );
+  const supported = supportedArtists(catalog, artists);
 
-  if (!followed.length) {
+  if (!supported.length) {
     throw new Error('目前追蹤的歌手還沒有通過實際原曲音訊驗證的歌詞卡。');
   }
 
   const safeIndex = Math.max(0, Math.floor(cardIndex));
-  const cycle = Math.floor(safeIndex / followed.length);
-  const position = safeIndex % followed.length;
-  const ordered = orderForCycle(followed, dateKey, cycle);
-  const entry = ordered[position];
-  if (!entry) throw new Error('Verified lyric card unavailable.');
 
-  const artist = artists.find((candidate) => matchesArtist(entry, candidate)) ?? artists[0];
-  if (!artist) throw new Error('No followed artist available.');
+  // Artist-first scheduling: every supported followed artist gets one turn
+  // before any artist gets a second. This keeps a six-card artist from
+  // overwhelming a two-card artist and makes newly added artists visible fast.
+  const artistCycle = Math.floor(safeIndex / supported.length);
+  const artistPosition = safeIndex % supported.length;
+  const artistOrder = orderedArtistCycle(supported, dateKey, artistCycle);
+  const selected = artistOrder[artistPosition];
+  if (!selected) throw new Error('Verified lyric artist unavailable.');
+
+  const visitIndex = artistCycle;
+  const entry = entryForVisit(
+    selected.entries,
+    dateKey,
+    selected.artist.id,
+    visitIndex,
+  );
+  if (!entry) throw new Error('Verified lyric card unavailable.');
 
   return {
     id: dateKey + ':' + entry.id,
     dateKey,
-    artistId: artist.id,
+    artistId: selected.artist.id,
     artistName: entry.artistName,
     trackId: entry.lrclibTrackId,
     appleTrackId: entry.appleTrackId,
@@ -143,8 +211,6 @@ export async function verifiedDeckLesson(
 export async function verifiedCatalogCountForArtists(
   artists: FollowedArtist[],
 ): Promise<number> {
-  const catalog = await loadCatalog();
-  return catalog.entries.filter((entry) =>
-    artists.some((artist) => matchesArtist(entry, artist)),
-  ).length;
+  const coverage = await verifiedArtistCoverage(artists);
+  return coverage.reduce((total, item) => total + item.count, 0);
 }

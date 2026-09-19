@@ -14,6 +14,11 @@ import {
   recentDays,
 } from "../public/app/features/progress/activity.js";
 import { grammar, readings } from "../public/app/features/studio/content.js";
+import { readFile } from "node:fs/promises";
+import {
+  verifiedArtistCoverage,
+  verifiedDeckLesson,
+} from "../public/app/features/lyrics/verified.js";
 const item = (id) => ({
   id,
   kind: "vocabulary",
@@ -183,5 +188,47 @@ test("every lesson has a valid, unambiguous keyed answer and unique ID", () => {
       assert.equal(new Set(l.check.options).size, 4);
       assert.ok(l.check.explanation.length > 5);
     }
+  }
+});
+
+
+test("verified lyric deck rotates supported artists fairly and keeps unsupported artists pending", async () => {
+  const catalog = JSON.parse(
+    await readFile(new URL("../public/data/verified-lyrics.json", import.meta.url), "utf8"),
+  );
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => catalog,
+  });
+
+  try {
+    const artists = [
+      { id: "yoasobi", name: "YOASOBI" },
+      { id: "vaundy", name: "Vaundy" },
+      { id: "pending", name: "未驗證測試歌手" },
+    ];
+    const coverage = await verifiedArtistCoverage(artists);
+    assert.ok(coverage.find((item) => item.artistId === "vaundy")?.count > 0);
+    assert.equal(coverage.find((item) => item.artistId === "pending")?.count, 0);
+
+    const firstCycle = await Promise.all(
+      [0, 1].map((index) => verifiedDeckLesson(artists, "2026-09-19", index)),
+    );
+    assert.deepEqual(
+      new Set(firstCycle.map((lesson) => lesson.artistId)),
+      new Set(["yoasobi", "vaundy"]),
+    );
+    assert.ok(firstCycle.every((lesson) => lesson.artistId !== "pending"));
+
+    const secondCycle = await Promise.all(
+      [2, 3].map((index) => verifiedDeckLesson(artists, "2026-09-19", index)),
+    );
+    assert.deepEqual(
+      new Set(secondCycle.map((lesson) => lesson.artistId)),
+      new Set(["yoasobi", "vaundy"]),
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 });
