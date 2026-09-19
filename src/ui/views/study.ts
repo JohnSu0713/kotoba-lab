@@ -95,8 +95,15 @@ function renderFlashcard(
             question.example
               ? `
             <div class="vocab-example">
-              <div class="vocab-example-head"><span>例句</span>${question.example.sourceLabel ? `<small>${escapeHtml(question.example.sourceLabel)}</small>` : ""}</div>
-              <p lang="ja">${escapeHtml(question.example.ja)}</p>
+              <div class="vocab-example-head">
+                <span>例句</span>
+                <div class="vocab-example-tools">
+                  ${question.example.sourceLabel ? `<small>${escapeHtml(question.example.sourceLabel)}</small>` : ""}
+                  <button class="vocab-example-speak" type="button" data-example-speak aria-label="播放例句發音" title="播放例句發音">${icons.volume}</button>
+                </div>
+              </div>
+              <p class="vocab-example-ja" lang="ja">${escapeHtml(question.example.ja)}</p>
+              ${question.example.romaji ? `<p class="vocab-example-romaji" lang="ja-Latn">${escapeHtml(question.example.romaji)}</p>` : ""}
               ${question.example.translation ? `<div class="vocab-example-translation"><small>${escapeHtml(question.example.translationLabel ?? "翻譯")}</small><span>${escapeHtml(question.example.translation)}</span></div>` : ""}
             </div>`
               : `
@@ -352,6 +359,16 @@ export async function renderStudy(
       .querySelector<HTMLElement>('[data-action="speak"]')
       ?.addEventListener("click", () => {
         if (q.speakText) speakJapanese(q.speakText);
+      });
+
+    root
+      .querySelector<HTMLButtonElement>("[data-example-speak]")
+      ?.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (q.type === "flashcard" && q.example?.ja) {
+          speakJapanese(q.example.ja);
+        }
       });
 
     if (feedback) {
