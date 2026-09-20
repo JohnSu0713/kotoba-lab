@@ -102,7 +102,7 @@ jobs:
           )
           aligned = [
               e for e in entries
-              if e.get("karaokeAlignmentCoverage", 0) >= 0.58
+              if e.get("karaokeAlignmentCoverage", 0) >= 0.85
               and e.get("words")
           ]
           for e in aligned:
