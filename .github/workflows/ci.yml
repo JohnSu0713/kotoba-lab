@@ -100,5 +100,27 @@ jobs:
               0 <= e["previewLineStartSeconds"] < e["previewLineEndSeconds"] <= 30
               for e in entries
           )
+          aligned = [
+              e for e in entries
+              if e.get("karaokeAlignmentCoverage", 0) >= 0.58
+              and e.get("words")
+          ]
+          for e in aligned:
+              words = e["words"]
+              assert "".join(w.get("text", "") for w in words) == e["lineJa"]
+              assert all(
+                  w["startSeconds"] < w["endSeconds"]
+                  for w in words
+              )
+              assert all(
+                  words[i]["startSeconds"] >= words[i - 1]["startSeconds"]
+                  for i in range(1, len(words))
+              )
+              assert words[0]["startSeconds"] >= e["previewLineStartSeconds"] - 0.05
+              assert words[-1]["endSeconds"] <= e["previewLineEndSeconds"] + 0.05
+          assert len(aligned) >= max(12, int(len(entries) * 0.75)), (
+              f"only {len(aligned)}/{len(entries)} cards have trusted karaoke alignment"
+          )
           print("VERIFIED_LYRIC_CARDS", len(entries))
+          print("TRUSTED_KARAOKE_CARDS", len(aligned))
           PY
