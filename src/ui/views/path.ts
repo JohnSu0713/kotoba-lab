@@ -47,7 +47,7 @@ export async function renderPath(
       <a class="quiet-link" href="#/">← 回到今日</a>
       <p class="eyebrow">KOTOBA PATH</p>
       <h1>Foundation + 100 Units</h1>
-      <p>固定 ${TOTAL_VOCABULARY_TARGET.toLocaleString()} 個單字、${TOTAL_PATTERN_TARGET} 個句型目標。每個單字只在 curriculum 裡有一個固定位置。</p>
+      <p>Curriculum v2 將 ${TOTAL_VOCABULARY_TARGET.toLocaleString()} 個單字依生活與語義主題重新組織；${TOTAL_PATTERN_TARGET} 個句型目標會沿著同一條路徑逐級展開。</p>
       <div class="path-map-summary">
         <div><strong>${snapshot.completedUnits}</strong><span>/ 100 Units 完成</span></div>
         <div><strong>${snapshot.pathVocabularyLearned.toLocaleString()}</strong><span>/ 7,777 主線單字</span></div>
@@ -88,10 +88,10 @@ export async function renderPath(
                 const unitCurrent = unit.order === currentOrder;
                 const unitFuture = unit.order > currentOrder;
                 return `
-                  <div class="path-unit-chip ${unitComplete ? "is-complete" : ""} ${unitCurrent ? "is-current" : ""} ${unitFuture ? "is-future" : ""}" title="${unit.vocabularyIds.length} 單字 · ${unit.patternTarget} 句型目標">
-                    <strong>${unit.order}</strong>
-                    <span>${unit.vocabularyIds.length}詞</span>
-                    ${unitComplete ? "<b>✓</b>" : unitCurrent ? "<b>現在</b>" : ""}
+                  <div class="path-unit-chip ${unitComplete ? "is-complete" : ""} ${unitCurrent ? "is-current" : ""} ${unitFuture ? "is-future" : ""}" title="${unit.topicFocus}">
+                    <div class="path-unit-chip-top"><strong>Unit ${unit.order}</strong>${unitComplete ? "<b>✓</b>" : unitCurrent ? "<b>現在</b>" : ""}</div>
+                    <span class="path-unit-topic">${unit.topicTitle}</span>
+                    <small>${unit.vocabularyIds.length} 單字 · ${unit.patternTarget} 句型目標</small>
                   </div>`;
               }).join("")}
             </div>
@@ -101,8 +101,8 @@ export async function renderPath(
 
     <section class="path-contract-note">
       <p class="eyebrow">CURRICULUM CONTRACT</p>
-      <h2>發布後，Unit 不偷偷換內容。</h2>
-      <p>Curriculum v1 固定單字順序與單元邊界。字典可以持續更新，但不會把既有學習進度重新洗牌；真正需要調整課綱時才發布新的 curriculum version。</p>
+      <h2>Curriculum v2：主題先行，版本化調整。</h2>
+      <p>這次主題化是一次正式 curriculum revision，所以版本提升到 v2。之後字典資料仍可更新，但若要重新分配 Unit，必須再提升 curriculum version，不會無聲改變學習路徑。</p>
     </section>
   `;
 }
