@@ -135,6 +135,32 @@ test("weak practice includes future-due failed cards and excludes untouched cont
   assert.equal(s.total, 1);
   assert.equal(s.current().item.id, "2");
 });
+
+test("path sessions review old material while new cards stay inside the current lesson", async () => {
+  const { engine, repository, scheduler } = setup();
+  repository.settings.dailyNew = 0;
+  repository.reviews = [{
+    ...scheduler.create("0", "test", new Date()),
+    reps: 2,
+    dueAt: new Date(0).toISOString(),
+  }];
+
+  const session = await engine.create(mode, {
+    strategy: "scheduled",
+    limit: 3,
+    dueLimit: 1,
+    ignoreDailyNewLimit: true,
+    freshPredicate: (candidate) => ["1", "2"].includes(candidate.id),
+  });
+
+  assert.equal(session.total, 3);
+  assert.equal(session.current().item.id, "0");
+  await session.submit("0");
+  const freshIds = [session.current().item.id];
+  await session.submit(session.current().item.id);
+  freshIds.push(session.current().item.id);
+  assert.deepEqual(new Set(freshIds), new Set(["1", "2"]));
+});
 test("legacy backup accepted; invalid records, dates and goal rejected", () => {
   const backup = {
     schemaVersion: 1,
