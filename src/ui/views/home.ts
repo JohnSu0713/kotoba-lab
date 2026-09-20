@@ -96,7 +96,7 @@ export async function renderHome(
   const pathTitle = !snapshot.foundationDone
     ? "先把日文的聲音讀起來。"
     : unit
-      ? unit.stageTitle
+      ? unit.topicTitle
       : "你走完了 Kotoba Path。";
   const pathCopy = !snapshot.foundationDone
     ? `平假名與片假名基本清音 ${snapshot.foundationReviewed}/${snapshot.foundationTotal}。完成後，主線從 N5 Unit 1 開始。`
@@ -199,7 +199,7 @@ export async function renderHome(
     await context.repository.putNotebook({
       ...latest,
       path: {
-        curriculumVersion: 1,
+        curriculumVersion: CURRICULUM_VERSION,
         foundationSkipped: true,
       },
     });
