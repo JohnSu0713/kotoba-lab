@@ -204,7 +204,7 @@ export async function renderStudy(
       : isFoundationSession
         ? 15
         : undefined;
-  const sessionFilter = {
+  const sessionFilter: import("../../features/study/session-engine.js").SessionFilter = {
     predicate,
     strategy,
     ...(limit !== undefined ? { limit } : {}),
