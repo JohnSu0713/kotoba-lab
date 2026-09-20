@@ -35,6 +35,7 @@ export interface FlashcardQuestion {
   speakText?: string;
   badge?: string;
   chips?: string[];
+  collocations?: string[];
   details?: Array<{ label: string; value: string }>;
   example?: FlashcardExample;
   sourceNote?: string;
