@@ -213,7 +213,7 @@ export async function verifiedDeckLesson(
     lineJa: entry.lineJa,
     lineZhTw: '',
     timingResolved: true,
-    timingVersion: 5,
+    timingVersion: 6,
     lineStartSeconds: entry.previewLineStartSeconds,
     lineEndSeconds: entry.previewLineEndSeconds,
     ...(words.length ? { words } : {}),
