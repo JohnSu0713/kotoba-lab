@@ -12,6 +12,7 @@ written to the catalog. Stored line timestamps are LOCAL TO THE PREVIEW.
 from __future__ import annotations
 
 import argparse
+from difflib import SequenceMatcher
 import json
 import re
 import tempfile
@@ -325,81 +326,170 @@ def lyric_display_units(value: str) -> list[str]:
     return [unit for unit in units if unit]
 
 
-def project_karaoke_timings(
+def _heard_character_timeline(words: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Expand Whisper word anchors into a normalized character timeline."""
+    timeline: list[dict[str, Any]] = []
+    for word in words:
+        text = lyric_norm(str(word.get("text") or ""))
+        if not text:
+            continue
+        try:
+            start = float(word.get("start"))
+            end = float(word.get("end"))
+        except (TypeError, ValueError):
+            continue
+        if not (end > start):
+            continue
+        duration = max(0.04, end - start)
+        for index, char in enumerate(text):
+            char_start = start + duration * index / len(text)
+            char_end = start + duration * (index + 1) / len(text)
+            timeline.append({
+                "char": char,
+                "start": char_start,
+                "end": max(char_start + 0.025, char_end),
+            })
+    return timeline
+
+
+def align_karaoke_timings(
     line: str,
     words: list[dict[str, Any]],
-    start: float,
-    end: float,
-) -> list[dict[str, Any]]:
-    """Project Whisper word anchors onto the exact lyric text for karaoke display."""
+    window_start: float,
+    window_end: float,
+) -> dict[str, Any]:
+    """Align exact lyric characters to Whisper timing anchors.
+
+    This is intentionally conservative: if too little of the displayed lyric
+    can be anchored to the ASR transcript, no fake per-character timings are
+    emitted and the client falls back to line-level highlighting.
+    """
     units = lyric_display_units(line)
-    anchors = [
-        word for word in words
-        if lyric_norm(str(word.get("text") or ""))
-        and float(word.get("end") or 0) > float(word.get("start") or 0)
+    target = "".join(lyric_norm(unit) for unit in units)
+    heard = _heard_character_timeline(words)
+    heard_text = "".join(item["char"] for item in heard)
+
+    if not units or not target or not heard_text:
+        return {
+            "words": [],
+            "coverage": 0.0,
+            "start": max(0.0, window_start),
+            "end": min(30.0, window_end),
+        }
+
+    matcher = SequenceMatcher(None, target, heard_text, autojunk=False)
+    matched: dict[int, dict[str, Any]] = {}
+    for block in matcher.get_matching_blocks():
+        for offset in range(block.size):
+            target_index = block.a + offset
+            heard_index = block.b + offset
+            if heard_index < len(heard):
+                matched[target_index] = heard[heard_index]
+
+    matched_count = len(matched)
+    coverage = matched_count / max(1, len(target))
+    if matched_count < min(4, len(target)) or coverage < 0.58:
+        return {
+            "words": [],
+            "coverage": coverage,
+            "start": max(0.0, window_start),
+            "end": min(30.0, window_end),
+        }
+
+    direct_durations = [
+        max(0.025, value["end"] - value["start"])
+        for value in matched.values()
     ]
-    if not units:
-        return []
+    direct_durations.sort()
+    median_duration = direct_durations[len(direct_durations) // 2] if direct_durations else 0.12
+    median_duration = min(0.42, max(0.055, median_duration))
 
-    start = max(0.0, start)
-    end = max(start + 0.2, end)
-    if not anchors:
-        step = (end - start) / len(units)
-        return [
-            {
-                "text": unit,
-                "startSeconds": round(start + step * index, 3),
-                "endSeconds": round(end if index == len(units) - 1 else start + step * (index + 1), 3),
-            }
-            for index, unit in enumerate(units)
-        ]
+    char_times: list[dict[str, float] | None] = [None] * len(target)
+    for index, value in matched.items():
+        char_times[index] = {
+            "start": float(value["start"]),
+            "end": float(value["end"]),
+        }
 
-    weights = [max(1, len(lyric_norm(str(word["text"])))) for word in anchors]
-    total = sum(weights)
-    cursor = 0
-    consumed = 0
-    result: list[dict[str, Any]] = []
+    known = sorted(matched)
+    first = known[0]
+    first_start = float(char_times[first]["start"])  # type: ignore[index]
+    for index in range(first - 1, -1, -1):
+        end = first_start - median_duration * (first - 1 - index)
+        start = end - median_duration
+        char_times[index] = {"start": start, "end": end}
 
-    for index, (word, weight) in enumerate(zip(anchors, weights)):
-        if cursor >= len(units):
-            break
-        consumed += weight
-        if index == len(anchors) - 1:
-            next_cursor = len(units)
+    last = known[-1]
+    last_end = float(char_times[last]["end"])  # type: ignore[index]
+    for index in range(last + 1, len(target)):
+        start = last_end + median_duration * (index - last - 1)
+        char_times[index] = {"start": start, "end": start + median_duration}
+
+    for left, right in zip(known, known[1:]):
+        if right <= left + 1:
+            continue
+        left_end = float(char_times[left]["end"])  # type: ignore[index]
+        right_start = float(char_times[right]["start"])  # type: ignore[index]
+        gap_count = right - left - 1
+        available = right_start - left_end
+        if available >= gap_count * 0.025:
+            step = available / gap_count
+            for offset in range(1, gap_count + 1):
+                start = left_end + step * (offset - 1)
+                char_times[left + offset] = {
+                    "start": start,
+                    "end": min(right_start, max(start + 0.025, left_end + step * offset)),
+                }
         else:
-            projected = round((consumed / total) * len(units))
-            next_cursor = min(len(units), max(cursor + 1, projected))
+            span_start = float(char_times[left]["start"])  # type: ignore[index]
+            span_end = float(char_times[right]["end"])  # type: ignore[index]
+            step = max(0.025, (span_end - span_start) / (right - left + 1))
+            for offset in range(1, gap_count + 1):
+                start = span_start + step * offset
+                char_times[left + offset] = {
+                    "start": start,
+                    "end": start + step,
+                }
 
-        assigned = units[cursor:next_cursor]
-        word_start = max(start, float(word["start"]))
-        word_end = min(end, max(word_start + 0.04, float(word["end"])))
-        if assigned:
-            step = max(0.025, (word_end - word_start) / len(assigned))
-            for local_index, unit in enumerate(assigned):
-                unit_start = word_start + step * local_index
-                unit_end = word_end if local_index == len(assigned) - 1 else min(word_end, unit_start + step)
-                result.append({
-                    "text": unit,
-                    "startSeconds": round(max(start, unit_start), 3),
-                    "endSeconds": round(min(end, max(unit_start + 0.025, unit_end)), 3),
-                })
-        cursor = next_cursor
+    # Map normalized target character ranges back to original display units.
+    result: list[dict[str, Any]] = []
+    target_cursor = 0
+    for unit in units:
+        normalized_unit = lyric_norm(unit)
+        length = max(1, len(normalized_unit))
+        slice_times = [
+            value for value in char_times[target_cursor:target_cursor + length]
+            if value is not None
+        ]
+        target_cursor += length
+        if not slice_times:
+            continue
+        unit_start = max(0.0, float(slice_times[0]["start"]))
+        unit_end = min(30.0, float(slice_times[-1]["end"]))
+        if unit_end <= unit_start:
+            continue
+        result.append({
+            "text": unit,
+            "startSeconds": round(unit_start, 3),
+            "endSeconds": round(unit_end, 3),
+        })
 
-    if cursor < len(units):
-        tail_start = max(start, result[-1]["endSeconds"] if result else start)
-        remaining = units[cursor:]
-        step = max(0.025, (end - tail_start) / max(1, len(remaining)))
-        for index, unit in enumerate(remaining):
-            unit_start = tail_start + step * index
-            unit_end = end if index == len(remaining) - 1 else min(end, unit_start + step)
-            result.append({
-                "text": unit,
-                "startSeconds": round(unit_start, 3),
-                "endSeconds": round(max(unit_start + 0.025, unit_end), 3),
-            })
+    if not result or "".join(item["text"] for item in result) != line:
+        return {
+            "words": [],
+            "coverage": coverage,
+            "start": max(0.0, window_start),
+            "end": min(30.0, window_end),
+        }
 
-    return result
-
+    aligned_start = max(0.0, result[0]["startSeconds"] - 0.02)
+    aligned_end = min(30.0, result[-1]["endSeconds"] + 0.02)
+    return {
+        "words": result,
+        "coverage": coverage,
+        "start": aligned_start,
+        "end": max(aligned_start + 0.2, aligned_end),
+    }
 
 def common_substring_len(a: str, b: str) -> int:
     maximum = min(len(a), len(b), 16)
@@ -467,22 +557,24 @@ def audio_matches(
                 continue
 
             score = max(full_score, partial_score)
+            alignment = align_karaoke_timings(
+                str(line["text"]),
+                list(window.get("words") or []),
+                max(0.0, float(window["start"])),
+                min(30.0, float(window["end"])),
+            )
             candidate = {
                 "line": str(line["text"]),
-                "start": max(0.0, float(window["start"])),
-                "end": min(30.0, float(window["end"])),
+                "start": alignment["start"],
+                "end": alignment["end"],
                 "transcript": str(window["text"]),
                 "score": float(score),
                 "fullScore": float(full_score),
                 "coverage": float(coverage),
                 "exactInclusion": bool(exact_inclusion),
                 "common": int(common),
-                "wordTimings": project_karaoke_timings(
-                    str(line["text"]),
-                    list(window.get("words") or []),
-                    max(0.0, float(window["start"])),
-                    min(30.0, float(window["end"])),
-                ),
+                "wordTimings": alignment["words"],
+                "karaokeAlignmentCoverage": float(alignment["coverage"]),
             }
             if best_for_line is None or (
                 candidate["score"],
@@ -595,6 +687,7 @@ def main() -> None:
                     "verificationCommonChars": int(match["common"]),
                     "verifiedTranscript": match["transcript"],
                     "words": match["wordTimings"],
+                    "karaokeAlignmentCoverage": round(match["karaokeAlignmentCoverage"], 3),
                 }
                 entries.append(entry)
                 accepted += 1
