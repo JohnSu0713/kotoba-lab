@@ -404,8 +404,9 @@ function setBasicPlaybackState(
 }
 
 function resetLyricHighlight(root: HTMLElement): void {
+  root.querySelector<HTMLElement>('#lyric-sync-text')?.classList.remove('is-karaoke-active');
   root.querySelectorAll<HTMLElement>('.lyric-sync-word, .lyric-sync-line').forEach((element) => {
-    element.classList.remove('active');
+    element.classList.remove('active', 'sung');
   });
 }
 
@@ -414,17 +415,26 @@ function updateLyricHighlight(
   lesson: DailyLyricLesson,
   currentSeconds: number,
 ): void {
-  resetLyricHighlight(root);
-
   if (lesson.words?.length) {
+    const text = root.querySelector<HTMLElement>('#lyric-sync-text');
+    const first = lesson.words[0];
+    const last = lesson.words.at(-1);
+    const karaokeActive = !!first && !!last
+      && currentSeconds >= first.startSeconds
+      && currentSeconds <= last.endSeconds;
+    text?.classList.toggle('is-karaoke-active', karaokeActive);
+
     lesson.words.forEach((word, index) => {
-      if (currentSeconds >= word.startSeconds && currentSeconds < word.endSeconds) {
-        root.querySelector<HTMLElement>('[data-lyric-word="' + index + '"]')?.classList.add('active');
-      }
+      const element = root.querySelector<HTMLElement>('[data-lyric-word="' + index + '"]');
+      if (!element) return;
+      const active = currentSeconds >= word.startSeconds && currentSeconds < word.endSeconds;
+      element.classList.toggle('active', active);
+      element.classList.toggle('sung', currentSeconds >= word.endSeconds);
     });
     return;
   }
 
+  resetLyricHighlight(root);
   if (
     lesson.lineStartSeconds !== undefined
     && lesson.lineEndSeconds !== undefined
@@ -836,7 +846,7 @@ async function prefetchDeckCard(
   const index = sanitizeDeckIndex(cardIndex);
   const key = deckSlotKey(dateKey, index);
   const cached = lyricsStore.cachedLesson(key);
-  if (cached?.timingResolved && cached.timingVersion === 5 && cached.source === 'verified-preview') return;
+  if (cached?.timingResolved && cached.timingVersion === 6 && cached.source === 'verified-preview') return;
   if (deckPrefetches.has(key)) return await deckPrefetches.get(key);
 
   const promise = resolveCatalogLesson(artists, dateKey, index)
@@ -897,7 +907,7 @@ async function cachedLessonIsVerified(
 ): Promise<boolean> {
   if (
     !lesson.timingResolved
-    || lesson.timingVersion !== 5
+    || lesson.timingVersion !== 6
     || lesson.source !== 'verified-preview'
     || !lesson.appleTrackId
     || lesson.lineStartSeconds === undefined

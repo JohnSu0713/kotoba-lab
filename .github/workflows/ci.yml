@@ -72,6 +72,9 @@ jobs:
               raise SystemExit(f"{len(bad)} invalid learner-facing examples")
           PY
 
+      - name: Validate lyric verifier syntax
+        run: python -m py_compile scripts/generate_verified_lyrics.py
+
       - name: Validate verified lyric catalog
         run: |
           python - <<'PY'
