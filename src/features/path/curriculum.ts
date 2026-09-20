@@ -1,6 +1,7 @@
 import type { JlptLevel, VocabularyItem } from '../../domain/models.js';
+import { assignVocabularyToThemes, THEMES_BY_LEVEL } from './themes.js';
 
-export const CURRICULUM_VERSION = 1;
+export const CURRICULUM_VERSION = 2;
 export const PATH_UNIT_COUNT = 100;
 export const LESSONS_PER_UNIT = 10;
 export const TOTAL_VOCABULARY_TARGET = 7777;
@@ -29,6 +30,9 @@ export interface PathUnitDefinition {
   level: JlptLevel;
   stageTitle: string;
   stageSubtitle: string;
+  topicId: string;
+  topicTitle: string;
+  topicFocus: string;
   vocabularyIds: string[];
   patternTarget: number;
   lessons: PathLessonDefinition[];
@@ -128,7 +132,8 @@ export function buildLearningPath(
       .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 
     const vocabPerUnit = distribute(levelItems.length, stage.unitCount);
-    const vocabSlices = sliceBySizes(levelItems, vocabPerUnit);
+    const themes = THEMES_BY_LEVEL[stage.level];
+    const vocabSlices = assignVocabularyToThemes(levelItems, themes, vocabPerUnit);
     const patternsPerUnit = distribute(stage.patternTarget, stage.unitCount);
 
     for (let stageIndex = 0; stageIndex < stage.unitCount; stageIndex += 1) {
@@ -136,12 +141,17 @@ export function buildLearningPath(
       const unitId = stage.level.toLocaleLowerCase() + '-unit-' + String(order).padStart(3, '0');
       const ids = (vocabSlices[stageIndex] ?? []).map((item) => item.id);
       const patternTarget = patternsPerUnit[stageIndex] ?? 0;
+      const theme = themes[stageIndex];
+      if (!theme) throw new Error(`Missing theme for ${stage.level} unit ${order}`);
       units.push({
         id: unitId,
         order,
         level: stage.level,
         stageTitle: stage.title,
         stageSubtitle: stage.subtitle,
+        topicId: theme.id,
+        topicTitle: theme.title,
+        topicFocus: theme.focus,
         vocabularyIds: ids,
         patternTarget,
         lessons: lessonDefinitions(unitId, ids, patternTarget),
