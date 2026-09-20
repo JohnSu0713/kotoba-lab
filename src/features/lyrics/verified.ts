@@ -1,4 +1,5 @@
-import type { DailyLyricLesson, FollowedArtist } from './models.js';
+import type { DailyLyricLesson, FollowedArtist, LyricWordTiming } from './models.js';
+import { approximateKaraokeTimings, normalizeKaraokeTimings } from './karaoke.js';
 
 interface VerifiedCatalogEntry {
   id: string;
@@ -15,6 +16,7 @@ interface VerifiedCatalogEntry {
   previewLineEndSeconds: number;
   verificationScore: number;
   verificationCommonChars: number;
+  words?: LyricWordTiming[];
 }
 
 interface VerifiedCatalog {
@@ -187,6 +189,17 @@ export async function verifiedDeckLesson(
   );
   if (!entry) throw new Error('Verified lyric card unavailable.');
 
+  const preciseWords = normalizeKaraokeTimings(
+    entry.words,
+    entry.previewLineStartSeconds,
+    entry.previewLineEndSeconds,
+  );
+  const words = preciseWords ?? approximateKaraokeTimings(
+    entry.lineJa,
+    entry.previewLineStartSeconds,
+    entry.previewLineEndSeconds,
+  );
+
   return {
     id: dateKey + ':' + entry.id,
     dateKey,
@@ -203,6 +216,7 @@ export async function verifiedDeckLesson(
     timingVersion: 5,
     lineStartSeconds: entry.previewLineStartSeconds,
     lineEndSeconds: entry.previewLineEndSeconds,
+    ...(words.length ? { words } : {}),
     fetchedAt: new Date().toISOString(),
     source: 'verified-preview',
   };
