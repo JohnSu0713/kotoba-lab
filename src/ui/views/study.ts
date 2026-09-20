@@ -63,6 +63,7 @@ function renderFlashcard(
   revealed: boolean,
 ): string {
   const chips = question.chips ?? [];
+  const collocations = question.collocations ?? [];
   const details = question.details ?? [];
   const interactive = revealed
     ? ""
@@ -91,6 +92,7 @@ function renderFlashcard(
             <p class="vocab-answer-label">意思</p>
             <div class="vocab-meaning">${escapeHtml(question.back)}</div>
             ${chips.length ? `<div class="vocab-pos-chips">${chips.map((chip) => `<span>${escapeHtml(chip)}</span>`).join("")}</div>` : ""}
+            ${collocations.length ? `<div class="vocab-collocations"><small>常用搭配</small><div>${collocations.map((value) => `<span lang="ja">${escapeHtml(value)}</span>`).join("")}</div></div>` : ""}
           </div>
           ${
             question.example
