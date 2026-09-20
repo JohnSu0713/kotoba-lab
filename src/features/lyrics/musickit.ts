@@ -301,7 +301,7 @@ export async function playPreciseSegment(
     if (currentSeconds >= source.endSeconds) {
       void stop();
     }
-  }, 90);
+  }, 50);
 
   onTick({
     currentSeconds: source.startSeconds,
