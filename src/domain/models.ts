@@ -32,6 +32,7 @@ export interface VocabularyItem {
   jlpt: JlptLevel;
   tags: string[];
   examples: VocabularyExample[];
+  collocations?: string[];
   order: number;
   partsOfSpeech?: string[];
   fields?: string[];
