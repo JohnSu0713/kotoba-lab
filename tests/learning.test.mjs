@@ -15,6 +15,7 @@ import {
 } from "../public/app/features/progress/activity.js";
 import { grammar, readings } from "../public/app/features/studio/content.js";
 import { vocabFlashcardMode } from "../public/app/features/vocabulary/modes/flashcard.js";
+import { applyLearnerContent } from "../public/app/features/vocabulary/learner-content.js";
 import { readFile } from "node:fs/promises";
 import {
   verifiedArtistCoverage,
@@ -376,6 +377,27 @@ test("the single learning path is stable, complete, and assigns every word once"
     );
   }
 
+  for (const stage of PATH_STAGES) {
+    const stageUnits = units.filter((unit) => unit.level === stage.level);
+    assert.equal(new Set(stageUnits.map((unit) => unit.topicId)).size, stage.unitCount);
+    assert.ok(stageUnits.every((unit) => unit.topicTitle.length >= 4));
+    assert.ok(stageUnits.every((unit) => unit.topicFocus.length >= 8));
+  }
+
+  const n5Pack = packs.find((pack) => pack.items.some((item) => item.jlpt === "N5"));
+  const n5ById = new Map(n5Pack.items.map((item) => [item.id, item]));
+  const topicExpressions = (topicId) => new Set(
+    units
+      .find((unit) => unit.level === "N5" && unit.topicId === topicId)
+      .vocabularyIds
+      .map((id) => n5ById.get(id)?.expression)
+      .filter(Boolean),
+  );
+  const people = topicExpressions("people-intro");
+  assert.ok(["家族", "学生", "外国人", "子供", "私"].filter((word) => people.has(word)).length >= 3);
+  const transport = topicExpressions("places-transport");
+  assert.ok(["右", "左", "自動車", "駅", "電車"].filter((word) => transport.has(word)).length >= 3);
+
   for (const unit of units) {
     assert.equal(unit.lessons.length, 10);
     assert.deepEqual(
@@ -387,4 +409,39 @@ test("the single learning path is stable, complete, and assigns every word once"
       unit.patternTarget,
     );
   }
+});
+
+
+test("learner content repairs ambiguous core meanings and supplies practical examples", () => {
+  const curated = applyLearnerContent({
+    id: "vocab:test:cup",
+    kind: "vocabulary",
+    expression: "コップ",
+    reading: "コップ",
+    meaningsZhTw: ["警察；警官"],
+    jlpt: "N5",
+    tags: [],
+    examples: [{
+      ja: "長すぎる既存例文をそのまま使わないためのテストです。",
+      kana: "ながすぎるきぞんれいぶんをそのままつかわないためのてすとです。",
+      source: "tatoeba",
+    }],
+    order: 1,
+  });
+
+  assert.deepEqual(curated.meaningsZhTw, ["杯子；玻璃杯"]);
+  assert.ok(curated.collocations?.includes("コップに入れる"));
+  assert.equal(curated.examples[0]?.ja, "コップに水を入れます。");
+  assert.equal(curated.examples[0]?.zhTw, "把水倒進杯子裡。");
+
+  const question = vocabFlashcardMode.createQuestion(curated, {
+    allItems: [curated],
+    random: () => 0.5,
+  });
+  assert.equal(question.type, "flashcard");
+  assert.equal(question.back, "杯子；玻璃杯");
+  assert.equal(question.example?.ja, "コップに水を入れます。");
+  assert.equal(question.example?.translation, "把水倒進杯子裡。");
+  assert.equal(question.example?.sourceLabel, "Kotoba Lab");
+  assert.ok(question.collocations?.includes("コップ一杯"));
 });
