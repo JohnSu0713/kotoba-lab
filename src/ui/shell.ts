@@ -14,12 +14,10 @@ export function renderShell(app: HTMLElement, contentHtml = ""): void {
       </header>
       <main id="page" tabindex="-1">${contentHtml}</main>
       <nav class="bottom-nav" aria-label="主要導覽">
-        <a href="#/" data-nav="/">${icons.today}<span>今日</span></a>
-        <a href="#/library" data-nav="/library">${icons.modeVocab}<span>詞彙</span></a>
-        <a href="#/studio" data-nav="/studio">${icons.kana}<span>練習室</span></a>
+        <a href="#/" data-nav="/">${icons.today}<span>學習</span></a>
         <a href="#/lyrics" data-nav="/lyrics">${icons.lyrics}<span>歌詞</span></a>
-        <a href="#/stats" data-nav="/stats">${icons.stats}<span>統計</span></a>
-
+        <a href="#/library" data-nav="/library">${icons.modeVocab}<span>筆記</span></a>
+        <a href="#/stats" data-nav="/stats">${icons.stats}<span>進度</span></a>
       </nav>
     </div>`;
 
