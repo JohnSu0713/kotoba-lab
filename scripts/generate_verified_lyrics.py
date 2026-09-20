@@ -290,7 +290,7 @@ def transcribe_preview(model: WhisperModel, url: str) -> list[dict[str, Any]]:
         words: list[dict[str, Any]] = []
         for word in segment.words or []:
             word_text = str(word.word or "").strip()
-            if not word_text:
+            if not word_text or word.start is None or word.end is None:
                 continue
             words.append({
                 "text": word_text,
