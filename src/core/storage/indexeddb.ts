@@ -22,7 +22,7 @@ export const defaultNotebook: Notebook = {
   dailyGoal: 20,
   level: "N5",
   path: {
-    curriculumVersion: 1,
+    curriculumVersion: 2,
     foundationSkipped: false,
   },
 };
@@ -120,7 +120,7 @@ export function validateSnapshot(
       !["N5", "N4", "N3", "N2", "N1"].includes(String(n.level)) ||
       (n.path !== undefined && (
         !object(n.path) ||
-        n.path.curriculumVersion !== 1 ||
+        ![1, 2].includes(Number(n.path.curriculumVersion)) ||
         typeof n.path.foundationSkipped !== "boolean"
       ))
     )

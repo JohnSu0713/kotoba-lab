@@ -2,6 +2,7 @@ import type { ContentPack } from '../../core/contracts/content.js';
 import type { ContentRegistry } from '../../core/registry/content-registry.js';
 import type { JlptLevel, VocabularyItem } from '../../domain/models.js';
 import { sampleN5Pack } from './data.js';
+import { applyLearnerContent } from './learner-content.js';
 
 const LEVELS: JlptLevel[] = ['N5', 'N4', 'N3', 'N2', 'N1'];
 
@@ -29,7 +30,10 @@ export async function registerVocabularyCorpus(content: ContentRegistry): Promis
       if (result.status === 'rejected') console.warn(`Vocabulary corpus ${level ?? 'unknown'} unavailable`, result.reason);
       return;
     }
-    content.register(result.value);
+    content.register({
+      ...result.value,
+      items: result.value.items.map(applyLearnerContent),
+    });
     if (level === 'N5') n5Loaded = true;
   });
 

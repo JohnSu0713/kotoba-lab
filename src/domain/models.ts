@@ -32,6 +32,7 @@ export interface VocabularyItem {
   jlpt: JlptLevel;
   tags: string[];
   examples: VocabularyExample[];
+  collocations?: string[];
   order: number;
   partsOfSpeech?: string[];
   fields?: string[];
@@ -63,7 +64,7 @@ export interface LearningActivity {
   isNew: boolean;
 }
 export interface LearningPathPreferences {
-  curriculumVersion: 1;
+  curriculumVersion: 1 | 2;
   foundationSkipped: boolean;
 }
 
