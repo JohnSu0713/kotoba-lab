@@ -30,7 +30,7 @@ export async function renderPath(
     notebook.path?.foundationSkipped ?? false,
   );
 
-  const currentOrder = snapshot.currentUnit?.order ?? 101;
+  const currentOrder = snapshot.foundationDone ? (snapshot.currentUnit?.order ?? 101) : 0;
   const currentHref = !snapshot.foundationDone
     ? studyHref("kana-recognition", { scope: "basic", limit: "15", path: "foundation" })
     : snapshot.currentUnit && snapshot.currentLesson
