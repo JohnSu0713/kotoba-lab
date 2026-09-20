@@ -21,6 +21,12 @@ import {
   verifiedDeckLesson,
 } from "../public/app/features/lyrics/verified.js";
 import { normalizeKaraokeTimings } from "../public/app/features/lyrics/karaoke.js";
+import {
+  buildLearningPath,
+  PATH_STAGES,
+  TOTAL_PATTERN_TARGET,
+  TOTAL_VOCABULARY_TARGET,
+} from "../public/app/features/path/curriculum.js";
 const item = (id) => ({
   id,
   kind: "vocabulary",
@@ -128,6 +134,32 @@ test("weak practice includes future-due failed cards and excludes untouched cont
   const s = await engine.create(mode, { strategy: "weak" });
   assert.equal(s.total, 1);
   assert.equal(s.current().item.id, "2");
+});
+
+test("path sessions review old material while new cards stay inside the current lesson", async () => {
+  const { engine, repository, scheduler } = setup();
+  repository.settings.dailyNew = 0;
+  repository.reviews = [{
+    ...scheduler.create("0", "test", new Date()),
+    reps: 2,
+    dueAt: new Date(0).toISOString(),
+  }];
+
+  const session = await engine.create(mode, {
+    strategy: "scheduled",
+    limit: 3,
+    dueLimit: 1,
+    ignoreDailyNewLimit: true,
+    freshPredicate: (candidate) => ["1", "2"].includes(candidate.id),
+  });
+
+  assert.equal(session.total, 3);
+  assert.equal(session.current().item.id, "0");
+  await session.submit("0");
+  const freshIds = [session.current().item.id];
+  await session.submit(session.current().item.id);
+  freshIds.push(session.current().item.id);
+  assert.deepEqual(new Set(freshIds), new Set(["1", "2"]));
 });
 test("legacy backup accepted; invalid records, dates and goal rejected", () => {
   const backup = {
@@ -304,3 +336,55 @@ test("trusted karaoke timings are normalized without inventing timing", () => {
   ], 3.2, 6.46), undefined);
 });
 
+
+
+test("the single learning path is stable, complete, and assigns every word once", async () => {
+  const packs = await Promise.all(
+    ["n5", "n4", "n3", "n2", "n1"].map(async (level) =>
+      JSON.parse(
+        await readFile(
+          new URL(`../public/data/vocab/${level}.json`, import.meta.url),
+          "utf8",
+        ),
+      ),
+    ),
+  );
+  const vocabulary = packs.flatMap((pack) => pack.items);
+  const units = buildLearningPath(vocabulary);
+
+  assert.equal(units.length, 100);
+  assert.deepEqual(units.map((unit) => unit.order), Array.from({ length: 100 }, (_, index) => index + 1));
+
+  const assigned = units.flatMap((unit) => unit.vocabularyIds);
+  assert.equal(assigned.length, TOTAL_VOCABULARY_TARGET);
+  assert.equal(new Set(assigned).size, TOTAL_VOCABULARY_TARGET);
+  assert.equal(
+    units.reduce((total, unit) => total + unit.patternTarget, 0),
+    TOTAL_PATTERN_TARGET,
+  );
+
+  for (const stage of PATH_STAGES) {
+    const stageUnits = units.filter((unit) => unit.level === stage.level);
+    assert.equal(stageUnits.length, stage.unitCount);
+    assert.equal(
+      stageUnits.reduce((total, unit) => total + unit.vocabularyIds.length, 0),
+      stage.vocabularyTarget,
+    );
+    assert.equal(
+      stageUnits.reduce((total, unit) => total + unit.patternTarget, 0),
+      stage.patternTarget,
+    );
+  }
+
+  for (const unit of units) {
+    assert.equal(unit.lessons.length, 10);
+    assert.deepEqual(
+      unit.lessons.flatMap((lesson) => lesson.vocabularyIds),
+      unit.vocabularyIds,
+    );
+    assert.equal(
+      unit.lessons.reduce((total, lesson) => total + lesson.patternTarget, 0),
+      unit.patternTarget,
+    );
+  }
+});

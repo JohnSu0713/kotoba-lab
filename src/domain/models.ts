@@ -62,10 +62,16 @@ export interface LearningActivity {
   correct: boolean;
   isNew: boolean;
 }
+export interface LearningPathPreferences {
+  curriculumVersion: 1;
+  foundationSkipped: boolean;
+}
+
 export interface Notebook {
   savedIds: string[];
   dailyGoal: number;
   level: JlptLevel;
+  path?: LearningPathPreferences;
 }
 export interface AppSettings {
   dailyNew: number;

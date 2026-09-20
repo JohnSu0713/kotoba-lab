@@ -9,6 +9,7 @@ import type { AppContext } from "./context.js";
 import { currentRoute } from "../ui/router.js";
 import { renderShell } from "../ui/shell.js";
 import { renderHome } from "../ui/views/home.js";
+import { renderPath } from "../ui/views/path.js";
 import { renderKana } from "../ui/views/kana.js";
 import { renderLyrics } from "../ui/views/lyrics.js";
 import { renderStudy } from "../ui/views/study.js";
@@ -49,6 +50,7 @@ async function bootstrap(): Promise<void> {
       "Kotoba Lab · " +
       ({
         "/": "今日",
+        "/path": "學習路徑",
         "/library": "詞彙筆記",
         "/studio": "練習室",
         "/kana": "五十音",
@@ -72,7 +74,9 @@ async function bootstrap(): Promise<void> {
         node.setAttribute("aria-current", "page");
       }
     });
-    if (route.path === "/library")
+    if (route.path === "/path")
+      await renderPath(page, context);
+    else if (route.path === "/library")
       await renderLibrary(page, context, route.params);
     else if (route.path === "/studio")
       await renderStudio(page, context, route.params);

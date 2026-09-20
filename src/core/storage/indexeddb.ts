@@ -21,6 +21,10 @@ export const defaultNotebook: Notebook = {
   savedIds: [],
   dailyGoal: 20,
   level: "N5",
+  path: {
+    curriculumVersion: 1,
+    foundationSkipped: false,
+  },
 };
 function requestToPromise<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -113,9 +117,14 @@ export function validateSnapshot(
       !n.savedIds.every((id) => typeof id === "string") ||
       !number(n.dailyGoal, 5, 200) ||
       !Number.isInteger(n.dailyGoal) ||
-      !["N5", "N4", "N3", "N2", "N1"].includes(String(n.level))
+      !["N5", "N4", "N3", "N2", "N1"].includes(String(n.level)) ||
+      (n.path !== undefined && (
+        !object(n.path) ||
+        n.path.curriculumVersion !== 1 ||
+        typeof n.path.foundationSkipped !== "boolean"
+      ))
     )
-      throw new Error("收藏或每日目標無效");
+      throw new Error("收藏、每日目標或學習路徑無效");
   }
 }
 export class IndexedDbRepository implements AppRepository {
