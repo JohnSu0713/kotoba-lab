@@ -1,5 +1,6 @@
 import type { AppContext } from "../../app/context.js";
-import type { Rating, Script } from "../../domain/models.js";
+import type { Rating, Script, VocabularyItem } from "../../domain/models.js";
+import { buildLearningPath } from "../../features/path/curriculum.js";
 import type {
   FlashcardQuestion,
   StudyQuestion,
@@ -160,11 +161,32 @@ export async function renderStudy(
       : params.get("strategy") === "practice"
         ? "practice"
         : "scheduled";
-  const pageTitle =
-    strategy === "weak" ? "弱項再練習" : isMixed ? "今日混合練習" : mode!.title;
+  const pathUnitOrder = Number(params.get("pathUnit") ?? "");
+  const pathLessonOrder = Number(params.get("pathLesson") ?? "");
+  const isPathSession = params.get("path") === "1";
+  const isFoundationSession = params.get("path") === "foundation";
+  const pathUnit = Number.isInteger(pathUnitOrder)
+    ? buildLearningPath(
+        context.content.getAll({ kind: "vocabulary" }) as VocabularyItem[],
+      ).find((unit) => unit.order === pathUnitOrder)
+    : undefined;
+  const pathLesson = pathUnit && Number.isInteger(pathLessonOrder)
+    ? pathUnit.lessons.find((lesson) => lesson.order === pathLessonOrder)
+    : undefined;
+  const pathIds = pathLesson ? new Set(pathLesson.vocabularyIds) : undefined;
+  const pageTitle = isFoundationSession
+    ? "Foundation · 五十音"
+    : isPathSession && pathUnit && pathLesson
+      ? `${pathUnit.level} · Unit ${pathUnit.order} · Lesson ${pathLesson.order}/10`
+      : strategy === "weak"
+        ? "弱項再練習"
+        : isMixed
+          ? "今日混合練習"
+          : mode!.title;
   const basePredicate = predicateFor(params, settings.enabledKanaGroups);
   const predicate = (item: import("../../domain/models.js").ContentItem) =>
     basePredicate(item) &&
+    (!pathIds || pathIds.has(item.id)) &&
     (!params.get("item") || item.id === params.get("item")) &&
     (params.get("saved") !== "1" || savedIds.has(item.id));
   const mixedModes = context.modes
@@ -175,9 +197,13 @@ export async function renderStudy(
     );
 
   root.innerHTML = `<section class="loading">正在準備 ${escapeHtml(pageTitle)}…</section>`;
+  const requestedLimit = Number(params.get("limit") ?? "");
+  const limit = Number.isInteger(requestedLimit) && requestedLimit > 0
+    ? requestedLimit
+    : undefined;
   const session = isMixed
-    ? await context.sessions.createMixed(mixedModes, { predicate, strategy })
-    : await context.sessions.create(mode!, { predicate, strategy });
+    ? await context.sessions.createMixed(mixedModes, { predicate, strategy, limit })
+    : await context.sessions.create(mode!, { predicate, strategy, limit });
   let feedback: FeedbackState | undefined;
   let revealed = false;
   let submitting = false;
@@ -248,12 +274,12 @@ export async function renderStudy(
         <section class="study-shell complete-card">
           <a class="back-link" href="#/">← 首頁</a>
           <div class="completion-mark">✓</div>
-          <p class="eyebrow">SESSION COMPLETE</p>
-          <h1>今天這組完成了</h1>
+          <p class="eyebrow">${isPathSession || isFoundationSession ? "PATH COMPLETE" : "SESSION COMPLETE"}</p>
+          <h1>${isPathSession ? "這一課完成了" : isFoundationSession ? "這一段 Foundation 完成了" : "今天這組完成了"}</h1>
           <p>完成 ${session.total} 題 · ${Math.max(1, Math.round((Date.now() - startedAt) / 60000))} 分鐘。記憶排程已儲存。</p>
           <div class="session-summary"><div><strong>${correctCount}</strong><span>答對或自評記得</span></div><div><strong>${missedIds.size}</strong><span>需要再回想的項目</span></div></div>
-          ${missedIds.size ? `<a class="secondary-button" href="${studyHref("daily-mixed", { strategy: "weak" })}">再練習弱項 →</a>` : ""}
-          <a class="primary-button" href="#/">回到今日</a>
+          ${!isPathSession && !isFoundationSession && missedIds.size ? `<a class="secondary-button" href="${studyHref("daily-mixed", { strategy: "weak" })}">再練習弱項 →</a>` : ""}
+          <a class="primary-button" href="#/">${isPathSession || isFoundationSession ? "回到路徑，繼續下一步" : "回到今日"}</a>
         </section>`;
       return;
     }
@@ -265,8 +291,9 @@ export async function renderStudy(
           <a class="back-link" href="#/">← 首頁</a>
           <p class="eyebrow">ALL CLEAR</p>
           <h1>${strategy === "weak" ? "還沒有需要加強的項目" : params.get("saved") === "1" ? "先收藏想練習的字" : "這一輪，可以先休息了"}</h1>
-          <p>${strategy === "scheduled" ? "目前沒有到期卡片，或今日新卡額度已用完。也可以到練習室讀一篇短文。" : "完成一般練習或收藏詞彙後，再回來看看。"}</p><a class="secondary-button" href="#/studio">到練習室 →</a>
-          <a class="primary-button" href="#/">選其他模式</a>
+          <p>${isPathSession || isFoundationSession ? "這一課目前沒有待完成項目。回到主線會自動帶你到下一步。" : strategy === "scheduled" ? "目前沒有到期卡片，或今日新卡額度已用完。也可以到練習室讀一篇短文。" : "完成一般練習或收藏詞彙後，再回來看看。"}</p>
+          ${isPathSession || isFoundationSession ? "" : '<a class="secondary-button" href="#/studio">到練習室 →</a>'}
+          <a class="primary-button" href="#/">${isPathSession || isFoundationSession ? "回到學習路徑" : "選其他模式"}</a>
         </section>`;
       return;
     }
