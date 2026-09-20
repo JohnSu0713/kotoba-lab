@@ -846,7 +846,7 @@ async function prefetchDeckCard(
   const index = sanitizeDeckIndex(cardIndex);
   const key = deckSlotKey(dateKey, index);
   const cached = lyricsStore.cachedLesson(key);
-  if (cached?.timingResolved && cached.timingVersion === 6 && cached.source === 'verified-preview') return;
+  if (cached?.timingResolved && cached.timingVersion === 7 && cached.source === 'verified-preview') return;
   if (deckPrefetches.has(key)) return await deckPrefetches.get(key);
 
   const promise = resolveCatalogLesson(artists, dateKey, index)
@@ -907,7 +907,7 @@ async function cachedLessonIsVerified(
 ): Promise<boolean> {
   if (
     !lesson.timingResolved
-    || lesson.timingVersion !== 6
+    || lesson.timingVersion !== 7
     || lesson.source !== 'verified-preview'
     || !lesson.appleTrackId
     || lesson.lineStartSeconds === undefined
