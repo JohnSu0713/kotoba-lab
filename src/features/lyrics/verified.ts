@@ -190,9 +190,12 @@ export async function verifiedDeckLesson(
   );
   if (!entry) throw new Error('Verified lyric card unavailable.');
 
+  const catalogWords = entry.words?.map((word) => word.text).join('') === entry.lineJa
+    ? entry.words
+    : undefined;
   const preciseWords = (entry.karaokeAlignmentCoverage ?? 0) >= 0.58
     ? normalizeKaraokeTimings(
-        entry.words,
+        catalogWords,
         entry.previewLineStartSeconds,
         entry.previewLineEndSeconds,
       )
