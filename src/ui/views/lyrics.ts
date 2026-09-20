@@ -645,7 +645,7 @@ function playOriginalPreview(
       }
 
       if (audio.currentTime >= focus.end - 0.05) finish(false);
-    }, 90);
+    }, 50);
   }).catch(() => {
     finish(true);
   });
