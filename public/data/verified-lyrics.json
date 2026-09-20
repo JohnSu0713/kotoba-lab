@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-19T16:23:53.085021+00:00",
+  "generatedAt": "2026-09-20T04:26:25.748782+00:00",
   "verifier": "faster-whisper/small",
   "storefront": "JP",
   "entries": [
     {
-      "id": "apple:1490256995:1.14:沈むように溶けてゆくよう",
+      "id": "apple:1490256995:1.16:沈むように溶けてゆくよう",
       "artistName": "YOASOBI",
       "artistAliases": [
         "YOASOBI"
@@ -17,17 +17,85 @@
       "storefront": "JP",
       "trackDurationSeconds": 261.013,
       "lineJa": "沈むように溶けてゆくように",
-      "previewLineStartSeconds": 1.14,
-      "previewLineEndSeconds": 5.08,
+      "previewLineStartSeconds": 1.16,
+      "previewLineEndSeconds": 5.1,
       "verificationScore": 100.0,
       "verificationFullScore": 100.0,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 13,
-      "verifiedTranscript": "沈むように溶けてゆくように"
+      "verifiedTranscript": "沈むように溶けてゆくように",
+      "words": [
+        {
+          "text": "沈",
+          "startSeconds": 1.18,
+          "endSeconds": 2.02
+        },
+        {
+          "text": "む",
+          "startSeconds": 2.02,
+          "endSeconds": 2.52
+        },
+        {
+          "text": "よ",
+          "startSeconds": 2.52,
+          "endSeconds": 2.713
+        },
+        {
+          "text": "う",
+          "startSeconds": 2.713,
+          "endSeconds": 2.907
+        },
+        {
+          "text": "に",
+          "startSeconds": 2.907,
+          "endSeconds": 3.1
+        },
+        {
+          "text": "溶",
+          "startSeconds": 3.1,
+          "endSeconds": 3.52
+        },
+        {
+          "text": "け",
+          "startSeconds": 3.52,
+          "endSeconds": 3.67
+        },
+        {
+          "text": "て",
+          "startSeconds": 3.67,
+          "endSeconds": 3.82
+        },
+        {
+          "text": "ゆ",
+          "startSeconds": 3.82,
+          "endSeconds": 4.24
+        },
+        {
+          "text": "く",
+          "startSeconds": 4.24,
+          "endSeconds": 4.38
+        },
+        {
+          "text": "よ",
+          "startSeconds": 4.38,
+          "endSeconds": 4.613
+        },
+        {
+          "text": "う",
+          "startSeconds": 4.613,
+          "endSeconds": 4.847
+        },
+        {
+          "text": "に",
+          "startSeconds": 4.847,
+          "endSeconds": 5.08
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1490256995:9.0:二人だけの空が広がる夜に",
+      "id": "apple:1490256995:8.74:二人だけの空が広がる夜に",
       "artistName": "YOASOBI",
       "artistAliases": [
         "YOASOBI"
@@ -39,17 +107,80 @@
       "storefront": "JP",
       "trackDurationSeconds": 261.013,
       "lineJa": "二人だけの空が広がる夜に",
-      "previewLineStartSeconds": 9.0,
-      "previewLineEndSeconds": 13.4,
+      "previewLineStartSeconds": 8.74,
+      "previewLineEndSeconds": 13.42,
       "verificationScore": 100.0,
       "verificationFullScore": 100.0,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 12,
-      "verifiedTranscript": "二人だけの空が広がる夜に"
+      "verifiedTranscript": "二人だけの空が広がる夜に",
+      "words": [
+        {
+          "text": "二",
+          "startSeconds": 8.76,
+          "endSeconds": 9.18
+        },
+        {
+          "text": "人",
+          "startSeconds": 9.18,
+          "endSeconds": 9.8
+        },
+        {
+          "text": "だ",
+          "startSeconds": 9.8,
+          "endSeconds": 10.04
+        },
+        {
+          "text": "け",
+          "startSeconds": 10.04,
+          "endSeconds": 10.28
+        },
+        {
+          "text": "の",
+          "startSeconds": 10.28,
+          "endSeconds": 10.64
+        },
+        {
+          "text": "空",
+          "startSeconds": 10.64,
+          "endSeconds": 11.02
+        },
+        {
+          "text": "が",
+          "startSeconds": 11.02,
+          "endSeconds": 11.36
+        },
+        {
+          "text": "広",
+          "startSeconds": 11.36,
+          "endSeconds": 11.78
+        },
+        {
+          "text": "が",
+          "startSeconds": 11.78,
+          "endSeconds": 12.08
+        },
+        {
+          "text": "る",
+          "startSeconds": 12.08,
+          "endSeconds": 12.42
+        },
+        {
+          "text": "夜",
+          "startSeconds": 12.42,
+          "endSeconds": 12.82
+        },
+        {
+          "text": "に",
+          "startSeconds": 12.82,
+          "endSeconds": 13.4
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1611482688:18.18:比べるものは何もない",
+      "id": "apple:1611482688:18.16:比べるものは何もない",
       "artistName": "藤井 風",
       "artistAliases": [
         "藤井 風",
@@ -63,17 +194,70 @@
       "storefront": "JP",
       "trackDurationSeconds": 225.924,
       "lineJa": "比べるものは何もない",
-      "previewLineStartSeconds": 18.18,
-      "previewLineEndSeconds": 20.46,
+      "previewLineStartSeconds": 18.16,
+      "previewLineEndSeconds": 20.5,
       "verificationScore": 100.0,
-      "verificationFullScore": 100.0,
+      "verificationFullScore": 45.5,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 10,
-      "verifiedTranscript": "比べるものは何もない"
+      "verifiedTranscript": "Matsumi Matsumiあれもこれも顔あたり比べるものは何もない",
+      "words": [
+        {
+          "text": "比",
+          "startSeconds": 18.18,
+          "endSeconds": 18.66
+        },
+        {
+          "text": "べ",
+          "startSeconds": 18.66,
+          "endSeconds": 18.9
+        },
+        {
+          "text": "る",
+          "startSeconds": 18.9,
+          "endSeconds": 19.04
+        },
+        {
+          "text": "も",
+          "startSeconds": 19.04,
+          "endSeconds": 19.2
+        },
+        {
+          "text": "の",
+          "startSeconds": 19.2,
+          "endSeconds": 19.36
+        },
+        {
+          "text": "は",
+          "startSeconds": 19.36,
+          "endSeconds": 19.52
+        },
+        {
+          "text": "何",
+          "startSeconds": 19.52,
+          "endSeconds": 19.68
+        },
+        {
+          "text": "も",
+          "startSeconds": 19.68,
+          "endSeconds": 20.02
+        },
+        {
+          "text": "な",
+          "startSeconds": 20.02,
+          "endSeconds": 20.25
+        },
+        {
+          "text": "い",
+          "startSeconds": 20.25,
+          "endSeconds": 20.48
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1611482688:10.46:毎日愛しき何かの",
+      "id": "apple:1611482688:10.44:毎日愛しき何かの",
       "artistName": "藤井 風",
       "artistAliases": [
         "藤井 風",
@@ -87,17 +271,60 @@
       "storefront": "JP",
       "trackDurationSeconds": 225.924,
       "lineJa": "毎日愛しき何かの",
-      "previewLineStartSeconds": 10.46,
-      "previewLineEndSeconds": 13.24,
+      "previewLineStartSeconds": 10.44,
+      "previewLineEndSeconds": 13.26,
       "verificationScore": 100.0,
-      "verificationFullScore": 100.0,
+      "verificationFullScore": 39.0,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 8,
-      "verifiedTranscript": "毎日愛しき何かの"
+      "verifiedTranscript": "今こじ明けな 明けななせMatsumi Matsumi毎日愛しき何かの",
+      "words": [
+        {
+          "text": "毎",
+          "startSeconds": 10.46,
+          "endSeconds": 11.12
+        },
+        {
+          "text": "日",
+          "startSeconds": 11.12,
+          "endSeconds": 11.4
+        },
+        {
+          "text": "愛",
+          "startSeconds": 11.4,
+          "endSeconds": 11.74
+        },
+        {
+          "text": "し",
+          "startSeconds": 11.74,
+          "endSeconds": 11.94
+        },
+        {
+          "text": "き",
+          "startSeconds": 11.94,
+          "endSeconds": 12.1
+        },
+        {
+          "text": "何",
+          "startSeconds": 12.1,
+          "endSeconds": 12.36
+        },
+        {
+          "text": "か",
+          "startSeconds": 12.36,
+          "endSeconds": 12.84
+        },
+        {
+          "text": "の",
+          "startSeconds": 12.84,
+          "endSeconds": 13.24
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1505498783:7.84:別の恐怖と今は戦ってるの",
+      "id": "apple:1505498783:9.08:別の恐怖と今は戦ってるの",
       "artistName": "藤井 風",
       "artistAliases": [
         "藤井 風",
@@ -111,17 +338,80 @@
       "storefront": "JP",
       "trackDurationSeconds": 214.2,
       "lineJa": "別の恐怖と　今は戦ってるの",
-      "previewLineStartSeconds": 7.84,
-      "previewLineEndSeconds": 13.12,
+      "previewLineStartSeconds": 9.08,
+      "previewLineEndSeconds": 13.14,
       "verificationScore": 100.0,
-      "verificationFullScore": 82.8,
+      "verificationFullScore": 72.7,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 12,
-      "verifiedTranscript": "堪え堅いの別の恐怖と今は戦ってるの"
+      "verifiedTranscript": "そろそろ堪え堅いの別の恐怖と今は戦ってるの",
+      "words": [
+        {
+          "text": "別",
+          "startSeconds": 9.1,
+          "endSeconds": 9.54
+        },
+        {
+          "text": "の",
+          "startSeconds": 9.54,
+          "endSeconds": 9.84
+        },
+        {
+          "text": "恐",
+          "startSeconds": 9.84,
+          "endSeconds": 10.12
+        },
+        {
+          "text": "怖",
+          "startSeconds": 10.12,
+          "endSeconds": 10.4
+        },
+        {
+          "text": "と　",
+          "startSeconds": 10.4,
+          "endSeconds": 10.66
+        },
+        {
+          "text": "今",
+          "startSeconds": 10.66,
+          "endSeconds": 11.16
+        },
+        {
+          "text": "は",
+          "startSeconds": 11.16,
+          "endSeconds": 11.44
+        },
+        {
+          "text": "戦",
+          "startSeconds": 11.44,
+          "endSeconds": 11.78
+        },
+        {
+          "text": "っ",
+          "startSeconds": 11.78,
+          "endSeconds": 12.093
+        },
+        {
+          "text": "て",
+          "startSeconds": 12.093,
+          "endSeconds": 12.407
+        },
+        {
+          "text": "る",
+          "startSeconds": 12.407,
+          "endSeconds": 12.72
+        },
+        {
+          "text": "の",
+          "startSeconds": 12.72,
+          "endSeconds": 13.12
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1505498783:13.12:おっと罪の香り",
+      "id": "apple:1505498783:13.1:おっと罪の香り",
       "artistName": "藤井 風",
       "artistAliases": [
         "藤井 風",
@@ -135,17 +425,55 @@
       "storefront": "JP",
       "trackDurationSeconds": 214.2,
       "lineJa": "おっと　罪の香り",
-      "previewLineStartSeconds": 13.12,
-      "previewLineEndSeconds": 15.72,
+      "previewLineStartSeconds": 13.1,
+      "previewLineEndSeconds": 15.9,
       "verificationScore": 100.0,
-      "verificationFullScore": 100.0,
+      "verificationFullScore": 66.7,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 7,
-      "verifiedTranscript": "おっと罪の香り"
+      "verifiedTranscript": "今は戦ってるのおっと罪の香り",
+      "words": [
+        {
+          "text": "お",
+          "startSeconds": 13.12,
+          "endSeconds": 13.62
+        },
+        {
+          "text": "っ",
+          "startSeconds": 13.62,
+          "endSeconds": 13.8
+        },
+        {
+          "text": "と　",
+          "startSeconds": 13.8,
+          "endSeconds": 13.98
+        },
+        {
+          "text": "罪",
+          "startSeconds": 13.98,
+          "endSeconds": 14.7
+        },
+        {
+          "text": "の",
+          "startSeconds": 14.7,
+          "endSeconds": 14.92
+        },
+        {
+          "text": "香",
+          "startSeconds": 14.92,
+          "endSeconds": 15.2
+        },
+        {
+          "text": "り",
+          "startSeconds": 15.2,
+          "endSeconds": 15.88
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1538265734:0.0:汚れてゆくのでしょう",
+      "id": "apple:1538265734:4.5:汚れてゆくのでしょう",
       "artistName": "米津玄師",
       "artistAliases": [
         "米津玄師",
@@ -158,17 +486,70 @@
       "storefront": "JP",
       "trackDurationSeconds": 235.723,
       "lineJa": "汚れてゆくのでしょう",
-      "previewLineStartSeconds": 0.0,
-      "previewLineEndSeconds": 7.34,
+      "previewLineStartSeconds": 4.5,
+      "previewLineEndSeconds": 7.36,
       "verificationScore": 100.0,
       "verificationFullScore": 64.5,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 10,
-      "verifiedTranscript": "花糸の湯の通り 私の手は汚れてゆくのでしょう"
+      "verifiedTranscript": "花糸の湯の通り 私の手は汚れてゆくのでしょう",
+      "words": [
+        {
+          "text": "汚",
+          "startSeconds": 4.52,
+          "endSeconds": 5.34
+        },
+        {
+          "text": "れ",
+          "startSeconds": 5.34,
+          "endSeconds": 5.57
+        },
+        {
+          "text": "て",
+          "startSeconds": 5.57,
+          "endSeconds": 5.8
+        },
+        {
+          "text": "ゆ",
+          "startSeconds": 5.8,
+          "endSeconds": 6.16
+        },
+        {
+          "text": "く",
+          "startSeconds": 6.16,
+          "endSeconds": 6.28
+        },
+        {
+          "text": "の",
+          "startSeconds": 6.28,
+          "endSeconds": 6.6
+        },
+        {
+          "text": "で",
+          "startSeconds": 6.6,
+          "endSeconds": 6.92
+        },
+        {
+          "text": "し",
+          "startSeconds": 6.92,
+          "endSeconds": 7.06
+        },
+        {
+          "text": "ょ",
+          "startSeconds": 7.06,
+          "endSeconds": 7.2
+        },
+        {
+          "text": "う",
+          "startSeconds": 7.2,
+          "endSeconds": 7.34
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1538265734:7.34:生きてゆくでしょう",
+      "id": "apple:1538265734:11.8:生きてゆくでしょう",
       "artistName": "米津玄師",
       "artistAliases": [
         "米津玄師",
@@ -181,14 +562,62 @@
       "storefront": "JP",
       "trackDurationSeconds": 235.723,
       "lineJa": "生きてゆくでしょう",
-      "previewLineStartSeconds": 7.34,
-      "previewLineEndSeconds": 13.88,
+      "previewLineStartSeconds": 11.8,
+      "previewLineEndSeconds": 13.96,
       "verificationScore": 100.0,
-      "verificationFullScore": 60.0,
+      "verificationFullScore": 62.1,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 9,
-      "verifiedTranscript": "追い風に昼がえり 私はまだ生きてゆくでしょう"
+      "verifiedTranscript": "追い風に昼帰り 私はまだ生きてゆくでしょう",
+      "words": [
+        {
+          "text": "生",
+          "startSeconds": 11.82,
+          "endSeconds": 12.44
+        },
+        {
+          "text": "き",
+          "startSeconds": 12.44,
+          "endSeconds": 12.54
+        },
+        {
+          "text": "て",
+          "startSeconds": 12.54,
+          "endSeconds": 12.86
+        },
+        {
+          "text": "ゆ",
+          "startSeconds": 12.86,
+          "endSeconds": 13.14
+        },
+        {
+          "text": "く",
+          "startSeconds": 13.14,
+          "endSeconds": 13.34
+        },
+        {
+          "text": "で",
+          "startSeconds": 13.34,
+          "endSeconds": 13.49
+        },
+        {
+          "text": "し",
+          "startSeconds": 13.49,
+          "endSeconds": 13.64
+        },
+        {
+          "text": "ょ",
+          "startSeconds": 13.64,
+          "endSeconds": 13.79
+        },
+        {
+          "text": "う",
+          "startSeconds": 13.79,
+          "endSeconds": 13.94
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
       "id": "apple:1538265734:14.8:寄り添うように",
@@ -211,10 +640,12 @@
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 7,
-      "verifiedTranscript": "終わる日まで寄り添うように 君を覚えていたい"
+      "verifiedTranscript": "終わる日まで寄り添うように 君を覚えていたい",
+      "words": [],
+      "karaokeAlignmentCoverage": 0.571
     },
     {
-      "id": "apple:1537279371:5.16:晴れた空に種を蒔こう",
+      "id": "apple:1537279371:9.44:ハレルヤ夢を描いたなら",
       "artistName": "米津玄師",
       "artistAliases": [
         "米津玄師",
@@ -226,15 +657,73 @@
       "appleTrackId": 1537279371,
       "storefront": "JP",
       "trackDurationSeconds": 203.032,
-      "lineJa": "晴れた空に種を蒔こう",
-      "previewLineStartSeconds": 5.16,
-      "previewLineEndSeconds": 9.5,
-      "verificationScore": 88.9,
-      "verificationFullScore": 84.2,
-      "verificationCoverage": 0.9,
-      "verificationExactInclusion": false,
-      "verificationCommonChars": 7,
-      "verifiedTranscript": "晴れた空に種をまこ"
+      "lineJa": "ハレルヤ 夢を描いたなら",
+      "previewLineStartSeconds": 9.44,
+      "previewLineEndSeconds": 14.06,
+      "verificationScore": 100.0,
+      "verificationFullScore": 71.0,
+      "verificationCoverage": 1.0,
+      "verificationExactInclusion": true,
+      "verificationCommonChars": 11,
+      "verifiedTranscript": "晴れた空に種をまこはれるや夢を描いたなら",
+      "words": [
+        {
+          "text": "ハ",
+          "startSeconds": 9.46,
+          "endSeconds": 10.06
+        },
+        {
+          "text": "レ",
+          "startSeconds": 10.06,
+          "endSeconds": 10.31
+        },
+        {
+          "text": "ル",
+          "startSeconds": 10.31,
+          "endSeconds": 10.56
+        },
+        {
+          "text": "ヤ ",
+          "startSeconds": 10.56,
+          "endSeconds": 11.26
+        },
+        {
+          "text": "夢",
+          "startSeconds": 11.26,
+          "endSeconds": 11.94
+        },
+        {
+          "text": "を",
+          "startSeconds": 11.94,
+          "endSeconds": 12.5
+        },
+        {
+          "text": "描",
+          "startSeconds": 12.5,
+          "endSeconds": 12.88
+        },
+        {
+          "text": "い",
+          "startSeconds": 12.88,
+          "endSeconds": 13.18
+        },
+        {
+          "text": "た",
+          "startSeconds": 13.18,
+          "endSeconds": 13.48
+        },
+        {
+          "text": "な",
+          "startSeconds": 13.48,
+          "endSeconds": 13.76
+        },
+        {
+          "text": "ら",
+          "startSeconds": 13.76,
+          "endSeconds": 14.04
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
       "id": "apple:1445023277:0.0:話をしている",
@@ -251,16 +740,49 @@
       "trackDurationSeconds": 334.147,
       "lineJa": "話をしている",
       "previewLineStartSeconds": 0.0,
-      "previewLineEndSeconds": 3.48,
+      "previewLineEndSeconds": 3.5,
       "verificationScore": 100.0,
       "verificationFullScore": 100.0,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 6,
-      "verifiedTranscript": "話をしている"
+      "verifiedTranscript": "話をしている",
+      "words": [
+        {
+          "text": "話",
+          "startSeconds": 0.0,
+          "endSeconds": 0.76
+        },
+        {
+          "text": "を",
+          "startSeconds": 0.76,
+          "endSeconds": 1.7
+        },
+        {
+          "text": "し",
+          "startSeconds": 1.7,
+          "endSeconds": 1.89
+        },
+        {
+          "text": "て",
+          "startSeconds": 1.89,
+          "endSeconds": 2.08
+        },
+        {
+          "text": "い",
+          "startSeconds": 2.08,
+          "endSeconds": 2.78
+        },
+        {
+          "text": "る",
+          "startSeconds": 2.78,
+          "endSeconds": 3.48
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1445023277:10.28:いくつも嘘をついて歩いて",
+      "id": "apple:1445023277:11.8:いくつも嘘をついて歩いて",
       "artistName": "米津玄師",
       "artistAliases": [
         "米津玄師",
@@ -273,14 +795,112 @@
       "storefront": "JP",
       "trackDurationSeconds": 334.147,
       "lineJa": "いくつも嘘をついて歩いていくのだろうか",
-      "previewLineStartSeconds": 10.28,
-      "previewLineEndSeconds": 17.98,
+      "previewLineStartSeconds": 11.8,
+      "previewLineEndSeconds": 18.0,
       "verificationScore": 89.5,
       "verificationFullScore": 82.9,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": false,
       "verificationCommonChars": 13,
-      "verifiedTranscript": "二人でいくつもそうついて歩いていくのだろうか"
+      "verifiedTranscript": "二人でいくつもそうついて歩いていくのだろうか",
+      "words": [
+        {
+          "text": "い",
+          "startSeconds": 11.82,
+          "endSeconds": 12.07
+        },
+        {
+          "text": "く",
+          "startSeconds": 12.07,
+          "endSeconds": 12.32
+        },
+        {
+          "text": "つ",
+          "startSeconds": 12.32,
+          "endSeconds": 12.64
+        },
+        {
+          "text": "も",
+          "startSeconds": 12.64,
+          "endSeconds": 12.94
+        },
+        {
+          "text": "嘘",
+          "startSeconds": 12.94,
+          "endSeconds": 13.16
+        },
+        {
+          "text": "を",
+          "startSeconds": 13.16,
+          "endSeconds": 13.38
+        },
+        {
+          "text": "つ",
+          "startSeconds": 13.38,
+          "endSeconds": 13.88
+        },
+        {
+          "text": "い",
+          "startSeconds": 13.88,
+          "endSeconds": 14.37
+        },
+        {
+          "text": "て",
+          "startSeconds": 14.37,
+          "endSeconds": 14.86
+        },
+        {
+          "text": "歩",
+          "startSeconds": 14.86,
+          "endSeconds": 15.64
+        },
+        {
+          "text": "い",
+          "startSeconds": 15.64,
+          "endSeconds": 15.84
+        },
+        {
+          "text": "て",
+          "startSeconds": 15.84,
+          "endSeconds": 16.04
+        },
+        {
+          "text": "い",
+          "startSeconds": 16.04,
+          "endSeconds": 16.23
+        },
+        {
+          "text": "く",
+          "startSeconds": 16.23,
+          "endSeconds": 16.42
+        },
+        {
+          "text": "の",
+          "startSeconds": 16.42,
+          "endSeconds": 16.88
+        },
+        {
+          "text": "だ",
+          "startSeconds": 16.88,
+          "endSeconds": 17.14
+        },
+        {
+          "text": "ろ",
+          "startSeconds": 17.14,
+          "endSeconds": 17.41
+        },
+        {
+          "text": "う",
+          "startSeconds": 17.41,
+          "endSeconds": 17.68
+        },
+        {
+          "text": "か",
+          "startSeconds": 17.68,
+          "endSeconds": 17.98
+        }
+      ],
+      "karaokeAlignmentCoverage": 0.895
     },
     {
       "id": "apple:1536130472:0.0:廃墟の屋上に",
@@ -296,16 +916,49 @@
       "trackDurationSeconds": 294.147,
       "lineJa": "廃墟の屋上に",
       "previewLineStartSeconds": 0.0,
-      "previewLineEndSeconds": 5.5,
+      "previewLineEndSeconds": 2.28,
       "verificationScore": 100.0,
-      "verificationFullScore": 63.2,
+      "verificationFullScore": 100.0,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 6,
-      "verifiedTranscript": "廃墟の屋上に 辿り着く渡毛の"
+      "verifiedTranscript": "廃墟の屋上に",
+      "words": [
+        {
+          "text": "廃",
+          "startSeconds": 0.0,
+          "endSeconds": 0.3
+        },
+        {
+          "text": "墟",
+          "startSeconds": 0.3,
+          "endSeconds": 0.54
+        },
+        {
+          "text": "の",
+          "startSeconds": 0.54,
+          "endSeconds": 0.74
+        },
+        {
+          "text": "屋",
+          "startSeconds": 0.74,
+          "endSeconds": 1.0
+        },
+        {
+          "text": "上",
+          "startSeconds": 1.0,
+          "endSeconds": 1.32
+        },
+        {
+          "text": "に",
+          "startSeconds": 1.32,
+          "endSeconds": 2.26
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1536130472:13.0:灰色の地上に",
+      "id": "apple:1536130472:12.98:灰色の地上に",
       "artistName": "Aimer",
       "artistAliases": [
         "Aimer"
@@ -317,17 +970,50 @@
       "storefront": "JP",
       "trackDurationSeconds": 294.147,
       "lineJa": "灰色の地上に",
-      "previewLineStartSeconds": 13.0,
-      "previewLineEndSeconds": 19.16,
+      "previewLineStartSeconds": 12.98,
+      "previewLineEndSeconds": 16.12,
       "verificationScore": 100.0,
-      "verificationFullScore": 66.7,
+      "verificationFullScore": 54.5,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 6,
-      "verifiedTranscript": "灰色の地上に 飾られた光の"
+      "verifiedTranscript": "囁きを囲む僕らは歌う灰色の地上に",
+      "words": [
+        {
+          "text": "灰",
+          "startSeconds": 13.0,
+          "endSeconds": 13.8
+        },
+        {
+          "text": "色",
+          "startSeconds": 13.8,
+          "endSeconds": 14.2
+        },
+        {
+          "text": "の",
+          "startSeconds": 14.2,
+          "endSeconds": 14.46
+        },
+        {
+          "text": "地",
+          "startSeconds": 14.46,
+          "endSeconds": 14.66
+        },
+        {
+          "text": "上",
+          "startSeconds": 14.66,
+          "endSeconds": 15.08
+        },
+        {
+          "text": "に",
+          "startSeconds": 15.08,
+          "endSeconds": 16.1
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1538259791:8.5:許されない約束飾られた記",
+      "id": "apple:1538259791:8.52:許されない約束飾られた記",
       "artistName": "Aimer",
       "artistAliases": [
         "Aimer"
@@ -339,17 +1025,85 @@
       "storefront": "JP",
       "trackDurationSeconds": 296.307,
       "lineJa": "許されない約束 飾られた記憶",
-      "previewLineStartSeconds": 8.5,
-      "previewLineEndSeconds": 15.74,
+      "previewLineStartSeconds": 8.52,
+      "previewLineEndSeconds": 15.76,
       "verificationScore": 100.0,
       "verificationFullScore": 100.0,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 13,
-      "verifiedTranscript": "許されない約束 飾られた記憶"
+      "verifiedTranscript": "許されない約束 飾られた記憶",
+      "words": [
+        {
+          "text": "許",
+          "startSeconds": 8.54,
+          "endSeconds": 9.5
+        },
+        {
+          "text": "さ",
+          "startSeconds": 9.5,
+          "endSeconds": 9.98
+        },
+        {
+          "text": "れ",
+          "startSeconds": 9.98,
+          "endSeconds": 10.127
+        },
+        {
+          "text": "な",
+          "startSeconds": 10.127,
+          "endSeconds": 10.273
+        },
+        {
+          "text": "い",
+          "startSeconds": 10.273,
+          "endSeconds": 10.42
+        },
+        {
+          "text": "約",
+          "startSeconds": 10.42,
+          "endSeconds": 11.04
+        },
+        {
+          "text": "束 ",
+          "startSeconds": 11.04,
+          "endSeconds": 12.06
+        },
+        {
+          "text": "飾",
+          "startSeconds": 13.54,
+          "endSeconds": 13.78
+        },
+        {
+          "text": "ら",
+          "startSeconds": 13.78,
+          "endSeconds": 14.16
+        },
+        {
+          "text": "れ",
+          "startSeconds": 14.16,
+          "endSeconds": 14.36
+        },
+        {
+          "text": "た",
+          "startSeconds": 14.36,
+          "endSeconds": 14.56
+        },
+        {
+          "text": "記",
+          "startSeconds": 14.56,
+          "endSeconds": 15.04
+        },
+        {
+          "text": "憶",
+          "startSeconds": 15.04,
+          "endSeconds": 15.74
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1538127362:3.74:知らないどこかで手にした",
+      "id": "apple:1538127362:3.7:知らないどこかで手にした",
       "artistName": "Aimer",
       "artistAliases": [
         "Aimer"
@@ -361,17 +1115,95 @@
       "storefront": "JP",
       "trackDurationSeconds": 309.1,
       "lineJa": "知らないどこかで手にした何かは",
-      "previewLineStartSeconds": 3.74,
-      "previewLineEndSeconds": 9.66,
+      "previewLineStartSeconds": 3.7,
+      "previewLineEndSeconds": 9.68,
       "verificationScore": 100.0,
-      "verificationFullScore": 100.0,
+      "verificationFullScore": 81.1,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 15,
-      "verifiedTranscript": "知らないどこかで手にした何かは"
+      "verifiedTranscript": "知った向かい風知らないどこかで手にした何かは",
+      "words": [
+        {
+          "text": "知",
+          "startSeconds": 3.72,
+          "endSeconds": 4.52
+        },
+        {
+          "text": "ら",
+          "startSeconds": 4.52,
+          "endSeconds": 5.0
+        },
+        {
+          "text": "な",
+          "startSeconds": 5.0,
+          "endSeconds": 5.27
+        },
+        {
+          "text": "い",
+          "startSeconds": 5.27,
+          "endSeconds": 5.54
+        },
+        {
+          "text": "ど",
+          "startSeconds": 5.54,
+          "endSeconds": 5.94
+        },
+        {
+          "text": "こ",
+          "startSeconds": 5.94,
+          "endSeconds": 6.1
+        },
+        {
+          "text": "か",
+          "startSeconds": 6.1,
+          "endSeconds": 6.34
+        },
+        {
+          "text": "で",
+          "startSeconds": 6.34,
+          "endSeconds": 7.04
+        },
+        {
+          "text": "手",
+          "startSeconds": 7.04,
+          "endSeconds": 7.5
+        },
+        {
+          "text": "に",
+          "startSeconds": 7.5,
+          "endSeconds": 7.72
+        },
+        {
+          "text": "し",
+          "startSeconds": 7.72,
+          "endSeconds": 8.04
+        },
+        {
+          "text": "た",
+          "startSeconds": 8.04,
+          "endSeconds": 8.36
+        },
+        {
+          "text": "何",
+          "startSeconds": 8.36,
+          "endSeconds": 8.8
+        },
+        {
+          "text": "か",
+          "startSeconds": 8.8,
+          "endSeconds": 9.14
+        },
+        {
+          "text": "は",
+          "startSeconds": 9.14,
+          "endSeconds": 9.66
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1538127362:15.3:そう世界の片隅で祈りとか",
+      "id": "apple:1538127362:15.28:そう世界の片隅で祈りとか",
       "artistName": "Aimer",
       "artistAliases": [
         "Aimer"
@@ -383,17 +1215,135 @@
       "storefront": "JP",
       "trackDurationSeconds": 309.1,
       "lineJa": "そう 世界の片隅で 祈りとか誓いすら意味をなさない",
-      "previewLineStartSeconds": 15.3,
-      "previewLineEndSeconds": 25.76,
+      "previewLineStartSeconds": 15.28,
+      "previewLineEndSeconds": 25.8,
       "verificationScore": 93.3,
       "verificationFullScore": 93.3,
       "verificationCoverage": 0.957,
       "verificationExactInclusion": false,
       "verificationCommonChars": 16,
-      "verifiedTranscript": "そう 世界の片隅で祈りとか誓いすら君をなさない"
+      "verifiedTranscript": "そう 世界の片隅で祈りとか誓いすら君をなさない",
+      "words": [
+        {
+          "text": "そ",
+          "startSeconds": 15.3,
+          "endSeconds": 15.7
+        },
+        {
+          "text": "う ",
+          "startSeconds": 15.7,
+          "endSeconds": 16.1
+        },
+        {
+          "text": "世",
+          "startSeconds": 16.1,
+          "endSeconds": 16.57
+        },
+        {
+          "text": "界",
+          "startSeconds": 16.57,
+          "endSeconds": 17.04
+        },
+        {
+          "text": "の",
+          "startSeconds": 17.04,
+          "endSeconds": 17.62
+        },
+        {
+          "text": "片",
+          "startSeconds": 17.62,
+          "endSeconds": 18.02
+        },
+        {
+          "text": "隅",
+          "startSeconds": 18.02,
+          "endSeconds": 19.24
+        },
+        {
+          "text": "で ",
+          "startSeconds": 19.24,
+          "endSeconds": 20.24
+        },
+        {
+          "text": "祈",
+          "startSeconds": 20.82,
+          "endSeconds": 21.22
+        },
+        {
+          "text": "り",
+          "startSeconds": 21.22,
+          "endSeconds": 21.56
+        },
+        {
+          "text": "と",
+          "startSeconds": 21.56,
+          "endSeconds": 21.75
+        },
+        {
+          "text": "か",
+          "startSeconds": 21.75,
+          "endSeconds": 21.94
+        },
+        {
+          "text": "誓",
+          "startSeconds": 21.94,
+          "endSeconds": 22.56
+        },
+        {
+          "text": "い",
+          "startSeconds": 22.56,
+          "endSeconds": 22.94
+        },
+        {
+          "text": "す",
+          "startSeconds": 22.94,
+          "endSeconds": 23.22
+        },
+        {
+          "text": "ら",
+          "startSeconds": 23.22,
+          "endSeconds": 23.54
+        },
+        {
+          "text": "意",
+          "startSeconds": 23.54,
+          "endSeconds": 23.77
+        },
+        {
+          "text": "味",
+          "startSeconds": 23.77,
+          "endSeconds": 24.0
+        },
+        {
+          "text": "を",
+          "startSeconds": 24.0,
+          "endSeconds": 24.44
+        },
+        {
+          "text": "な",
+          "startSeconds": 24.44,
+          "endSeconds": 24.62
+        },
+        {
+          "text": "さ",
+          "startSeconds": 24.62,
+          "endSeconds": 24.84
+        },
+        {
+          "text": "な",
+          "startSeconds": 24.84,
+          "endSeconds": 25.31
+        },
+        {
+          "text": "い",
+          "startSeconds": 25.31,
+          "endSeconds": 25.78
+        }
+      ],
+      "karaokeAlignmentCoverage": 0.826
     },
     {
-      "id": "apple:1538127487:14.0:背伸びして覗いた街は揺れ",
+      "id": "apple:1538127487:13.98:背伸びして覗いた街は揺れ",
       "artistName": "Aimer",
       "artistAliases": [
         "Aimer"
@@ -405,17 +1355,90 @@
       "storefront": "JP",
       "trackDurationSeconds": 328.031,
       "lineJa": "背伸びして覗いた街は揺れてる",
-      "previewLineStartSeconds": 14.0,
-      "previewLineEndSeconds": 19.44,
+      "previewLineStartSeconds": 13.98,
+      "previewLineEndSeconds": 19.46,
       "verificationScore": 100.0,
-      "verificationFullScore": 100.0,
+      "verificationFullScore": 66.7,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 14,
-      "verifiedTranscript": "背伸びして覗いた街は揺れてる"
+      "verifiedTranscript": "大人びたセーフも 駆けに隠した背伸びして覗いた街は揺れてる",
+      "words": [
+        {
+          "text": "背",
+          "startSeconds": 14.0,
+          "endSeconds": 14.52
+        },
+        {
+          "text": "伸",
+          "startSeconds": 14.52,
+          "endSeconds": 14.84
+        },
+        {
+          "text": "び",
+          "startSeconds": 14.84,
+          "endSeconds": 15.1
+        },
+        {
+          "text": "し",
+          "startSeconds": 15.1,
+          "endSeconds": 15.38
+        },
+        {
+          "text": "て",
+          "startSeconds": 15.38,
+          "endSeconds": 15.66
+        },
+        {
+          "text": "覗",
+          "startSeconds": 15.66,
+          "endSeconds": 16.12
+        },
+        {
+          "text": "い",
+          "startSeconds": 16.12,
+          "endSeconds": 16.64
+        },
+        {
+          "text": "た",
+          "startSeconds": 16.64,
+          "endSeconds": 17.16
+        },
+        {
+          "text": "街",
+          "startSeconds": 17.16,
+          "endSeconds": 17.7
+        },
+        {
+          "text": "は",
+          "startSeconds": 17.7,
+          "endSeconds": 18.26
+        },
+        {
+          "text": "揺",
+          "startSeconds": 18.26,
+          "endSeconds": 18.76
+        },
+        {
+          "text": "れ",
+          "startSeconds": 18.76,
+          "endSeconds": 18.87
+        },
+        {
+          "text": "て",
+          "startSeconds": 18.87,
+          "endSeconds": 18.98
+        },
+        {
+          "text": "る",
+          "startSeconds": 18.98,
+          "endSeconds": 19.44
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1753269920:9.16:揺れるスカートは恋してる",
+      "id": "apple:1753269920:9.14:揺れるスカートは恋してる",
       "artistName": "あいみょん",
       "artistAliases": [
         "あいみょん",
@@ -428,17 +1451,95 @@
       "storefront": "JP",
       "trackDurationSeconds": 218.58,
       "lineJa": "揺れるスカートは恋してるって証",
-      "previewLineStartSeconds": 9.16,
+      "previewLineStartSeconds": 9.14,
       "previewLineEndSeconds": 13.14,
       "verificationScore": 100.0,
-      "verificationFullScore": 100.0,
+      "verificationFullScore": 63.8,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 15,
-      "verifiedTranscript": "揺れるスカートは 恋してるって証"
+      "verifiedTranscript": "どんかんなあなたに 気付かせてあげる揺れるスカートは 恋してるって証",
+      "words": [
+        {
+          "text": "揺",
+          "startSeconds": 9.16,
+          "endSeconds": 9.8
+        },
+        {
+          "text": "れ",
+          "startSeconds": 9.8,
+          "endSeconds": 9.92
+        },
+        {
+          "text": "る",
+          "startSeconds": 9.92,
+          "endSeconds": 10.04
+        },
+        {
+          "text": "ス",
+          "startSeconds": 10.04,
+          "endSeconds": 10.36
+        },
+        {
+          "text": "カ",
+          "startSeconds": 10.207,
+          "endSeconds": 10.373
+        },
+        {
+          "text": "ー",
+          "startSeconds": 10.36,
+          "endSeconds": 10.54
+        },
+        {
+          "text": "ト",
+          "startSeconds": 10.54,
+          "endSeconds": 10.72
+        },
+        {
+          "text": "は",
+          "startSeconds": 10.72,
+          "endSeconds": 11.16
+        },
+        {
+          "text": "恋",
+          "startSeconds": 11.78,
+          "endSeconds": 11.94
+        },
+        {
+          "text": "し",
+          "startSeconds": 11.94,
+          "endSeconds": 12.06
+        },
+        {
+          "text": "て",
+          "startSeconds": 12.06,
+          "endSeconds": 12.18
+        },
+        {
+          "text": "る",
+          "startSeconds": 12.18,
+          "endSeconds": 12.46
+        },
+        {
+          "text": "っ",
+          "startSeconds": 12.46,
+          "endSeconds": 12.58
+        },
+        {
+          "text": "て",
+          "startSeconds": 12.58,
+          "endSeconds": 12.7
+        },
+        {
+          "text": "証",
+          "startSeconds": 12.7,
+          "endSeconds": 13.12
+        }
+      ],
+      "karaokeAlignmentCoverage": 0.933
     },
     {
-      "id": "apple:1753269920:13.76:小さなところで気づいて",
+      "id": "apple:1753269920:14.01:小さなところで気づいて",
       "artistName": "あいみょん",
       "artistAliases": [
         "あいみょん",
@@ -451,17 +1552,75 @@
       "storefront": "JP",
       "trackDurationSeconds": 218.58,
       "lineJa": "小さなところで気づいて",
-      "previewLineStartSeconds": 13.76,
-      "previewLineEndSeconds": 17.88,
+      "previewLineStartSeconds": 14.01,
+      "previewLineEndSeconds": 16.14,
       "verificationScore": 100.0,
-      "verificationFullScore": 78.6,
+      "verificationFullScore": 51.2,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 11,
-      "verifiedTranscript": "小さなところで気づいて 恋してるの私"
+      "verifiedTranscript": "揺れるスカートは 恋してるって証小さなところで気づいて 恋してるの私",
+      "words": [
+        {
+          "text": "小",
+          "startSeconds": 14.03,
+          "endSeconds": 14.34
+        },
+        {
+          "text": "さ",
+          "startSeconds": 14.34,
+          "endSeconds": 14.72
+        },
+        {
+          "text": "な",
+          "startSeconds": 14.72,
+          "endSeconds": 14.92
+        },
+        {
+          "text": "と",
+          "startSeconds": 14.92,
+          "endSeconds": 14.967
+        },
+        {
+          "text": "こ",
+          "startSeconds": 14.967,
+          "endSeconds": 15.013
+        },
+        {
+          "text": "ろ",
+          "startSeconds": 15.013,
+          "endSeconds": 15.06
+        },
+        {
+          "text": "で",
+          "startSeconds": 15.06,
+          "endSeconds": 15.42
+        },
+        {
+          "text": "気",
+          "startSeconds": 15.42,
+          "endSeconds": 15.58
+        },
+        {
+          "text": "づ",
+          "startSeconds": 15.58,
+          "endSeconds": 15.74
+        },
+        {
+          "text": "い",
+          "startSeconds": 15.74,
+          "endSeconds": 15.93
+        },
+        {
+          "text": "て",
+          "startSeconds": 15.93,
+          "endSeconds": 16.12
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1753269920:18.52:今日もまつ毛を空に高くあ",
+      "id": "apple:1753269920:18.5:今日もまつ毛を空に高くあ",
       "artistName": "あいみょん",
       "artistAliases": [
         "あいみょん",
@@ -474,17 +1633,90 @@
       "storefront": "JP",
       "trackDurationSeconds": 218.58,
       "lineJa": "今日もまつ毛を空に高くあげる",
-      "previewLineStartSeconds": 18.52,
-      "previewLineEndSeconds": 24.52,
+      "previewLineStartSeconds": 18.5,
+      "previewLineEndSeconds": 24.64,
       "verificationScore": 92.9,
       "verificationFullScore": 92.9,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": false,
       "verificationCommonChars": 8,
-      "verifiedTranscript": "今日もまつけを空に 高くあげる"
+      "verifiedTranscript": "今日もまつけを空に 高くあげる",
+      "words": [
+        {
+          "text": "今",
+          "startSeconds": 18.52,
+          "endSeconds": 18.77
+        },
+        {
+          "text": "日",
+          "startSeconds": 18.77,
+          "endSeconds": 19.02
+        },
+        {
+          "text": "も",
+          "startSeconds": 19.02,
+          "endSeconds": 19.56
+        },
+        {
+          "text": "ま",
+          "startSeconds": 19.56,
+          "endSeconds": 19.9
+        },
+        {
+          "text": "つ",
+          "startSeconds": 19.9,
+          "endSeconds": 20.16
+        },
+        {
+          "text": "毛",
+          "startSeconds": 20.16,
+          "endSeconds": 20.52
+        },
+        {
+          "text": "を",
+          "startSeconds": 20.52,
+          "endSeconds": 20.76
+        },
+        {
+          "text": "空",
+          "startSeconds": 20.76,
+          "endSeconds": 21.2
+        },
+        {
+          "text": "に",
+          "startSeconds": 21.2,
+          "endSeconds": 21.68
+        },
+        {
+          "text": "高",
+          "startSeconds": 22.14,
+          "endSeconds": 22.5
+        },
+        {
+          "text": "く",
+          "startSeconds": 22.5,
+          "endSeconds": 23.12
+        },
+        {
+          "text": "あ",
+          "startSeconds": 23.12,
+          "endSeconds": 23.4
+        },
+        {
+          "text": "げ",
+          "startSeconds": 23.4,
+          "endSeconds": 23.6
+        },
+        {
+          "text": "る",
+          "startSeconds": 23.6,
+          "endSeconds": 24.62
+        }
+      ],
+      "karaokeAlignmentCoverage": 0.929
     },
     {
-      "id": "apple:1628261505:22.22:誰もがそれぞれ出会った誰",
+      "id": "apple:1628261505:22.2:誰もがそれぞれ出会った誰",
       "artistName": "Official髭男dism",
       "artistAliases": [
         "Official髭男dism",
@@ -498,17 +1730,130 @@
       "storefront": "JP",
       "trackDurationSeconds": 213.987,
       "lineJa": "誰もがそれぞれ出会った誰かと寄り添い合ってる",
-      "previewLineStartSeconds": 22.22,
-      "previewLineEndSeconds": 29.04,
+      "previewLineStartSeconds": 22.2,
+      "previewLineEndSeconds": 29.06,
       "verificationScore": 100.0,
       "verificationFullScore": 100.0,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 16,
-      "verifiedTranscript": "誰もがそれぞれ出会った誰かと寄り添い合ってる"
+      "verifiedTranscript": "誰もがそれぞれ出会った誰かと寄り添い合ってる",
+      "words": [
+        {
+          "text": "誰",
+          "startSeconds": 22.22,
+          "endSeconds": 22.94
+        },
+        {
+          "text": "も",
+          "startSeconds": 22.94,
+          "endSeconds": 23.6
+        },
+        {
+          "text": "が",
+          "startSeconds": 23.6,
+          "endSeconds": 24.0
+        },
+        {
+          "text": "そ",
+          "startSeconds": 24.0,
+          "endSeconds": 24.19
+        },
+        {
+          "text": "れ",
+          "startSeconds": 24.19,
+          "endSeconds": 24.38
+        },
+        {
+          "text": "ぞ",
+          "startSeconds": 24.38,
+          "endSeconds": 24.7
+        },
+        {
+          "text": "れ",
+          "startSeconds": 24.7,
+          "endSeconds": 25.06
+        },
+        {
+          "text": "出",
+          "startSeconds": 25.06,
+          "endSeconds": 25.34
+        },
+        {
+          "text": "会",
+          "startSeconds": 25.34,
+          "endSeconds": 25.54
+        },
+        {
+          "text": "っ",
+          "startSeconds": 25.54,
+          "endSeconds": 25.73
+        },
+        {
+          "text": "た",
+          "startSeconds": 25.73,
+          "endSeconds": 25.92
+        },
+        {
+          "text": "誰",
+          "startSeconds": 25.92,
+          "endSeconds": 26.2
+        },
+        {
+          "text": "か",
+          "startSeconds": 26.2,
+          "endSeconds": 26.84
+        },
+        {
+          "text": "と",
+          "startSeconds": 26.84,
+          "endSeconds": 27.16
+        },
+        {
+          "text": "寄",
+          "startSeconds": 27.16,
+          "endSeconds": 27.72
+        },
+        {
+          "text": "り",
+          "startSeconds": 27.72,
+          "endSeconds": 27.88
+        },
+        {
+          "text": "添",
+          "startSeconds": 27.88,
+          "endSeconds": 28.12
+        },
+        {
+          "text": "い",
+          "startSeconds": 28.12,
+          "endSeconds": 28.4
+        },
+        {
+          "text": "合",
+          "startSeconds": 28.4,
+          "endSeconds": 28.54
+        },
+        {
+          "text": "っ",
+          "startSeconds": 28.54,
+          "endSeconds": 28.707
+        },
+        {
+          "text": "て",
+          "startSeconds": 28.707,
+          "endSeconds": 28.873
+        },
+        {
+          "text": "る",
+          "startSeconds": 28.873,
+          "endSeconds": 29.04
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1754117470:21.74:誰もがそれぞれ出会った誰",
+      "id": "apple:1754117470:21.72:誰もがそれぞれ出会った誰",
       "artistName": "Official髭男dism",
       "artistAliases": [
         "Official髭男dism",
@@ -522,17 +1867,130 @@
       "storefront": "JP",
       "trackDurationSeconds": 211.348,
       "lineJa": "誰もがそれぞれ出会った誰かと寄り添い合ってる",
-      "previewLineStartSeconds": 21.74,
-      "previewLineEndSeconds": 28.56,
+      "previewLineStartSeconds": 21.72,
+      "previewLineEndSeconds": 28.58,
       "verificationScore": 100.0,
       "verificationFullScore": 100.0,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 16,
-      "verifiedTranscript": "誰もがそれぞれ出会った誰かと寄り添い合ってる"
+      "verifiedTranscript": "誰もがそれぞれ出会った誰かと寄り添い合ってる",
+      "words": [
+        {
+          "text": "誰",
+          "startSeconds": 21.74,
+          "endSeconds": 22.48
+        },
+        {
+          "text": "も",
+          "startSeconds": 22.48,
+          "endSeconds": 23.12
+        },
+        {
+          "text": "が",
+          "startSeconds": 23.12,
+          "endSeconds": 23.5
+        },
+        {
+          "text": "そ",
+          "startSeconds": 23.5,
+          "endSeconds": 23.7
+        },
+        {
+          "text": "れ",
+          "startSeconds": 23.7,
+          "endSeconds": 23.9
+        },
+        {
+          "text": "ぞ",
+          "startSeconds": 23.9,
+          "endSeconds": 24.2
+        },
+        {
+          "text": "れ",
+          "startSeconds": 24.2,
+          "endSeconds": 24.6
+        },
+        {
+          "text": "出",
+          "startSeconds": 24.6,
+          "endSeconds": 24.86
+        },
+        {
+          "text": "会",
+          "startSeconds": 24.86,
+          "endSeconds": 25.04
+        },
+        {
+          "text": "っ",
+          "startSeconds": 25.04,
+          "endSeconds": 25.23
+        },
+        {
+          "text": "た",
+          "startSeconds": 25.23,
+          "endSeconds": 25.42
+        },
+        {
+          "text": "誰",
+          "startSeconds": 25.42,
+          "endSeconds": 25.7
+        },
+        {
+          "text": "か",
+          "startSeconds": 25.7,
+          "endSeconds": 26.34
+        },
+        {
+          "text": "と",
+          "startSeconds": 26.34,
+          "endSeconds": 26.66
+        },
+        {
+          "text": "寄",
+          "startSeconds": 26.66,
+          "endSeconds": 27.26
+        },
+        {
+          "text": "り",
+          "startSeconds": 27.26,
+          "endSeconds": 27.38
+        },
+        {
+          "text": "添",
+          "startSeconds": 27.38,
+          "endSeconds": 27.62
+        },
+        {
+          "text": "い",
+          "startSeconds": 27.62,
+          "endSeconds": 27.92
+        },
+        {
+          "text": "合",
+          "startSeconds": 27.92,
+          "endSeconds": 28.08
+        },
+        {
+          "text": "っ",
+          "startSeconds": 28.08,
+          "endSeconds": 28.24
+        },
+        {
+          "text": "て",
+          "startSeconds": 28.24,
+          "endSeconds": 28.4
+        },
+        {
+          "text": "る",
+          "startSeconds": 28.4,
+          "endSeconds": 28.56
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1616586639:21.88:誰もがそれぞれ出会った誰",
+      "id": "apple:1616586639:21.86:誰もがそれぞれ出会った誰",
       "artistName": "Official髭男dism",
       "artistAliases": [
         "Official髭男dism",
@@ -546,17 +2004,130 @@
       "storefront": "JP",
       "trackDurationSeconds": 213.438,
       "lineJa": "誰もがそれぞれ出会った誰かと寄り添い合ってる",
-      "previewLineStartSeconds": 21.88,
-      "previewLineEndSeconds": 28.7,
+      "previewLineStartSeconds": 21.86,
+      "previewLineEndSeconds": 28.72,
       "verificationScore": 100.0,
       "verificationFullScore": 100.0,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 16,
-      "verifiedTranscript": "誰もがそれぞれ出会った誰かと寄り添い合ってる"
+      "verifiedTranscript": "誰もがそれぞれ出会った誰かと寄り添い合ってる",
+      "words": [
+        {
+          "text": "誰",
+          "startSeconds": 21.88,
+          "endSeconds": 22.64
+        },
+        {
+          "text": "も",
+          "startSeconds": 22.64,
+          "endSeconds": 23.26
+        },
+        {
+          "text": "が",
+          "startSeconds": 23.26,
+          "endSeconds": 23.66
+        },
+        {
+          "text": "そ",
+          "startSeconds": 23.66,
+          "endSeconds": 23.85
+        },
+        {
+          "text": "れ",
+          "startSeconds": 23.85,
+          "endSeconds": 24.04
+        },
+        {
+          "text": "ぞ",
+          "startSeconds": 24.04,
+          "endSeconds": 24.36
+        },
+        {
+          "text": "れ",
+          "startSeconds": 24.36,
+          "endSeconds": 24.74
+        },
+        {
+          "text": "出",
+          "startSeconds": 24.74,
+          "endSeconds": 25.02
+        },
+        {
+          "text": "会",
+          "startSeconds": 25.02,
+          "endSeconds": 25.2
+        },
+        {
+          "text": "っ",
+          "startSeconds": 25.2,
+          "endSeconds": 25.39
+        },
+        {
+          "text": "た",
+          "startSeconds": 25.39,
+          "endSeconds": 25.58
+        },
+        {
+          "text": "誰",
+          "startSeconds": 25.58,
+          "endSeconds": 25.9
+        },
+        {
+          "text": "か",
+          "startSeconds": 25.9,
+          "endSeconds": 26.5
+        },
+        {
+          "text": "と",
+          "startSeconds": 26.5,
+          "endSeconds": 26.84
+        },
+        {
+          "text": "寄",
+          "startSeconds": 26.84,
+          "endSeconds": 27.4
+        },
+        {
+          "text": "り",
+          "startSeconds": 27.4,
+          "endSeconds": 27.56
+        },
+        {
+          "text": "添",
+          "startSeconds": 27.56,
+          "endSeconds": 27.78
+        },
+        {
+          "text": "い",
+          "startSeconds": 27.78,
+          "endSeconds": 28.08
+        },
+        {
+          "text": "合",
+          "startSeconds": 28.08,
+          "endSeconds": 28.22
+        },
+        {
+          "text": "っ",
+          "startSeconds": 28.22,
+          "endSeconds": 28.38
+        },
+        {
+          "text": "て",
+          "startSeconds": 28.38,
+          "endSeconds": 28.54
+        },
+        {
+          "text": "る",
+          "startSeconds": 28.54,
+          "endSeconds": 28.7
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1492963535:22.72:僕が見つめる景色のその中",
+      "id": "apple:1492963535:22.88:僕が見つめる景色のその中",
       "artistName": "Official髭男dism",
       "artistAliases": [
         "Official髭男dism",
@@ -570,41 +2141,85 @@
       "storefront": "JP",
       "trackDurationSeconds": 282.036,
       "lineJa": "僕が見つめる 景色のその中に",
-      "previewLineStartSeconds": 22.72,
-      "previewLineEndSeconds": 29.92,
+      "previewLineStartSeconds": 22.88,
+      "previewLineEndSeconds": 28.1,
       "verificationScore": 100.0,
-      "verificationFullScore": 83.9,
+      "verificationFullScore": 100.0,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 13,
-      "verifiedTranscript": "僕が見つめる景色のその中に君が履いて"
-    },
-    {
-      "id": "apple:1479397584:11.52:歌うメロディ振り向いた未",
-      "artistName": "Official髭男dism",
-      "artistAliases": [
-        "Official髭男dism",
-        "Official HIGE DANdism",
-        "Official Hige Dandism"
+      "verifiedTranscript": "僕が見つめる景色のその中に",
+      "words": [
+        {
+          "text": "僕",
+          "startSeconds": 22.9,
+          "endSeconds": 23.4
+        },
+        {
+          "text": "が",
+          "startSeconds": 23.4,
+          "endSeconds": 23.98
+        },
+        {
+          "text": "見",
+          "startSeconds": 23.98,
+          "endSeconds": 24.66
+        },
+        {
+          "text": "つ",
+          "startSeconds": 24.66,
+          "endSeconds": 24.86
+        },
+        {
+          "text": "め",
+          "startSeconds": 24.86,
+          "endSeconds": 24.98
+        },
+        {
+          "text": "る ",
+          "startSeconds": 24.98,
+          "endSeconds": 25.34
+        },
+        {
+          "text": "景",
+          "startSeconds": 25.34,
+          "endSeconds": 26.1
+        },
+        {
+          "text": "色",
+          "startSeconds": 26.1,
+          "endSeconds": 26.32
+        },
+        {
+          "text": "の",
+          "startSeconds": 26.32,
+          "endSeconds": 26.7
+        },
+        {
+          "text": "そ",
+          "startSeconds": 26.7,
+          "endSeconds": 26.95
+        },
+        {
+          "text": "の",
+          "startSeconds": 26.95,
+          "endSeconds": 27.2
+        },
+        {
+          "text": "中",
+          "startSeconds": 27.2,
+          "endSeconds": 27.72
+        },
+        {
+          "text": "に",
+          "startSeconds": 27.72,
+          "endSeconds": 28.08
+        }
       ],
-      "trackName": "宿命",
-      "albumName": "Traveler",
-      "lrclibTrackId": 6658846,
-      "appleTrackId": 1479397584,
-      "storefront": "JP",
-      "trackDurationSeconds": 280.856,
-      "lineJa": "歌うメロディ 振り向いた未来",
-      "previewLineStartSeconds": 11.52,
-      "previewLineEndSeconds": 22.18,
-      "verificationScore": 100.0,
-      "verificationFullScore": 70.3,
-      "verificationCoverage": 1.0,
-      "verificationExactInclusion": true,
-      "verificationCommonChars": 13,
-      "verifiedTranscript": "心臓から 溢れ出した声で 歌うメロディ 振り向いた未来"
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1578260041:22.8:僕が見つめる景色のその中",
+      "id": "apple:1578260041:22.78:僕が見つめる景色のその中",
       "artistName": "Official髭男dism",
       "artistAliases": [
         "Official髭男dism",
@@ -618,17 +2233,186 @@
       "storefront": "JP",
       "trackDurationSeconds": 282.687,
       "lineJa": "僕が 見つめる 景色の その中に",
-      "previewLineStartSeconds": 22.8,
-      "previewLineEndSeconds": 29.92,
+      "previewLineStartSeconds": 22.78,
+      "previewLineEndSeconds": 28.16,
       "verificationScore": 100.0,
       "verificationFullScore": 83.9,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 13,
-      "verifiedTranscript": "僕が見つめる景色のその中に君が履いて"
+      "verifiedTranscript": "僕が見つめる景色のその中に君が履いて",
+      "words": [
+        {
+          "text": "僕",
+          "startSeconds": 22.8,
+          "endSeconds": 23.62
+        },
+        {
+          "text": "が ",
+          "startSeconds": 23.62,
+          "endSeconds": 24.06
+        },
+        {
+          "text": "見",
+          "startSeconds": 24.06,
+          "endSeconds": 24.72
+        },
+        {
+          "text": "つ",
+          "startSeconds": 24.72,
+          "endSeconds": 24.94
+        },
+        {
+          "text": "め",
+          "startSeconds": 24.94,
+          "endSeconds": 25.04
+        },
+        {
+          "text": "る ",
+          "startSeconds": 25.04,
+          "endSeconds": 25.46
+        },
+        {
+          "text": "景",
+          "startSeconds": 25.46,
+          "endSeconds": 26.18
+        },
+        {
+          "text": "色",
+          "startSeconds": 26.18,
+          "endSeconds": 26.38
+        },
+        {
+          "text": "の ",
+          "startSeconds": 26.38,
+          "endSeconds": 26.78
+        },
+        {
+          "text": "そ",
+          "startSeconds": 26.78,
+          "endSeconds": 27.03
+        },
+        {
+          "text": "の",
+          "startSeconds": 27.03,
+          "endSeconds": 27.28
+        },
+        {
+          "text": "中",
+          "startSeconds": 27.28,
+          "endSeconds": 27.8
+        },
+        {
+          "text": "に",
+          "startSeconds": 27.8,
+          "endSeconds": 28.14
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1890060756:16.28:ここに置いていくから全部",
+      "id": "apple:1706828627:10.38:止まりどっかでまたやり直",
+      "artistName": "Vaundy",
+      "artistAliases": [
+        "Vaundy",
+        "バウンディ"
+      ],
+      "trackName": "踊り子",
+      "albumName": "Vaundy",
+      "lrclibTrackId": 27928556,
+      "appleTrackId": 1706828627,
+      "storefront": "JP",
+      "trackDurationSeconds": 230.11,
+      "lineJa": "止まりどっかで またやり直せたら",
+      "previewLineStartSeconds": 10.38,
+      "previewLineEndSeconds": 16.52,
+      "verificationScore": 100.0,
+      "verificationFullScore": 85.7,
+      "verificationCoverage": 1.0,
+      "verificationExactInclusion": true,
+      "verificationCommonChars": 15,
+      "verifiedTranscript": "僕の未来が止まりどっかでまたやり直せたら",
+      "words": [
+        {
+          "text": "止",
+          "startSeconds": 10.4,
+          "endSeconds": 10.98
+        },
+        {
+          "text": "ま",
+          "startSeconds": 10.98,
+          "endSeconds": 11.18
+        },
+        {
+          "text": "り",
+          "startSeconds": 11.18,
+          "endSeconds": 11.38
+        },
+        {
+          "text": "ど",
+          "startSeconds": 11.38,
+          "endSeconds": 11.8
+        },
+        {
+          "text": "っ",
+          "startSeconds": 11.8,
+          "endSeconds": 11.98
+        },
+        {
+          "text": "か",
+          "startSeconds": 11.98,
+          "endSeconds": 12.14
+        },
+        {
+          "text": "で ",
+          "startSeconds": 12.14,
+          "endSeconds": 12.62
+        },
+        {
+          "text": "ま",
+          "startSeconds": 12.62,
+          "endSeconds": 13.01
+        },
+        {
+          "text": "た",
+          "startSeconds": 13.01,
+          "endSeconds": 13.4
+        },
+        {
+          "text": "や",
+          "startSeconds": 13.4,
+          "endSeconds": 14.06
+        },
+        {
+          "text": "り",
+          "startSeconds": 14.06,
+          "endSeconds": 14.48
+        },
+        {
+          "text": "直",
+          "startSeconds": 14.48,
+          "endSeconds": 15.04
+        },
+        {
+          "text": "せ",
+          "startSeconds": 15.04,
+          "endSeconds": 15.62
+        },
+        {
+          "text": "た",
+          "startSeconds": 15.62,
+          "endSeconds": 16.08
+        },
+        {
+          "text": "ら",
+          "startSeconds": 16.08,
+          "endSeconds": 16.5
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
+    },
+    {
+      "id": "apple:1890060756:16.24:ここに置いていくから全部",
       "artistName": "Vaundy",
       "artistAliases": [
         "Vaundy",
@@ -641,17 +2425,80 @@
       "storefront": "JP",
       "trackDurationSeconds": 252.811,
       "lineJa": "ここに置いていくから全部",
-      "previewLineStartSeconds": 16.28,
-      "previewLineEndSeconds": 20.0,
+      "previewLineStartSeconds": 16.24,
+      "previewLineEndSeconds": 20.02,
       "verificationScore": 100.0,
-      "verificationFullScore": 100.0,
+      "verificationFullScore": 58.5,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 12,
-      "verifiedTranscript": "ここに置いていくから全部"
+      "verifiedTranscript": "今はせで受けとくよ全部それじゃまたここに置いていくから全部",
+      "words": [
+        {
+          "text": "こ",
+          "startSeconds": 16.26,
+          "endSeconds": 16.69
+        },
+        {
+          "text": "こ",
+          "startSeconds": 16.69,
+          "endSeconds": 17.12
+        },
+        {
+          "text": "に",
+          "startSeconds": 17.12,
+          "endSeconds": 17.9
+        },
+        {
+          "text": "置",
+          "startSeconds": 17.9,
+          "endSeconds": 18.36
+        },
+        {
+          "text": "い",
+          "startSeconds": 18.36,
+          "endSeconds": 18.48
+        },
+        {
+          "text": "て",
+          "startSeconds": 18.48,
+          "endSeconds": 18.6
+        },
+        {
+          "text": "い",
+          "startSeconds": 18.6,
+          "endSeconds": 18.82
+        },
+        {
+          "text": "く",
+          "startSeconds": 18.82,
+          "endSeconds": 19.04
+        },
+        {
+          "text": "か",
+          "startSeconds": 19.04,
+          "endSeconds": 19.24
+        },
+        {
+          "text": "ら",
+          "startSeconds": 19.24,
+          "endSeconds": 19.44
+        },
+        {
+          "text": "全",
+          "startSeconds": 19.44,
+          "endSeconds": 19.72
+        },
+        {
+          "text": "部",
+          "startSeconds": 19.72,
+          "endSeconds": 20.0
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1890060756:3.18:僕の言葉も涙も全部",
+      "id": "apple:1890060756:3.11:僕の言葉も涙も全部",
       "artistName": "Vaundy",
       "artistAliases": [
         "Vaundy",
@@ -664,17 +2511,65 @@
       "storefront": "JP",
       "trackDurationSeconds": 252.811,
       "lineJa": "僕の言葉も涙も全部",
-      "previewLineStartSeconds": 3.18,
-      "previewLineEndSeconds": 6.46,
+      "previewLineStartSeconds": 3.11,
+      "previewLineEndSeconds": 6.48,
       "verificationScore": 100.0,
-      "verificationFullScore": 100.0,
+      "verificationFullScore": 72.0,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 9,
-      "verifiedTranscript": "僕の言葉も涙も全部"
+      "verifiedTranscript": "この風がいない僕の言葉も涙も全部",
+      "words": [
+        {
+          "text": "僕",
+          "startSeconds": 3.13,
+          "endSeconds": 3.56
+        },
+        {
+          "text": "の",
+          "startSeconds": 3.56,
+          "endSeconds": 4.24
+        },
+        {
+          "text": "言",
+          "startSeconds": 4.24,
+          "endSeconds": 4.48
+        },
+        {
+          "text": "葉",
+          "startSeconds": 4.48,
+          "endSeconds": 4.94
+        },
+        {
+          "text": "も",
+          "startSeconds": 4.94,
+          "endSeconds": 5.14
+        },
+        {
+          "text": "涙",
+          "startSeconds": 5.14,
+          "endSeconds": 5.66
+        },
+        {
+          "text": "も",
+          "startSeconds": 5.66,
+          "endSeconds": 5.96
+        },
+        {
+          "text": "全",
+          "startSeconds": 5.96,
+          "endSeconds": 6.21
+        },
+        {
+          "text": "部",
+          "startSeconds": 6.21,
+          "endSeconds": 6.46
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1890060756:20.0:怖くないこの空へ",
+      "id": "apple:1890060756:19.98:怖くないこの空へ",
       "artistName": "Vaundy",
       "artistAliases": [
         "Vaundy",
@@ -687,17 +2582,60 @@
       "storefront": "JP",
       "trackDurationSeconds": 252.811,
       "lineJa": "怖くない この空へ",
-      "previewLineStartSeconds": 20.0,
-      "previewLineEndSeconds": 23.62,
+      "previewLineStartSeconds": 19.98,
+      "previewLineEndSeconds": 23.64,
       "verificationScore": 100.0,
-      "verificationFullScore": 100.0,
+      "verificationFullScore": 57.1,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 8,
-      "verifiedTranscript": "怖くないこの空へ"
+      "verifiedTranscript": "ここに置いていくから全部怖くないこの空へ",
+      "words": [
+        {
+          "text": "怖",
+          "startSeconds": 20.0,
+          "endSeconds": 20.86
+        },
+        {
+          "text": "く",
+          "startSeconds": 20.86,
+          "endSeconds": 21.28
+        },
+        {
+          "text": "な",
+          "startSeconds": 21.28,
+          "endSeconds": 21.39
+        },
+        {
+          "text": "い ",
+          "startSeconds": 21.39,
+          "endSeconds": 21.5
+        },
+        {
+          "text": "こ",
+          "startSeconds": 21.5,
+          "endSeconds": 21.83
+        },
+        {
+          "text": "の",
+          "startSeconds": 21.83,
+          "endSeconds": 22.16
+        },
+        {
+          "text": "空",
+          "startSeconds": 22.16,
+          "endSeconds": 22.74
+        },
+        {
+          "text": "へ",
+          "startSeconds": 22.74,
+          "endSeconds": 23.62
+        }
+      ],
+      "karaokeAlignmentCoverage": 1.0
     },
     {
-      "id": "apple:1706844349:0.0:東京フラッシュ君の目が覚",
+      "id": "apple:1706844349:0.64:東京フラッシュ君の目が覚",
       "artistName": "Vaundy",
       "artistAliases": [
         "Vaundy",
@@ -710,17 +2648,95 @@
       "storefront": "JP",
       "trackDurationSeconds": 258.858,
       "lineJa": "東京フラッシュ君の目が覚めたら",
-      "previewLineStartSeconds": 0.0,
-      "previewLineEndSeconds": 7.0,
+      "previewLineStartSeconds": 0.64,
+      "previewLineEndSeconds": 7.02,
       "verificationScore": 89.7,
       "verificationFullScore": 89.7,
       "verificationCoverage": 0.933,
       "verificationExactInclusion": false,
       "verificationCommonChars": 11,
-      "verifiedTranscript": "東京タッシュ君の目が覚めたら"
+      "verifiedTranscript": "東京タッシュ君の目が覚めたら",
+      "words": [
+        {
+          "text": "東",
+          "startSeconds": 0.66,
+          "endSeconds": 1.26
+        },
+        {
+          "text": "京",
+          "startSeconds": 1.26,
+          "endSeconds": 1.82
+        },
+        {
+          "text": "フ",
+          "startSeconds": 1.82,
+          "endSeconds": 2.09
+        },
+        {
+          "text": "ラ",
+          "startSeconds": 2.09,
+          "endSeconds": 2.36
+        },
+        {
+          "text": "ッ",
+          "startSeconds": 2.36,
+          "endSeconds": 2.52
+        },
+        {
+          "text": "シ",
+          "startSeconds": 2.52,
+          "endSeconds": 2.62
+        },
+        {
+          "text": "ュ",
+          "startSeconds": 2.793,
+          "endSeconds": 3.067
+        },
+        {
+          "text": "君",
+          "startSeconds": 2.62,
+          "endSeconds": 3.34
+        },
+        {
+          "text": "の",
+          "startSeconds": 3.34,
+          "endSeconds": 3.8
+        },
+        {
+          "text": "目",
+          "startSeconds": 3.8,
+          "endSeconds": 4.2
+        },
+        {
+          "text": "が",
+          "startSeconds": 4.2,
+          "endSeconds": 4.6
+        },
+        {
+          "text": "覚",
+          "startSeconds": 4.6,
+          "endSeconds": 5.26
+        },
+        {
+          "text": "め",
+          "startSeconds": 5.26,
+          "endSeconds": 5.78
+        },
+        {
+          "text": "た",
+          "startSeconds": 5.78,
+          "endSeconds": 6.56
+        },
+        {
+          "text": "ら",
+          "startSeconds": 6.56,
+          "endSeconds": 7.0
+        }
+      ],
+      "karaokeAlignmentCoverage": 0.8
     },
     {
-      "id": "apple:1714599986:23.24:失ってまた失って",
+      "id": "apple:1714599986:22.62:失ってまた失って",
       "artistName": "Vaundy",
       "artistAliases": [
         "Vaundy",
@@ -733,37 +2749,57 @@
       "storefront": "JP",
       "trackDurationSeconds": 202.021,
       "lineJa": "失って また失って",
-      "previewLineStartSeconds": 23.24,
-      "previewLineEndSeconds": 29.5,
+      "previewLineStartSeconds": 22.62,
+      "previewLineEndSeconds": 26.72,
       "verificationScore": 100.0,
       "verificationFullScore": 80.0,
       "verificationCoverage": 1.0,
       "verificationExactInclusion": true,
       "verificationCommonChars": 8,
-      "verifiedTranscript": "失ってまた失って 傷をつき"
-    },
-    {
-      "id": "apple:1706828344:21.9:なぁなんて美しい世界だ",
-      "artistName": "Vaundy",
-      "artistAliases": [
-        "Vaundy",
-        "バウンディ"
+      "verifiedTranscript": "失ってまた失って 傷をつき",
+      "words": [
+        {
+          "text": "失",
+          "startSeconds": 22.64,
+          "endSeconds": 23.6
+        },
+        {
+          "text": "っ",
+          "startSeconds": 23.6,
+          "endSeconds": 23.9
+        },
+        {
+          "text": "て ",
+          "startSeconds": 23.9,
+          "endSeconds": 24.2
+        },
+        {
+          "text": "ま",
+          "startSeconds": 24.2,
+          "endSeconds": 24.54
+        },
+        {
+          "text": "た",
+          "startSeconds": 24.54,
+          "endSeconds": 24.88
+        },
+        {
+          "text": "失",
+          "startSeconds": 24.88,
+          "endSeconds": 25.8
+        },
+        {
+          "text": "っ",
+          "startSeconds": 25.8,
+          "endSeconds": 26.25
+        },
+        {
+          "text": "て",
+          "startSeconds": 26.25,
+          "endSeconds": 26.7
+        }
       ],
-      "trackName": "不可幸力 / Vaundy ：MUSIC VIDEO",
-      "albumName": "Vaundy",
-      "lrclibTrackId": 12029544,
-      "appleTrackId": 1706828344,
-      "storefront": "JP",
-      "trackDurationSeconds": 200.242,
-      "lineJa": "なぁ なんて美しい世界だ",
-      "previewLineStartSeconds": 21.9,
-      "previewLineEndSeconds": 24.36,
-      "verificationScore": 100.0,
-      "verificationFullScore": 100.0,
-      "verificationCoverage": 1.0,
-      "verificationExactInclusion": true,
-      "verificationCommonChars": 11,
-      "verifiedTranscript": "なぁなんて美しい世界だ"
+      "karaokeAlignmentCoverage": 1.0
     }
   ]
 }
