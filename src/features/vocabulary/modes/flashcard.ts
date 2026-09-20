@@ -1,5 +1,6 @@
 import type { FlashcardQuestion, StudyMode } from '../../../core/contracts/study-mode.js';
 import type { VocabularyExample } from '../../../domain/models.js';
+import { bestVocabularyExample } from '../example-quality.js';
 
 function posLabel(raw: string): string {
   const value = raw.toLowerCase();
@@ -31,7 +32,12 @@ function exampleFor(example: VocabularyExample | undefined): FlashcardQuestion['
     ja: example.ja,
     ...(example.kana ? { kana: example.kana } : {}),
     ...(example.zhTw ? { translation: example.zhTw, translationLabel: '中文' } : {}),
-    ...(example.source === 'tatoeba' ? { sourceLabel: example.sourceId ? `Tatoeba #${example.sourceId}` : 'Tatoeba' } : {}),
+    ...(example.source === 'project'
+      ? { sourceLabel: 'Kotoba Lab'
+      }
+      : example.source === 'tatoeba'
+        ? { sourceLabel: example.sourceId ? `Tatoeba #${example.sourceId}` : 'Tatoeba' }
+        : {}),
   };
 }
 
@@ -56,10 +62,11 @@ export const vocabFlashcardMode: StudyMode = {
       speakText: item.reading,
       badge: item.jlpt,
       chips: pos,
+      ...(item.collocations?.length ? { collocations: item.collocations.slice(0, 3) } : {}),
       details,
       sourceNote: 'JMdict / Tomoshi · JLPT 分級為社群估計',
     };
-    const example = exampleFor(item.examples[0]);
+    const example = exampleFor(bestVocabularyExample(item));
     if (example) question.example = example;
     return question;
   },
