@@ -193,7 +193,7 @@ export async function verifiedDeckLesson(
   const catalogWords = entry.words?.map((word) => word.text).join('') === entry.lineJa
     ? entry.words
     : undefined;
-  const preciseWords = (entry.karaokeAlignmentCoverage ?? 0) >= 0.58
+  const preciseWords = (entry.karaokeAlignmentCoverage ?? 0) >= 0.85
     ? normalizeKaraokeTimings(
         catalogWords,
         entry.previewLineStartSeconds,
