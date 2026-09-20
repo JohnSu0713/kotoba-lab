@@ -101,7 +101,7 @@ export async function renderHome(
   const pathCopy = !snapshot.foundationDone
     ? `平假名與片假名基本清音 ${snapshot.foundationReviewed}/${snapshot.foundationTotal}。完成後，主線從 N5 Unit 1 開始。`
     : unit && lesson
-      ? `這一課固定 ${lessonSize} 個單字。完成後自動前進；複習會由記憶排程穿插，不需要自己選模式。`
+      ? `${unit.topicFocus}。這一課 ${lessonSize} 個新單字、${lesson.patternTarget} 個句型目標；到期複習會自動穿插。`
       : "7,777 個固定單字已走完。接下來用歌詞與自由閱讀把日文變成真正的語感。";
 
   root.innerHTML = `
