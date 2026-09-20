@@ -186,7 +186,6 @@ export async function renderStudy(
   const basePredicate = predicateFor(params, settings.enabledKanaGroups);
   const predicate = (item: import("../../domain/models.js").ContentItem) =>
     basePredicate(item) &&
-    (!pathIds || pathIds.has(item.id)) &&
     (!params.get("item") || item.id === params.get("item")) &&
     (params.get("saved") !== "1" || savedIds.has(item.id));
   const mixedModes = context.modes
@@ -200,11 +199,24 @@ export async function renderStudy(
   const requestedLimit = Number(params.get("limit") ?? "");
   const limit = Number.isInteger(requestedLimit) && requestedLimit > 0
     ? requestedLimit
-    : undefined;
+    : isPathSession
+      ? 16
+      : isFoundationSession
+        ? 15
+        : undefined;
   const sessionFilter = {
     predicate,
     strategy,
     ...(limit !== undefined ? { limit } : {}),
+    ...(isPathSession && pathIds ? {
+      freshPredicate: (item: import("../../domain/models.js").ContentItem) => pathIds.has(item.id),
+      dueLimit: 6,
+      ignoreDailyNewLimit: true,
+    } : {}),
+    ...(isFoundationSession ? {
+      dueLimit: 4,
+      ignoreDailyNewLimit: true,
+    } : {}),
   };
   const session = isMixed
     ? await context.sessions.createMixed(mixedModes, sessionFilter)
