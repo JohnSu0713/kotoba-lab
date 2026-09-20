@@ -179,7 +179,7 @@ export async function renderStudy(
   const pageTitle = isFoundationSession
     ? "Foundation · 五十音"
     : isPathSession && pathUnit && pathLesson
-      ? `${pathUnit.level} · Unit ${pathUnit.order} · Lesson ${pathLesson.order}/10`
+      ? `${pathUnit.level} · Unit ${pathUnit.order} · ${pathUnit.topicTitle} · Lesson ${pathLesson.order}/10`
       : strategy === "weak"
         ? "弱項再練習"
         : isMixed
