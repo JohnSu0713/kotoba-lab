@@ -38,7 +38,7 @@ export async function renderPath(
           path: "1",
           pathUnit: String(snapshot.currentUnit.order),
           pathLesson: String(snapshot.currentLesson.order),
-          limit: "10",
+          limit: "16",
         })
       : "#/lyrics";
 
