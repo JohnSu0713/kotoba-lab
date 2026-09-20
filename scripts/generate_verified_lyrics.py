@@ -454,6 +454,7 @@ def align_karaoke_timings(
     # Map normalized target character ranges back to original display units.
     result: list[dict[str, Any]] = []
     target_cursor = 0
+    previous_end: float | None = None
     for unit in units:
         normalized_unit = lyric_norm(unit)
         length = max(1, len(normalized_unit))
@@ -466,6 +467,9 @@ def align_karaoke_timings(
             continue
         unit_start = max(0.0, float(slice_times[0]["start"]))
         unit_end = min(30.0, float(slice_times[-1]["end"]))
+        if previous_end is not None and unit_start < previous_end:
+            unit_start = previous_end
+        unit_end = min(30.0, max(unit_start + 0.025, unit_end))
         if unit_end <= unit_start:
             continue
         result.append({
@@ -473,6 +477,7 @@ def align_karaoke_timings(
             "startSeconds": round(unit_start, 3),
             "endSeconds": round(unit_end, 3),
         })
+        previous_end = unit_end
 
     if not result or "".join(item["text"] for item in result) != line:
         return {
