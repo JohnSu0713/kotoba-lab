@@ -201,9 +201,14 @@ export async function renderStudy(
   const limit = Number.isInteger(requestedLimit) && requestedLimit > 0
     ? requestedLimit
     : undefined;
+  const sessionFilter = {
+    predicate,
+    strategy,
+    ...(limit !== undefined ? { limit } : {}),
+  };
   const session = isMixed
-    ? await context.sessions.createMixed(mixedModes, { predicate, strategy, limit })
-    : await context.sessions.create(mode!, { predicate, strategy, limit });
+    ? await context.sessions.createMixed(mixedModes, sessionFilter)
+    : await context.sessions.create(mode!, sessionFilter);
   let feedback: FeedbackState | undefined;
   let revealed = false;
   let submitting = false;
