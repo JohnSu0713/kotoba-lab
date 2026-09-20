@@ -732,15 +732,23 @@
     opacity 120ms ease;
 }
 
+.lyric-sync-word.sung {
+  color: color-mix(in srgb, var(--accent) 72%, var(--ink));
+  opacity: .94;
+}
+
 .lyric-sync-word.active,
 .lyric-sync-line.active {
   color: var(--accent);
-  background: color-mix(in srgb, var(--accent-soft) 44%, transparent);
-  box-shadow: inset 0 -.10em 0 color-mix(in srgb, var(--accent) 38%, transparent);
+  background: color-mix(in srgb, var(--accent-soft) 50%, transparent);
+  box-shadow:
+    inset 0 -.11em 0 color-mix(in srgb, var(--accent) 44%, transparent),
+    0 .12em .55em color-mix(in srgb, var(--accent) 10%, transparent);
+  opacity: 1;
 }
 
-#lyric-sync-text:has(.lyric-sync-word.active) .lyric-sync-word:not(.active) {
-  opacity: .68;
+#lyric-sync-text.is-karaoke-active .lyric-sync-word:not(.active):not(.sung) {
+  opacity: .48;
 }
 
 .lyric-primary-play:not(:disabled) #lyric-original-status {
