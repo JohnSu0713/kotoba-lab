@@ -20,10 +20,7 @@ import {
   verifiedArtistCoverage,
   verifiedDeckLesson,
 } from "../public/app/features/lyrics/verified.js";
-import {
-  approximateKaraokeTimings,
-  normalizeKaraokeTimings,
-} from "../public/app/features/lyrics/karaoke.js";
+import { normalizeKaraokeTimings } from "../public/app/features/lyrics/karaoke.js";
 const item = (id) => ({
   id,
   kind: "vocabulary",
@@ -225,8 +222,13 @@ test("verified lyric deck rotates supported artists fairly and keeps unsupported
       new Set(["yoasobi", "vaundy"]),
     );
     assert.ok(firstCycle.every((lesson) => lesson.artistId !== "pending"));
-    assert.ok(firstCycle.every((lesson) => (lesson.words?.length ?? 0) > 0));
-    assert.ok(firstCycle.every((lesson) => lesson.words?.map((word) => word.text).join("") === lesson.lineJa));
+    for (const lesson of firstCycle) {
+      if (!lesson.words?.length) continue;
+      assert.equal(lesson.words.map((word) => word.text).join(""), lesson.lineJa);
+      for (let index = 1; index < lesson.words.length; index += 1) {
+        assert.ok(lesson.words[index].startSeconds >= lesson.words[index - 1].startSeconds);
+      }
+    }
 
     const secondCycle = await Promise.all(
       [2, 3].map((index) => verifiedDeckLesson(artists, "2026-09-19", index)),
@@ -289,25 +291,16 @@ test("vocabulary examples expose hiragana and Chinese without English fallback",
 });
 
 
-test("karaoke fallback preserves the exact lyric and monotonic timing", () => {
-  const line = "ここに置いていくから、全部。";
-  const words = approximateKaraokeTimings(line, 3.2, 6.46);
-  assert.ok(words.length >= 8);
-  assert.equal(words.map((word) => word.text).join(""), line);
-  assert.equal(words[0]?.startSeconds, 3.2);
-  assert.equal(words.at(-1)?.endSeconds, 6.46);
-  for (let index = 1; index < words.length; index += 1) {
-    assert.ok(words[index].startSeconds >= words[index - 1].startSeconds);
-    assert.ok(words[index].endSeconds > words[index].startSeconds);
-  }
-
+test("trusted karaoke timings are normalized without inventing timing", () => {
   const precise = normalizeKaraokeTimings([
     { text: "ここ", startSeconds: 3.3, endSeconds: 3.8 },
     { text: "に", startSeconds: 3.78, endSeconds: 4.0 },
   ], 3.2, 6.46);
   assert.equal(precise?.length, 2);
   assert.ok((precise?.[1]?.startSeconds ?? 0) >= 3.74);
+  assert.equal(normalizeKaraokeTimings(undefined, 3.2, 6.46), undefined);
   assert.equal(normalizeKaraokeTimings([
     { text: "", startSeconds: 3.3, endSeconds: 3.8 },
   ], 3.2, 6.46), undefined);
 });
+

@@ -3,7 +3,7 @@ name: Build verified lyric catalog
 on:
   workflow_dispatch:
   push:
-    branches: [main, fix-audited-kana-lyrics]
+    branches: ['**']
     paths:
       - scripts/generate_verified_lyrics.py
       - .github/workflows/build-verified-lyrics.yml
@@ -70,7 +70,6 @@ jobs:
           PY
 
       - name: Commit verified catalog
-        if: github.event_name == 'workflow_dispatch' || github.ref_name == 'fix-audited-kana-lyrics'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
