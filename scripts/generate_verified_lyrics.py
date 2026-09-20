@@ -284,13 +284,121 @@ def transcribe_preview(model: WhisperModel, url: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for segment in segments:
         text = segment.text.strip()
-        if text:
-            out.append({
-                "start": float(segment.start),
-                "end": float(segment.end),
-                "text": text,
+        if not text:
+            continue
+        words: list[dict[str, Any]] = []
+        for word in segment.words or []:
+            word_text = str(word.word or "").strip()
+            if not word_text:
+                continue
+            words.append({
+                "text": word_text,
+                "start": float(word.start),
+                "end": float(word.end),
             })
+        out.append({
+            "start": float(segment.start),
+            "end": float(segment.end),
+            "text": text,
+            "words": words,
+        })
     return out
+
+
+def lyric_display_units(value: str) -> list[str]:
+    """Split a lyric into karaoke-sized display units while preserving punctuation."""
+    units: list[str] = []
+    prefix = ""
+    for char in value:
+        if lyric_norm(char):
+            units.append(prefix + char)
+            prefix = ""
+        elif units:
+            units[-1] += char
+        else:
+            prefix += char
+    if prefix:
+        if units:
+            units[-1] += prefix
+        else:
+            units.append(prefix)
+    return [unit for unit in units if unit]
+
+
+def project_karaoke_timings(
+    line: str,
+    words: list[dict[str, Any]],
+    start: float,
+    end: float,
+) -> list[dict[str, Any]]:
+    """Project Whisper word anchors onto the exact lyric text for karaoke display."""
+    units = lyric_display_units(line)
+    anchors = [
+        word for word in words
+        if lyric_norm(str(word.get("text") or ""))
+        and float(word.get("end") or 0) > float(word.get("start") or 0)
+    ]
+    if not units:
+        return []
+
+    start = max(0.0, start)
+    end = max(start + 0.2, end)
+    if not anchors:
+        step = (end - start) / len(units)
+        return [
+            {
+                "text": unit,
+                "startSeconds": round(start + step * index, 3),
+                "endSeconds": round(end if index == len(units) - 1 else start + step * (index + 1), 3),
+            }
+            for index, unit in enumerate(units)
+        ]
+
+    weights = [max(1, len(lyric_norm(str(word["text"])))) for word in anchors]
+    total = sum(weights)
+    cursor = 0
+    consumed = 0
+    result: list[dict[str, Any]] = []
+
+    for index, (word, weight) in enumerate(zip(anchors, weights)):
+        if cursor >= len(units):
+            break
+        consumed += weight
+        if index == len(anchors) - 1:
+            next_cursor = len(units)
+        else:
+            projected = round((consumed / total) * len(units))
+            next_cursor = min(len(units), max(cursor + 1, projected))
+
+        assigned = units[cursor:next_cursor]
+        word_start = max(start, float(word["start"]))
+        word_end = min(end, max(word_start + 0.04, float(word["end"])))
+        if assigned:
+            step = max(0.025, (word_end - word_start) / len(assigned))
+            for local_index, unit in enumerate(assigned):
+                unit_start = word_start + step * local_index
+                unit_end = word_end if local_index == len(assigned) - 1 else min(word_end, unit_start + step)
+                result.append({
+                    "text": unit,
+                    "startSeconds": round(max(start, unit_start), 3),
+                    "endSeconds": round(min(end, max(unit_start + 0.025, unit_end)), 3),
+                })
+        cursor = next_cursor
+
+    if cursor < len(units):
+        tail_start = max(start, result[-1]["endSeconds"] if result else start)
+        remaining = units[cursor:]
+        step = max(0.025, (end - tail_start) / max(1, len(remaining)))
+        for index, unit in enumerate(remaining):
+            unit_start = tail_start + step * index
+            unit_end = end if index == len(remaining) - 1 else min(end, unit_start + step)
+            result.append({
+                "text": unit,
+                "startSeconds": round(unit_start, 3),
+                "endSeconds": round(max(unit_start + 0.025, unit_end), 3),
+            })
+
+    return result
 
 
 def common_substring_len(a: str, b: str) -> int:
@@ -322,6 +430,11 @@ def audio_matches(
                 "start": start,
                 "end": end,
                 "text": "".join(str(seg["text"]) for seg in subset),
+                "words": [
+                    word
+                    for seg in subset
+                    for word in (seg.get("words") or [])
+                ],
             })
 
     candidates: list[dict[str, Any]] = []
@@ -364,6 +477,12 @@ def audio_matches(
                 "coverage": float(coverage),
                 "exactInclusion": bool(exact_inclusion),
                 "common": int(common),
+                "wordTimings": project_karaoke_timings(
+                    str(line["text"]),
+                    list(window.get("words") or []),
+                    max(0.0, float(window["start"])),
+                    min(30.0, float(window["end"])),
+                ),
             }
             if best_for_line is None or (
                 candidate["score"],
@@ -475,6 +594,7 @@ def main() -> None:
                     "verificationExactInclusion": bool(match["exactInclusion"]),
                     "verificationCommonChars": int(match["common"]),
                     "verifiedTranscript": match["transcript"],
+                    "words": match["wordTimings"],
                 }
                 entries.append(entry)
                 accepted += 1
