@@ -11,8 +11,11 @@ import { shuffle } from "./question-utils.js";
 
 export interface SessionFilter {
   predicate?: (item: ContentItem) => boolean;
+  freshPredicate?: (item: ContentItem) => boolean;
   strategy?: "scheduled" | "weak" | "practice";
   limit?: number;
+  dueLimit?: number;
+  ignoreDailyNewLimit?: boolean;
 }
 
 interface QueuedCard {
@@ -180,20 +183,29 @@ export class SessionEngine {
         reviewMap,
       );
     }
+    const dueCap = Math.min(
+      limit,
+      Math.max(0, filter.dueLimit ?? limit),
+    );
     const due = eligible
       .filter((card) => {
         const r = recordFor(card);
         return r && this.scheduler.isDue(r, now);
       })
       .sort((a, b) => recordFor(a)!.dueAt.localeCompare(recordFor(b)!.dueAt))
-      .slice(0, limit);
-    const remainingNew = Math.max(
-      0,
-      settings.dailyNew - activitySummary(activities, now).todayNew,
-    );
+      .slice(0, dueCap);
+    const remainingNew = filter.ignoreDailyNewLimit
+      ? limit
+      : Math.max(
+          0,
+          settings.dailyNew - activitySummary(activities, now).todayNew,
+        );
     const fresh: QueuedCard[] = [];
+    const freshEligible = filter.freshPredicate
+      ? eligible.filter((card) => filter.freshPredicate?.(card.item) ?? true)
+      : eligible;
     const buckets = shuffle(modes, Math.random).map((mode) =>
-      eligible.filter((card) => card.mode.id === mode.id && !recordFor(card)),
+      freshEligible.filter((card) => card.mode.id === mode.id && !recordFor(card)),
     );
     // Keep corpus order for an individual mode; alternate modes in mixed sessions.
     while (fresh.length < Math.min(remainingNew, limit - due.length)) {
